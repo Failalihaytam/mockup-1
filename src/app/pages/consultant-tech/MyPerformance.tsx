@@ -1,0 +1,189 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { PageHeader } from '../../components/common/PageHeader';
+import { EvaluationsAPI } from '../../services/odataClient';
+import { Evaluation } from '../../types/entities';
+import { useAuth } from '../../context/AuthContext';
+
+interface DevelopmentAction {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
+export const MyPerformance: React.FC = () => {
+  const { currentUser } = useAuth();
+  const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [plan, setPlan] = useState<DevelopmentAction[]>([
+    { id: 'd1', label: 'Complete CAP advanced training', done: false },
+    { id: 'd2', label: 'Improve code review turnaround time', done: true },
+    { id: 'd3', label: 'Publish one technical knowledge note per sprint', done: false },
+  ]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    void loadData(currentUser.id);
+  }, [currentUser]);
+
+  const loadData = async (userId: string) => {
+    setLoading(true);
+    try {
+      const data = await EvaluationsAPI.getByUser(userId);
+      setEvaluations(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const summary = useMemo(() => {
+    if (!evaluations.length) {
+      return {
+        score: 0,
+        productivity: 0,
+        quality: 0,
+        autonomy: 0,
+        collaboration: 0,
+        innovation: 0,
+      };
+    }
+
+    const count = evaluations.length;
+    const score = evaluations.reduce((sum, evaluation) => sum + evaluation.score, 0) / count;
+    const productivity =
+      evaluations.reduce(
+        (sum, evaluation) => sum + evaluation.qualitativeGrid.productivity,
+        0
+      ) / count;
+    const quality =
+      evaluations.reduce((sum, evaluation) => sum + evaluation.qualitativeGrid.quality, 0) /
+      count;
+    const autonomy =
+      evaluations.reduce((sum, evaluation) => sum + evaluation.qualitativeGrid.autonomy, 0) /
+      count;
+    const collaboration =
+      evaluations.reduce(
+        (sum, evaluation) => sum + evaluation.qualitativeGrid.collaboration,
+        0
+      ) / count;
+    const innovation =
+      evaluations.reduce((sum, evaluation) => sum + evaluation.qualitativeGrid.innovation, 0) /
+      count;
+    return { score, productivity, quality, autonomy, collaboration, innovation };
+  }, [evaluations]);
+
+  const toggleAction = (id: string) => {
+    setPlan((prev) =>
+      prev.map((action) => (action.id === id ? { ...action, done: !action.done } : action))
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <PageHeader
+        title="My Performance"
+        subtitle="Personal performance trend, feedback and development plan"
+        breadcrumbs={[
+          { label: 'Home', path: '/consultant-tech/dashboard' },
+          { label: 'My Performance' },
+        ]}
+      />
+
+      <div className="p-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-card border border-border rounded-lg p-4">
+            <p className="text-xs text-muted-foreground">Average Score</p>
+            <p className="text-2xl font-semibold text-foreground">{summary.score.toFixed(2)} / 5</p>
+          </div>
+          <div className="bg-card border border-border rounded-lg p-4">
+            <p className="text-xs text-muted-foreground">Evaluations</p>
+            <p className="text-2xl font-semibold text-foreground">{evaluations.length}</p>
+          </div>
+          <div className="bg-card border border-border rounded-lg p-4">
+            <p className="text-xs text-muted-foreground">Plan Completion</p>
+            <p className="text-2xl font-semibold text-foreground">
+              {Math.round((plan.filter((action) => action.done).length / plan.length) * 100)}%
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-card border border-border rounded-lg p-5">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Qualitative Grid</h3>
+            <div className="space-y-3">
+              {(
+                [
+                  ['productivity', 'Productivity'],
+                  ['quality', 'Quality'],
+                  ['autonomy', 'Autonomy'],
+                  ['collaboration', 'Collaboration'],
+                  ['innovation', 'Innovation'],
+                ] as const
+              ).map(([field, label]) => (
+                <div key={field}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span className="font-medium text-foreground">
+                      {summary[field].toFixed(2)} / 5
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted">
+                    <div
+                      className="h-2 rounded-full bg-primary"
+                      style={{ width: `${(summary[field] / 5) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-card border border-border rounded-lg p-5">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Development Plan</h3>
+            <div className="space-y-2">
+              {plan.map((action) => (
+                <label
+                  key={action.id}
+                  className="flex items-center gap-3 p-2 border border-border rounded hover:bg-accent/40 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={action.done}
+                    onChange={() => toggleAction(action.id)}
+                  />
+                  <span className={action.done ? 'line-through text-muted-foreground' : 'text-foreground'}>
+                    {action.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-border">
+            <h3 className="text-lg font-semibold text-foreground">Evaluation History</h3>
+          </div>
+          <div className="divide-y divide-border">
+            {loading ? (
+              <div className="p-6 text-muted-foreground">Loading evaluations...</div>
+            ) : evaluations.length === 0 ? (
+              <div className="p-6 text-muted-foreground">No evaluations found yet.</div>
+            ) : (
+              evaluations.map((evaluation) => (
+                <div key={evaluation.id} className="p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm font-medium text-foreground">{evaluation.period}</div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {evaluation.score.toFixed(2)} / 5
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{evaluation.feedback}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
