@@ -1,42 +1,48 @@
 // React Router configuration with role-based routing
 
-import type { ReactElement } from 'react';
+import { lazy, Suspense, type ReactElement } from 'react';
 import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router';
 import { MainLayout } from './components/layout/MainLayout';
 import { Login } from './pages/Login';
 import { getDefaultRouteForRole, useAuth } from './context/AuthContext';
 import { UserRole } from './types/entities';
 
-// Admin pages
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { UsersManagement } from './pages/admin/UsersManagement';
-import { ReferenceDataManagement } from './pages/admin/ReferenceData';
+// Lazy-loaded page components for code splitting
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const UsersManagement = lazy(() => import('./pages/admin/UsersManagement').then(m => ({ default: m.UsersManagement })));
+const ReferenceDataManagement = lazy(() => import('./pages/admin/ReferenceData').then(m => ({ default: m.ReferenceDataManagement })));
 
-// Manager pages
-import { ManagerDashboard } from './pages/manager/ManagerDashboard';
-import { ProjectsEnhanced as Projects } from './pages/manager/ProjectsEnhanced';
-import { ProjectDetails } from './pages/manager/ProjectDetails';
-import { TeamPerformance } from './pages/manager/TeamPerformance';
-import { ResourceAllocation } from './pages/manager/ResourceAllocation';
-import { RisksAndCriticalTasks } from './pages/manager/RisksAndCriticalTasks';
-import { TeamEvaluations } from './pages/manager/TeamEvaluations';
+const ManagerDashboard = lazy(() => import('./pages/manager/ManagerDashboard').then(m => ({ default: m.ManagerDashboard })));
+const Projects = lazy(() => import('./pages/manager/ProjectsEnhanced').then(m => ({ default: m.ProjectsEnhanced })));
+const ProjectDetails = lazy(() => import('./pages/manager/ProjectDetails').then(m => ({ default: m.ProjectDetails })));
+const TeamPerformance = lazy(() => import('./pages/manager/TeamPerformance').then(m => ({ default: m.TeamPerformance })));
+const ResourceAllocation = lazy(() => import('./pages/manager/ResourceAllocation').then(m => ({ default: m.ResourceAllocation })));
+const RisksAndCriticalTasks = lazy(() => import('./pages/manager/RisksAndCriticalTasks').then(m => ({ default: m.RisksAndCriticalTasks })));
+const TeamEvaluations = lazy(() => import('./pages/manager/TeamEvaluations').then(m => ({ default: m.TeamEvaluations })));
 
-// Technical Consultant pages
-import { TechDashboard } from './pages/consultant-tech/TechDashboard';
-import { MyTasks } from './pages/consultant-tech/MyTasks';
-import { TimesheetPage } from './pages/consultant-tech/Timesheet';
-import { MyProjects } from './pages/consultant-tech/MyProjects';
-import { MyPerformance } from './pages/consultant-tech/MyPerformance';
+const TechDashboard = lazy(() => import('./pages/consultant-tech/TechDashboard').then(m => ({ default: m.TechDashboard })));
+const MyTasks = lazy(() => import('./pages/consultant-tech/MyTasks').then(m => ({ default: m.MyTasks })));
+const TimesheetPage = lazy(() => import('./pages/consultant-tech/Timesheet').then(m => ({ default: m.TimesheetPage })));
+const MyProjects = lazy(() => import('./pages/consultant-tech/MyProjects').then(m => ({ default: m.MyProjects })));
+const MyPerformance = lazy(() => import('./pages/consultant-tech/MyPerformance').then(m => ({ default: m.MyPerformance })));
 
-// Functional Consultant pages
-import { FuncDashboard } from './pages/consultant-func/FuncDashboard';
-import { Deliverables } from './pages/consultant-func/Deliverables';
-import { FuncProjects } from './pages/consultant-func/Projects';
-import { FuncTickets } from './pages/consultant-func/Tickets';
+const FuncDashboard = lazy(() => import('./pages/consultant-func/FuncDashboard').then(m => ({ default: m.FuncDashboard })));
+const Deliverables = lazy(() => import('./pages/consultant-func/Deliverables').then(m => ({ default: m.Deliverables })));
+const FuncProjects = lazy(() => import('./pages/consultant-func/Projects').then(m => ({ default: m.FuncProjects })));
+const FuncTickets = lazy(() => import('./pages/consultant-func/Tickets').then(m => ({ default: m.FuncTickets })));
 
-// Shared pages
-import { ProfilePage } from './pages/shared/Profile';
-import { SettingsPage } from './pages/shared/Settings';
+const ProfilePage = lazy(() => import('./pages/shared/Profile').then(m => ({ default: m.ProfilePage })));
+const SettingsPage = lazy(() => import('./pages/shared/Settings').then(m => ({ default: m.SettingsPage })));
+
+const PageLoader = () => (
+  <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
+    Loading…
+  </div>
+);
+
+const SuspensePage = ({ children }: { children: ReactElement }) => (
+  <Suspense fallback={<PageLoader />}>{children}</Suspense>
+);
 
 const AuthLoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
@@ -152,15 +158,15 @@ export const router = createBrowserRouter([
           },
           {
             path: 'dashboard',
-            element: <AdminDashboard />,
+            element: <SuspensePage><AdminDashboard /></SuspensePage>,
           },
           {
             path: 'users',
-            element: <UsersManagement />,
+            element: <SuspensePage><UsersManagement /></SuspensePage>,
           },
           {
             path: 'reference-data',
-            element: <ReferenceDataManagement />,
+            element: <SuspensePage><ReferenceDataManagement /></SuspensePage>,
           },
         ],
       },
@@ -176,31 +182,31 @@ export const router = createBrowserRouter([
           },
           {
             path: 'dashboard',
-            element: <ManagerDashboard />,
+            element: <SuspensePage><ManagerDashboard /></SuspensePage>,
           },
           {
             path: 'projects',
-            element: <Projects />,
+            element: <SuspensePage><Projects /></SuspensePage>,
           },
           {
             path: 'projects/:id',
-            element: <ProjectDetails />,
+            element: <SuspensePage><ProjectDetails /></SuspensePage>,
           },
           {
             path: 'team',
-            element: <TeamPerformance />,
+            element: <SuspensePage><TeamPerformance /></SuspensePage>,
           },
           {
             path: 'allocations',
-            element: <ResourceAllocation />,
+            element: <SuspensePage><ResourceAllocation /></SuspensePage>,
           },
           {
             path: 'risks',
-            element: <RisksAndCriticalTasks />,
+            element: <SuspensePage><RisksAndCriticalTasks /></SuspensePage>,
           },
           {
             path: 'evaluations',
-            element: <TeamEvaluations />,
+            element: <SuspensePage><TeamEvaluations /></SuspensePage>,
           },
         ],
       },
@@ -216,23 +222,23 @@ export const router = createBrowserRouter([
           },
           {
             path: 'dashboard',
-            element: <TechDashboard />,
+            element: <SuspensePage><TechDashboard /></SuspensePage>,
           },
           {
             path: 'projects',
-            element: <MyProjects />,
+            element: <SuspensePage><MyProjects /></SuspensePage>,
           },
           {
             path: 'tasks',
-            element: <MyTasks />,
+            element: <SuspensePage><MyTasks /></SuspensePage>,
           },
           {
             path: 'timesheet',
-            element: <TimesheetPage />,
+            element: <SuspensePage><TimesheetPage /></SuspensePage>,
           },
           {
             path: 'performance',
-            element: <MyPerformance />,
+            element: <SuspensePage><MyPerformance /></SuspensePage>,
           },
         ],
       },
@@ -248,19 +254,19 @@ export const router = createBrowserRouter([
           },
           {
             path: 'dashboard',
-            element: <FuncDashboard />,
+            element: <SuspensePage><FuncDashboard /></SuspensePage>,
           },
           {
             path: 'projects',
-            element: <FuncProjects />,
+            element: <SuspensePage><FuncProjects /></SuspensePage>,
           },
           {
             path: 'deliverables',
-            element: <Deliverables />,
+            element: <SuspensePage><Deliverables /></SuspensePage>,
           },
           {
             path: 'tickets',
-            element: <FuncTickets />,
+            element: <SuspensePage><FuncTickets /></SuspensePage>,
           },
         ],
       },
@@ -268,18 +274,18 @@ export const router = createBrowserRouter([
       // Shared routes
       {
         path: 'profile',
-        element: <ProfilePage />,
+        element: <SuspensePage><ProfilePage /></SuspensePage>,
       },
       {
         path: 'settings',
-        element: <SettingsPage />,
+        element: <SuspensePage><SettingsPage /></SuspensePage>,
       },
       {
         path: '*',
         element: (
           <div className="p-6">
             <h1 className="text-2xl font-semibold">Page not found</h1>
-            <p className="text-gray-600 mt-2">
+            <p className="mt-2 text-muted-foreground">
               The page you requested does not exist.
             </p>
           </div>
@@ -290,10 +296,10 @@ export const router = createBrowserRouter([
   {
     path: '*',
     element: (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">404</h1>
-          <p className="text-gray-600">Page not found</p>
+          <h1 className="mb-2 text-4xl font-bold text-foreground">404</h1>
+          <p className="text-muted-foreground">Page not found</p>
         </div>
       </div>
     ),

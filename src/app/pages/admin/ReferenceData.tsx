@@ -1,9 +1,24 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { PageHeader } from '../../components/common/PageHeader';
-import { ReferenceDataAPI } from '../../services/odataClient';
-import { ReferenceData } from '../../types/entities';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Save, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageHeader } from '../../components/common/PageHeader';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { ReferenceDataAPI } from '../../services/odataClient';
+import { ReferenceData } from '../../types/entities';
 
 type ReferenceType = ReferenceData['type'] | 'ALL';
 
@@ -23,6 +38,7 @@ export const ReferenceDataManagement: React.FC = () => {
   const [form, setForm] = useState<Omit<ReferenceData, 'id'>>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [itemPendingDelete, setItemPendingDelete] = useState<ReferenceData | null>(null);
 
   useEffect(() => {
     void loadData();
@@ -42,11 +58,11 @@ export const ReferenceDataManagement: React.FC = () => {
     return items
       .filter((item) => {
         const matchesType = typeFilter === 'ALL' || item.type === typeFilter;
-        const q = search.trim().toLowerCase();
-        if (!q) return matchesType;
+        const query = search.trim().toLowerCase();
+        if (!query) return matchesType;
         return (
           matchesType &&
-          (item.code.toLowerCase().includes(q) || item.label.toLowerCase().includes(q))
+          (item.code.toLowerCase().includes(query) || item.label.toLowerCase().includes(query))
         );
       })
       .sort((a, b) => {
@@ -61,8 +77,8 @@ export const ReferenceDataManagement: React.FC = () => {
     setEditingId(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!form.code.trim() || !form.label.trim()) {
       toast.error('Code and label are required');
       return;
@@ -71,6 +87,7 @@ export const ReferenceDataManagement: React.FC = () => {
       toast.error('Order must be at least 1');
       return;
     }
+
     const normalizedCode = form.code.trim().toUpperCase();
     const duplicate = items.find(
       (item) =>
@@ -131,9 +148,6 @@ export const ReferenceDataManagement: React.FC = () => {
   };
 
   const removeItem = async (id: string) => {
-    const confirmed = window.confirm('Delete this reference item?');
-    if (!confirmed) return;
-
     try {
       await ReferenceDataAPI.delete(id);
       setItems((prev) => prev.filter((item) => item.id !== id));
@@ -143,6 +157,8 @@ export const ReferenceDataManagement: React.FC = () => {
       }
     } catch (error) {
       toast.error('Failed to delete reference item');
+    } finally {
+      setItemPendingDelete(null);
     }
   };
 
@@ -157,199 +173,230 @@ export const ReferenceDataManagement: React.FC = () => {
         ]}
       />
 
-      <div className="p-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-1 bg-card border border-border rounded-lg p-5 h-fit">
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            {editingId ? 'Edit Reference Item' : 'Create Reference Item'}
-          </h2>
+      <div className="grid grid-cols-1 gap-6 p-6 xl:grid-cols-3 lg:p-8">
+        <Card className="h-fit bg-card/92 xl:col-span-1">
+          <CardContent className="pt-6">
+            <h2 className="mb-4 text-lg font-semibold text-foreground">
+              {editingId ? 'Edit Reference Item' : 'Create Reference Item'}
+            </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div>
-              <label className="block text-sm mb-1 text-muted-foreground">Type</label>
-              <select
-                value={form.type}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    type: e.target.value as ReferenceData['type'],
-                  }))
-                }
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-              >
-                <option value="TASK_STATUS">Task Status</option>
-                <option value="PRIORITY">Priority</option>
-                <option value="PROJECT_TYPE">Project Type</option>
-                <option value="SKILL">Skill</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm mb-1 text-muted-foreground">Code</label>
-              <input
-                value={form.code}
-                onChange={(e) => setForm((prev) => ({ ...prev, code: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-                placeholder="EX: IN_PROGRESS"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-1 text-muted-foreground">Label</label>
-              <input
-                value={form.label}
-                onChange={(e) => setForm((prev) => ({ ...prev, label: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-                placeholder="Ex: In Progress"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-1 text-muted-foreground">Order</label>
-              <input
-                type="number"
-                min={1}
-                value={form.order ?? 1}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, order: Number(e.target.value || 1) }))
-                }
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-              />
-            </div>
-
-            <label className="inline-flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.active}
-                onChange={(e) => setForm((prev) => ({ ...prev, active: e.target.checked }))}
-              />
-              Active
-            </label>
-
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 flex items-center justify-center gap-2"
-              >
-                {editingId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                {isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}
-              </button>
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-4 py-2 border border-border rounded hover:bg-accent text-foreground flex items-center gap-2"
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="reference-type">Type</Label>
+                <select
+                  id="reference-type"
+                  value={form.type}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      type: event.target.value as ReferenceData['type'],
+                    }))
+                  }
+                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
                 >
-                  <X className="w-4 h-4" />
-                  Cancel
-                </button>
-              )}
+                  <option value="TASK_STATUS">Task Status</option>
+                  <option value="PRIORITY">Priority</option>
+                  <option value="PROJECT_TYPE">Project Type</option>
+                  <option value="SKILL">Skill</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="reference-code">Code</Label>
+                <Input
+                  id="reference-code"
+                  value={form.code}
+                  onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))}
+                  placeholder="EX: IN_PROGRESS"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="reference-label">Label</Label>
+                <Input
+                  id="reference-label"
+                  value={form.label}
+                  onChange={(event) => setForm((prev) => ({ ...prev, label: event.target.value }))}
+                  placeholder="Ex: In Progress"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="reference-order">Order</Label>
+                <Input
+                  id="reference-order"
+                  type="number"
+                  min={1}
+                  value={form.order ?? 1}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, order: Number(event.target.value || 1) }))
+                  }
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  id="reference-active"
+                  type="checkbox"
+                  checked={form.active}
+                  onChange={(event) => setForm((prev) => ({ ...prev, active: event.target.checked }))}
+                />
+                <Label htmlFor="reference-active">Active</Label>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <Button type="submit" disabled={isSubmitting} className="flex-1">
+                  {editingId ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                  {isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}
+                </Button>
+                {editingId && (
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    <X className="h-4 w-4" />
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden bg-card/92 xl:col-span-2">
+          <CardContent className="p-0">
+            <div className="flex flex-col gap-3 border-b border-border p-4 md:flex-row">
+              <div className="space-y-1 md:flex-1">
+                <Label htmlFor="reference-search" className="sr-only">
+                  Search reference data
+                </Label>
+                <Input
+                  id="reference-search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search code or label..."
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="reference-type-filter" className="sr-only">
+                  Filter by type
+                </Label>
+                <select
+                  id="reference-type-filter"
+                  value={typeFilter}
+                  onChange={(event) => setTypeFilter(event.target.value as ReferenceType)}
+                  className="h-9 rounded-md border border-input bg-input-background px-3 text-sm md:w-[220px]"
+                >
+                  <option value="ALL">All Types</option>
+                  <option value="TASK_STATUS">Task Status</option>
+                  <option value="PRIORITY">Priority</option>
+                  <option value="PROJECT_TYPE">Project Type</option>
+                  <option value="SKILL">Skill</option>
+                </select>
+              </div>
             </div>
-          </form>
-        </div>
 
-        <div className="xl:col-span-2 bg-card border border-border rounded-lg overflow-hidden">
-          <div className="p-4 border-b border-border flex flex-col md:flex-row gap-3">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search code or label..."
-              className="flex-1 px-3 py-2 border border-border rounded bg-card text-foreground"
-            />
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as ReferenceType)}
-              className="px-3 py-2 border border-border rounded bg-card text-foreground"
-            >
-              <option value="ALL">All Types</option>
-              <option value="TASK_STATUS">Task Status</option>
-              <option value="PRIORITY">Priority</option>
-              <option value="PROJECT_TYPE">Project Type</option>
-              <option value="SKILL">Skill</option>
-            </select>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs text-muted-foreground uppercase">
-                    Type
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs text-muted-foreground uppercase">
-                    Code
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs text-muted-foreground uppercase">
-                    Label
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs text-muted-foreground uppercase">
-                    Order
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs text-muted-foreground uppercase">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs text-muted-foreground uppercase">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {loading ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px]">
+                <thead className="bg-muted/65">
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                      Loading reference data...
-                    </td>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Code
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Label
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Order
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Actions
+                    </th>
                   </tr>
-                ) : filteredItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                      No reference entries found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-accent/40">
-                      <td className="px-4 py-3 text-sm text-foreground">{item.type}</td>
-                      <td className="px-4 py-3 text-sm font-mono text-foreground">{item.code}</td>
-                      <td className="px-4 py-3 text-sm text-foreground">{item.label}</td>
-                      <td className="px-4 py-3 text-sm text-foreground">{item.order ?? '-'}</td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => void toggleActive(item)}
-                          className={`px-2 py-1 rounded text-xs ${
-                            item.active
-                              ? 'bg-green-500/10 text-green-600'
-                              : 'bg-gray-500/10 text-gray-500'
-                          }`}
-                        >
-                          {item.active ? 'Active' : 'Inactive'}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end items-center gap-2">
-                          <button
-                            onClick={() => startEdit(item)}
-                            className="px-3 py-1.5 text-xs border border-border rounded hover:bg-accent"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => void removeItem(item.id)}
-                            className="px-3 py-1.5 text-xs bg-red-500/10 text-red-600 rounded hover:bg-red-500/20 flex items-center gap-1"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            Delete
-                          </button>
-                        </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                        Loading reference data...
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  ) : filteredItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                        No reference entries found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredItems.map((item) => (
+                      <tr key={item.id} className="hover:bg-accent/40">
+                        <td className="px-4 py-3 text-sm text-foreground">{item.type}</td>
+                        <td className="px-4 py-3 text-sm font-mono text-foreground">{item.code}</td>
+                        <td className="px-4 py-3 text-sm text-foreground">{item.label}</td>
+                        <td className="px-4 py-3 text-sm text-foreground">{item.order ?? '-'}</td>
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => void toggleActive(item)}
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              item.active
+                                ? 'bg-primary/12 text-primary hover:bg-primary/18'
+                                : 'bg-muted text-muted-foreground hover:bg-secondary'
+                            }`}
+                          >
+                            {item.active ? 'Active' : 'Inactive'}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button type="button" variant="outline" size="sm" onClick={() => startEdit(item)}>
+                              Edit
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setItemPendingDelete(item)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      <AlertDialog open={itemPendingDelete !== null} onOpenChange={(open) => !open && setItemPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete reference item</AlertDialogTitle>
+            <AlertDialogDescription>
+              {itemPendingDelete
+                ? `Delete "${itemPendingDelete.label}" (${itemPendingDelete.code}) from reference data?`
+                : 'This action cannot be undone.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => itemPendingDelete && void removeItem(itemPendingDelete.id)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

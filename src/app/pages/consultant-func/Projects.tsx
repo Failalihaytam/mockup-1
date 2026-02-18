@@ -1,9 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
-import { DeliverablesAPI, ProjectsAPI, TasksAPI, UsersAPI } from '../../services/odataClient';
+import {
+  DeliverablesAPI,
+  NotificationsAPI,
+  ProjectsAPI,
+  TasksAPI,
+  UsersAPI,
+} from '../../services/odataClient';
 import { Deliverable, Project, Task, User } from '../../types/entities';
 import { ExternalLink } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { Textarea } from '../../components/ui/textarea';
+import { Button } from '../../components/ui/button';
+import { toast } from 'sonner';
+
+interface ProjectFeedback {
+  author: string;
+  content: string;
+  createdAt: string;
+}
 
 export const FuncProjects: React.FC = () => {
   const { currentUser } = useAuth();
@@ -12,6 +27,8 @@ export const FuncProjects: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [feedbackDrafts, setFeedbackDrafts] = useState<Record<string, string>>({});
+  const [feedbackHistory, setFeedbackHistory] = useState<Record<string, ProjectFeedback[]>>({});
 
   useEffect(() => {
     void loadData();
@@ -61,6 +78,45 @@ export const FuncProjects: React.FC = () => {
     window.open(`https://teams.microsoft.com/l/chat/0/0?users=${usersParam}&message=${message}`, '_blank');
   };
 
+  const submitFeedback = async (project: Project, manager?: User) => {
+    if (!currentUser) return;
+    const content = (feedbackDrafts[project.id] ?? '').trim();
+
+    if (content.length < 10) {
+      toast.error('Project feedback must contain at least 10 characters');
+      return;
+    }
+
+    setFeedbackHistory((prev) => ({
+      ...prev,
+      [project.id]: [
+        {
+          author: currentUser.name,
+          content,
+          createdAt: new Date().toISOString(),
+        },
+        ...(prev[project.id] ?? []),
+      ],
+    }));
+    setFeedbackDrafts((prev) => ({ ...prev, [project.id]: '' }));
+
+    if (manager) {
+      try {
+        await NotificationsAPI.create({
+          userId: manager.id,
+          type: 'PROJECT_FEEDBACK',
+          title: 'New Functional Project Feedback',
+          message: `${currentUser.name} submitted a project feedback for ${project.name}.`,
+          read: false,
+        });
+      } catch {
+        // Silent in mock mode.
+      }
+    }
+
+    toast.success('Project feedback submitted');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
@@ -99,15 +155,15 @@ export const FuncProjects: React.FC = () => {
 
                 <div className="grid grid-cols-3 gap-2">
                   <div className="rounded border border-border p-2 text-center">
-                    <div className="text-xl font-semibold text-yellow-600">{pending}</div>
+                    <div className="text-xl font-semibold text-primary">{pending}</div>
                     <div className="text-xs text-muted-foreground">Pending</div>
                   </div>
                   <div className="rounded border border-border p-2 text-center">
-                    <div className="text-xl font-semibold text-red-500">{changes}</div>
+                    <div className="text-xl font-semibold text-destructive">{changes}</div>
                     <div className="text-xs text-muted-foreground">Changes Req.</div>
                   </div>
                   <div className="rounded border border-border p-2 text-center">
-                    <div className="text-xl font-semibold text-orange-500">{blocked}</div>
+                    <div className="text-xl font-semibold text-accent-foreground">{blocked}</div>
                     <div className="text-xs text-muted-foreground">Blocked Tasks</div>
                   </div>
                 </div>
@@ -120,6 +176,37 @@ export const FuncProjects: React.FC = () => {
                   <ExternalLink className="w-4 h-4" />
                   Open Teams Chat
                 </button>
+
+                <div className="space-y-2 rounded border border-border p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    Project Feedback
+                  </p>
+                  <Textarea
+                    value={feedbackDrafts[project.id] ?? ''}
+                    onChange={(event) =>
+                      setFeedbackDrafts((prev) => ({ ...prev, [project.id]: event.target.value }))
+                    }
+                    rows={3}
+                    placeholder="Share business feedback, blockers, or requested adjustments..."
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => void submitFeedback(project, manager)}
+                  >
+                    Submit Feedback
+                  </Button>
+
+                  {(feedbackHistory[project.id] ?? []).slice(0, 2).map((feedback, index) => (
+                    <div key={`${project.id}-feedback-${index}`} className="rounded bg-surface-2 p-2 text-xs">
+                      <p className="font-medium text-foreground">{feedback.author}</p>
+                      <p className="mt-1 text-muted-foreground">{feedback.content}</p>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {new Date(feedback.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>

@@ -1,19 +1,30 @@
-﻿// My Tasks - Kanban Board for Technical Consultant
-
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, Calendar, Clock, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 import { PageHeader } from '../../components/common/PageHeader';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '../../components/ui/sheet';
+import { Textarea } from '../../components/ui/textarea';
+import { cn } from '../../components/ui/utils';
+import { useAuth } from '../../context/AuthContext';
 import { NotificationsAPI, TasksAPI, UsersAPI } from '../../services/odataClient';
 import { Task, TaskStatus, User } from '../../types/entities';
-import { useAuth } from '../../context/AuthContext';
-import { Calendar, Clock, AlertCircle, ExternalLink, X } from 'lucide-react';
-import { toast } from 'sonner';
 import { todayLocalDateKey } from '../../utils/date';
 
-const TASK_STATUSES: { status: TaskStatus; label: string; color: string }[] = [
-  { status: 'TO_DO', label: 'To Do', color: 'bg-gray-100' },
-  { status: 'IN_PROGRESS', label: 'In Progress', color: 'bg-blue-100' },
-  { status: 'BLOCKED', label: 'Blocked', color: 'bg-red-100' },
-  { status: 'DONE', label: 'Done', color: 'bg-green-100' },
+const TASK_STATUSES: { status: TaskStatus; label: string; tone: string }[] = [
+  { status: 'TO_DO', label: 'To Do', tone: 'bg-muted' },
+  { status: 'IN_PROGRESS', label: 'In Progress', tone: 'bg-accent' },
+  { status: 'BLOCKED', label: 'Blocked', tone: 'bg-destructive/10' },
+  { status: 'DONE', label: 'Done', tone: 'bg-primary/10' },
 ];
 
 const ALLOWED_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
@@ -79,7 +90,7 @@ export const MyTasks: React.FC = () => {
         createdAt: new Date().toISOString(),
       });
     } catch (error) {
-      // In mock mode, this should not fail; silently ignore if it does.
+      // No-op in mock mode.
     }
   };
 
@@ -121,18 +132,18 @@ export const MyTasks: React.FC = () => {
     return tasks.filter((task) => task.status === status);
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityTone = (priority: string) => {
     switch (priority) {
       case 'CRITICAL':
-        return 'text-red-600 bg-red-50';
+        return 'bg-destructive/12 text-destructive';
       case 'HIGH':
-        return 'text-orange-600 bg-orange-50';
+        return 'bg-primary/12 text-primary';
       case 'MEDIUM':
-        return 'text-yellow-600 bg-yellow-50';
+        return 'bg-accent text-accent-foreground';
       case 'LOW':
-        return 'text-green-600 bg-green-50';
+        return 'bg-secondary text-secondary-foreground';
       default:
-        return 'text-gray-600 bg-gray-50';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -167,100 +178,88 @@ export const MyTasks: React.FC = () => {
         ]}
       />
 
-      <div className="p-6">
+      <div className="p-6 lg:p-8">
         {loading ? (
           <div className="text-muted-foreground">Loading tasks...</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {TASK_STATUSES.map(({ status, label, color }) => (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {TASK_STATUSES.map(({ status, label, tone }) => (
               <div key={status} className="flex flex-col">
-                <div className={`${color} dark:bg-secondary rounded-t-lg px-4 py-3 border-b-2 border-border`}>
+                <div className={cn('rounded-t-lg border-b border-border px-4 py-3', tone)}>
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-foreground">{label}</h3>
-                    <span className="bg-card px-2 py-1 rounded-full text-xs font-medium">
+                    <span className="rounded-full bg-card px-2 py-1 text-xs font-medium text-muted-foreground">
                       {getTasksByStatus(status).length}
                     </span>
                   </div>
                 </div>
 
-                <div className="bg-muted rounded-b-lg p-4 flex-1 space-y-3 min-h-[500px]">
+                <div className="min-h-[500px] flex-1 space-y-3 rounded-b-lg bg-surface-2 p-4">
                   {getTasksByStatus(status).map((task) => (
-                    <div
-                      key={task.id}
-                      className="bg-card rounded-lg shadow-sm border border-border p-4 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => setSelectedTask(task)}
-                    >
-                      <h4 className="font-medium text-foreground mb-2">{task.title}</h4>
+                    <article key={task.id} className="rounded-lg border border-border bg-card p-4 shadow-sm">
+                      <h4 className="font-medium text-foreground">{task.title}</h4>
 
-                      <span
-                        className={`inline-block px-2 py-1 text-xs font-semibold rounded ${getPriorityColor(
-                          task.priority
-                        )}`}
-                      >
-                        {task.priority}
-                      </span>
+                      <Badge className={cn('mt-2', getPriorityTone(task.priority))}>{task.priority}</Badge>
 
                       <div className="mt-3 space-y-2">
                         <div>
-                          <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                          <div className="mb-1 flex justify-between text-xs text-muted-foreground">
                             <span>Progress</span>
                             <span>{task.progressPercent}%</span>
                           </div>
-                          <div className="w-full bg-muted rounded-full h-1.5">
+                          <div className="h-1.5 w-full rounded-full bg-muted">
                             <div
-                              className="bg-blue-600 h-1.5 rounded-full"
+                              className="h-1.5 rounded-full bg-primary"
                               style={{ width: `${task.progressPercent}%` }}
                             />
                           </div>
                         </div>
 
                         <div className="flex items-center text-xs text-muted-foreground">
-                          <Calendar className="w-3 h-3 mr-1" />
+                          <Calendar className="mr-1 h-3 w-3" />
                           <span>Due: {new Date(task.plannedEnd).toLocaleDateString()}</span>
-                          {isOverdue(task) && <AlertCircle className="w-3 h-3 ml-1 text-red-500" />}
+                          {isOverdue(task) && <AlertCircle className="ml-1 h-3 w-3 text-destructive" />}
                         </div>
 
                         <div className="flex items-center text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3 mr-1" />
+                          <Clock className="mr-1 h-3 w-3" />
                           <span>
                             {task.actualHours}h / {task.estimatedHours}h
                           </span>
                         </div>
 
                         {task.isCritical && (
-                          <div className="pt-2">
-                            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold text-red-600 bg-red-50 rounded">
-                              <AlertCircle className="w-3 h-3 mr-1" />
-                              Critical
-                            </span>
-                          </div>
+                          <Badge className="bg-destructive/12 text-destructive">
+                            <AlertCircle className="mr-1 h-3 w-3" />
+                            Critical
+                          </Badge>
                         )}
                       </div>
 
-                      {status !== 'DONE' && (
-                        <div className="mt-3 pt-3 border-t border-border">
+                      <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+                        <Button type="button" variant="secondary" size="sm" onClick={() => setSelectedTask(task)}>
+                          Details
+                        </Button>
+
+                        {status !== 'DONE' && (
                           <select
                             value={task.status}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              void updateTaskStatus(task, e.target.value as TaskStatus);
-                            }}
-                            className="w-full text-xs px-2 py-1 border border-border rounded focus:ring-2 focus:ring-primary bg-card text-foreground"
-                            onClick={(e) => e.stopPropagation()}
+                            onChange={(event) => void updateTaskStatus(task, event.target.value as TaskStatus)}
+                            className="h-8 flex-1 rounded-md border border-input bg-input-background px-2 text-xs"
                           >
                             {getAllowedStatuses(task.status).map((allowedStatus) => (
                               <option key={allowedStatus} value={allowedStatus}>
-                                Move to {TASK_STATUSES.find((s) => s.status === allowedStatus)?.label}
+                                Move to {TASK_STATUSES.find((entry) => entry.status === allowedStatus)?.label}
                               </option>
                             ))}
                           </select>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    </article>
                   ))}
 
                   {getTasksByStatus(status).length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground text-sm">No tasks</div>
+                    <div className="py-8 text-center text-sm text-muted-foreground">No tasks</div>
                   )}
                 </div>
               </div>
@@ -269,58 +268,46 @@ export const MyTasks: React.FC = () => {
         )}
       </div>
 
-      {selectedTask && (
-        <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setSelectedTask(null)}>
-          <div
-            className="absolute right-0 top-0 h-full w-full max-w-2xl bg-card shadow-xl overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-6">
-                <h2 className="text-2xl font-semibold text-foreground">{selectedTask.title}</h2>
-                <button
-                  onClick={() => setSelectedTask(null)}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label="Close task details panel"
-                  title="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+      <Sheet open={selectedTask !== null} onOpenChange={(open) => !open && setSelectedTask(null)}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
+          {selectedTask && (
+            <>
+              <SheetHeader className="p-6 pb-0">
+                <SheetTitle>{selectedTask.title}</SheetTitle>
+                <SheetDescription>Update progress, status, and blockers.</SheetDescription>
+              </SheetHeader>
 
-              <div className="space-y-6">
+              <div className="space-y-6 p-6">
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Description
-                  </label>
-                  <p className="text-foreground">{selectedTask.description}</p>
+                  <Label htmlFor="task-description">Description</Label>
+                  <Textarea id="task-description" value={selectedTask.description} disabled rows={3} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Progress: {selectedTask.progressPercent}%
-                  </label>
+                  <Label htmlFor="task-progress-slider">Progress: {selectedTask.progressPercent}%</Label>
                   <input
+                    id="task-progress-slider"
                     type="range"
                     min="0"
                     max="100"
                     step="5"
                     value={selectedTask.progressPercent}
-                    onChange={(e) => void updateTaskProgress(selectedTask, Number(e.target.value))}
-                    className="w-full"
+                    onChange={(event) =>
+                      void updateTaskProgress(selectedTask, Number(event.target.value))
+                    }
+                    className="w-full accent-primary"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Status
-                  </label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="task-status">Status</Label>
                   <select
+                    id="task-status"
                     value={selectedTask.status}
-                    onChange={(e) =>
-                      void updateTaskStatus(selectedTask, e.target.value as TaskStatus)
+                    onChange={(event) =>
+                      void updateTaskStatus(selectedTask, event.target.value as TaskStatus)
                     }
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-card text-foreground"
+                    className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
                   >
                     {getAllowedStatuses(selectedTask.status).map((status) => (
                       <option key={status} value={status}>
@@ -330,88 +317,58 @@ export const MyTasks: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                      Planned Start
-                    </label>
-                    <input
-                      type="date"
-                      value={selectedTask.plannedStart}
-                      disabled
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-muted"
-                    />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="task-planned-start">Planned Start</Label>
+                    <Input id="task-planned-start" type="date" value={selectedTask.plannedStart} disabled />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                      Planned End
-                    </label>
-                    <input
-                      type="date"
-                      value={selectedTask.plannedEnd}
-                      disabled
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-muted"
-                    />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="task-planned-end">Planned End</Label>
+                    <Input id="task-planned-end" type="date" value={selectedTask.plannedEnd} disabled />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                      Estimated Hours
-                    </label>
-                    <input
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="task-estimated-hours">Estimated Hours</Label>
+                    <Input
+                      id="task-estimated-hours"
                       type="number"
                       value={selectedTask.estimatedHours}
                       disabled
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-muted"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                      Actual Hours
-                    </label>
-                    <input
-                      type="number"
-                      value={selectedTask.actualHours}
-                      disabled
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-muted"
-                    />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="task-actual-hours">Actual Hours</Label>
+                    <Input id="task-actual-hours" type="number" value={selectedTask.actualHours} disabled />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Comments / Blockers
-                  </label>
-                  <textarea
+                <div className="space-y-1.5">
+                  <Label htmlFor="task-comments">Comments / Blockers</Label>
+                  <Textarea
+                    id="task-comments"
                     value={selectedTask.comments || ''}
-                    onChange={(e) =>
+                    onChange={(event) =>
                       setSelectedTask((prev) =>
-                        prev ? { ...prev, comments: e.target.value } : prev
+                        prev ? { ...prev, comments: event.target.value } : prev
                       )
                     }
-                    onBlur={(e) => void updateTaskComment(selectedTask, e.target.value)}
+                    onBlur={(event) => void updateTaskComment(selectedTask, event.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground"
                     placeholder="Describe blockers, dependencies, or notes..."
                   />
                 </div>
 
-                <div>
-                  <button
-                    onClick={openTeamsDiscussion}
-                    className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Open Teams Discussion (Functional Consultant)
-                  </button>
-                </div>
+                <Button type="button" variant="secondary" onClick={openTeamsDiscussion} className="w-full">
+                  <ExternalLink className="h-4 w-4" />
+                  Open Teams Discussion (Functional Consultant)
+                </Button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

@@ -146,9 +146,9 @@ export const TeamPerformance: React.FC = () => {
                     <td className="px-4 py-3 text-sm font-medium text-foreground">{row.user.name}</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{row.user.role}</td>
                     <td className="px-4 py-3 text-sm text-foreground">{row.assigned}</td>
-                    <td className="px-4 py-3 text-sm text-green-600">{row.done}</td>
-                    <td className="px-4 py-3 text-sm text-red-500">{row.blocked}</td>
-                    <td className="px-4 py-3 text-sm text-orange-500">{row.overdue}</td>
+                    <td className="px-4 py-3 text-sm text-primary">{row.done}</td>
+                    <td className="px-4 py-3 text-sm text-destructive">{row.blocked}</td>
+                    <td className="px-4 py-3 text-sm text-accent-foreground">{row.overdue}</td>
                     <td className="px-4 py-3 text-sm text-foreground">{row.avgScore.toFixed(2)}</td>
                     <td className="px-4 py-3 text-sm text-foreground">
                       {row.qualityScore.toFixed(2)}

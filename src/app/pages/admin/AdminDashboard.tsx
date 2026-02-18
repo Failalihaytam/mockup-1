@@ -1,27 +1,11 @@
-// Admin Dashboard
-
 import React, { useEffect, useState } from 'react';
+import { Activity, Database, ServerCog, Users } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { KPICard } from '../../components/common/KPICard';
-import { UsersAPI, ProjectsAPI, TasksAPI } from '../../services/odataClient';
-import {
-  Card,
-  CardHeader,
-  AnalyticalTable,
-  List,
-  ListItemStandard,
-  ObjectStatus,
-  Icon,
-} from '@ui5/webcomponents-react';
-import '@ui5/webcomponents-icons/dist/sys-monitor.js';
-import '@ui5/webcomponents-icons/dist/table-view.js';
-
-const kpiColumns = [
-  { Header: 'KPI', accessor: 'name', width: 200 },
-  { Header: 'Formula', accessor: 'formula', width: 280 },
-  { Header: 'Source', accessor: 'source', width: 150 },
-  { Header: 'Refresh', accessor: 'refresh', width: 150 },
-];
+import { NotificationsAPI, ProjectsAPI, TasksAPI, UsersAPI } from '../../services/odataClient';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Notification } from '../../types/entities';
 
 const kpiReferences = [
   {
@@ -32,7 +16,7 @@ const kpiReferences = [
   },
   {
     name: 'Active Users',
-    formula: 'count(users where active=true)',
+    formula: 'count(users where active = true)',
     source: 'Users',
     refresh: 'On dashboard load',
   },
@@ -55,101 +39,195 @@ export const AdminDashboard: React.FC = () => {
   const [projectCount, setProjectCount] = useState(0);
   const [taskCount, setTaskCount] = useState(0);
   const [activeUsers, setActiveUsers] = useState(0);
+  const [auditEvents, setAuditEvents] = useState<
+    Array<Notification & { userName: string }>
+  >([]);
 
   useEffect(() => {
-    loadData();
+    const loadData = async () => {
+      const [users, projects, tasks] = await Promise.all([UsersAPI.getAll(), ProjectsAPI.getAll(), TasksAPI.getAll()]);
+
+      const allNotifications = (
+        await Promise.all(users.map((user) => NotificationsAPI.getByUser(user.id)))
+      ).flat();
+      const userNameById = new Map(users.map((user) => [user.id, user.name] as const));
+
+      setUserCount(users.length);
+      setProjectCount(projects.length);
+      setTaskCount(tasks.length);
+      setActiveUsers(users.filter((user) => user.active).length);
+      setAuditEvents(
+        [...allNotifications]
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+          .map((event) => ({
+            ...event,
+            userName: userNameById.get(event.userId) ?? event.userId,
+          }))
+      );
+    };
+
+    void loadData();
   }, []);
 
-  const loadData = async () => {
-    const users = await UsersAPI.getAll();
-    const projects = await ProjectsAPI.getAll();
-    const tasks = await TasksAPI.getAll();
-
-    setUserCount(users.length);
-    setProjectCount(projects.length);
-    setTaskCount(tasks.length);
-    setActiveUsers(users.filter((u) => u.active).length);
-  };
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <PageHeader
-        title="Admin Dashboard"
-        subtitle="System overview and administration"
+        title="Admin Command Center"
+        subtitle="Platform health, user governance, and data integrity overview"
         breadcrumbs={[{ label: 'Admin Dashboard' }]}
       />
 
-      <div className="p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="space-y-6 p-6 lg:p-8">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KPICard title="Total Users" value={userCount} icon="group" color="blue" />
-          <KPICard
-            title="Active Users"
-            value={activeUsers}
-            icon="group"
-            color="green"
-          />
+          <KPICard title="Active Users" value={activeUsers} icon="group" color="green" />
           <KPICard
             title="Projects"
             value={projectCount}
             icon="project-definition-triangle-2"
-            color="purple"
+            color="yellow"
           />
-          <KPICard title="Total Tasks" value={taskCount} icon="task" color="yellow" />
+          <KPICard title="Tasks" value={taskCount} icon="task" color="purple" />
         </div>
 
-        {/* KPI Definitions Table */}
-        <Card
-          header={
-            <CardHeader
-              titleText="KPI Definitions"
-              subtitleText="Formula / Source / Refresh"
-              avatar={<Icon name="table-view" />}
-            />
-          }
-        >
-          <AnalyticalTable
-            columns={kpiColumns}
-            data={kpiReferences}
-            minRows={4}
-            visibleRows={4}
-            scaleWidthMode="Smart"
-            alternateRowColor
-          />
-        </Card>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr_1fr]">
+          <Card className="bg-card/92">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Database className="h-4 w-4 text-primary" />
+                KPI Definitions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto rounded-lg border border-border/70">
+                <table className="w-full min-w-[580px]">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                        KPI
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                        Formula
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                        Source
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                        Refresh
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {kpiReferences.map((kpi) => (
+                      <tr key={kpi.name} className="border-t border-border/60">
+                        <td className="px-4 py-3 text-sm font-medium text-foreground">{kpi.name}</td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">{kpi.formula}</td>
+                        <td className="px-4 py-3 text-sm text-foreground">{kpi.source}</td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">{kpi.refresh}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* System Information */}
-        <Card
-          header={
-            <CardHeader
-              titleText="System Information"
-              subtitleText="Platform status and configuration"
-              avatar={<Icon name="sys-monitor" />}
-            />
-          }
-        >
-          <List>
-            <ListItemStandard
-              description="v1.0.0"
-              additionalText="Current"
-              additionalTextState="Information"
-            >
-              Platform Version
-            </ListItemStandard>
-            <ListItemStandard
-              description="Mock Mode"
-              additionalText="Active"
-              additionalTextState="Positive"
-            >
-              Backend Status
-            </ListItemStandard>
-            <ListItemStandard
-              description="/odata/v4/performance"
-              additionalText="Configured"
-              additionalTextState="None"
-            >
-              OData Endpoint
-            </ListItemStandard>
-          </List>
+          <Card className="bg-card/92">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <ServerCog className="h-4 w-4 text-primary" />
+                System Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-xl border border-border/70 bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-[0.1em] text-muted-foreground">Backend mode</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge>Mock Data</Badge>
+                  <span className="text-sm text-muted-foreground">Frontend-only simulation</span>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border/70 bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-[0.1em] text-muted-foreground">OData endpoint</p>
+                <p className="mt-2 break-all text-sm font-medium text-foreground">/odata/v4/performance</p>
+              </div>
+
+              <div className="rounded-xl border border-border/70 bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-[0.1em] text-muted-foreground">Activity snapshot</p>
+                <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-2"><Users className="h-4 w-4" />User records</span>
+                    <span className="font-semibold text-foreground">{userCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-2"><Activity className="h-4 w-4" />Project entities</span>
+                    <span className="font-semibold text-foreground">{projectCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-2"><Activity className="h-4 w-4" />Audit events</span>
+                    <span className="font-semibold text-foreground">{auditEvents.length}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="bg-card/92">
+          <CardHeader>
+            <CardTitle className="text-lg">Audit & Activity Log</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto rounded-lg border border-border/70">
+              <table className="w-full min-w-[760px]">
+                <thead className="bg-muted/60">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Timestamp
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      User
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Event
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Message
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/70">
+                  {auditEvents.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                        No audit entries available.
+                      </td>
+                    </tr>
+                  ) : (
+                    auditEvents.slice(0, 12).map((event) => (
+                      <tr key={event.id}>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {new Date(event.createdAt).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-foreground">{event.userName}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-foreground">{event.title}</td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">{event.message}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant={event.read ? 'secondary' : 'default'}>
+                            {event.read ? 'Read' : 'Unread'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>

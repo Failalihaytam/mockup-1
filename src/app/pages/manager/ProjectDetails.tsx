@@ -242,11 +242,11 @@ export const ProjectDetails: React.FC = () => {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Critical Tasks</span>
-                <span className="font-medium text-red-500">{kpis.critical}</span>
+                <span className="font-medium text-destructive">{kpis.critical}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Blocked</span>
-                <span className="font-medium text-orange-500">{kpis.blocked}</span>
+                <span className="font-medium text-accent-foreground">{kpis.blocked}</span>
               </div>
             </div>
           </div>
@@ -377,19 +377,19 @@ export const ProjectDetails: React.FC = () => {
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
                 <div className="text-xs text-muted-foreground mb-1">Late Tasks</div>
-                <div className="text-2xl font-semibold text-orange-500">{kpis.late}</div>
+                <div className="text-2xl font-semibold text-accent-foreground">{kpis.late}</div>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
                 <div className="text-xs text-muted-foreground mb-1">Blocked Tasks</div>
-                <div className="text-2xl font-semibold text-red-500">{kpis.blocked}</div>
+                <div className="text-2xl font-semibold text-destructive">{kpis.blocked}</div>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
                 <div className="text-xs text-muted-foreground mb-1">Completed Tasks</div>
-                <div className="text-2xl font-semibold text-green-500">{kpis.completed}</div>
+                <div className="text-2xl font-semibold text-primary">{kpis.completed}</div>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
                 <div className="text-xs text-muted-foreground mb-1">Critical Tasks</div>
-                <div className="text-2xl font-semibold text-red-500">{kpis.critical}</div>
+                <div className="text-2xl font-semibold text-destructive">{kpis.critical}</div>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
                 <div className="text-xs text-muted-foreground mb-1">Average Progress</div>

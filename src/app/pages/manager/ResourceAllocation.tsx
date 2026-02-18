@@ -1,5 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { PageHeader } from '../../components/common/PageHeader';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
 import {
   AllocationsAPI,
   NotificationsAPI,
@@ -7,8 +23,6 @@ import {
   UsersAPI,
 } from '../../services/odataClient';
 import { Allocation, Project, User } from '../../types/entities';
-import { Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { todayLocalDateKey } from '../../utils/date';
 
 interface NewAllocationForm {
@@ -27,12 +41,8 @@ const EMPTY_FORM: NewAllocationForm = {
   endDate: todayLocalDateKey(),
 };
 
-const rangesOverlap = (
-  startA: string,
-  endA: string,
-  startB: string,
-  endB: string
-) => !(endA < startB || endB < startA);
+const rangesOverlap = (startA: string, endA: string, startB: string, endB: string) =>
+  !(endA < startB || endB < startA);
 
 export const ResourceAllocation: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -42,6 +52,7 @@ export const ResourceAllocation: React.FC = () => {
   const [form, setForm] = useState<NewAllocationForm>(EMPTY_FORM);
   const [projectFilter, setProjectFilter] = useState<string>('ALL');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [allocationPendingDelete, setAllocationPendingDelete] = useState<Allocation | null>(null);
 
   useEffect(() => {
     void loadData();
@@ -79,8 +90,8 @@ export const ResourceAllocation: React.FC = () => {
     return totals;
   }, [allocations]);
 
-  const createAllocation = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const createAllocation = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!form.userId || !form.projectId) {
       toast.error('User and project are required');
       return;
@@ -93,21 +104,18 @@ export const ResourceAllocation: React.FC = () => {
       toast.error('Allocation percent must be between 0 and 100');
       return;
     }
+
     const duplicatePeriod = allocations.some(
       (allocation) =>
         allocation.userId === form.userId &&
         allocation.projectId === form.projectId &&
-        rangesOverlap(
-          form.startDate,
-          form.endDate,
-          allocation.startDate,
-          allocation.endDate
-        )
+        rangesOverlap(form.startDate, form.endDate, allocation.startDate, allocation.endDate)
     );
     if (duplicatePeriod) {
       toast.error('This consultant already has an overlapping allocation for this project');
       return;
     }
+
     const currentTotal = userTotalAllocation.get(form.userId) ?? 0;
     const nextTotal = currentTotal + form.allocationPercent;
     if (nextTotal > 100) {
@@ -117,12 +125,10 @@ export const ResourceAllocation: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      const created = await AllocationsAPI.create({
-        ...form,
-      });
+      const created = await AllocationsAPI.create({ ...form });
       setAllocations((prev) => [created, ...prev]);
-      const projectName =
-        projects.find((project) => project.id === form.projectId)?.name ?? 'project';
+
+      const projectName = projects.find((project) => project.id === form.projectId)?.name ?? 'project';
       await NotificationsAPI.create({
         userId: form.userId,
         type: 'ALLOCATION_UPDATED',
@@ -130,6 +136,7 @@ export const ResourceAllocation: React.FC = () => {
         message: `You have been allocated ${form.allocationPercent}% on ${projectName}.`,
         read: false,
       });
+
       setForm(EMPTY_FORM);
       toast.success('Allocation created');
     } catch (error) {
@@ -144,6 +151,7 @@ export const ResourceAllocation: React.FC = () => {
       toast.error('Allocation percent must be between 0 and 100');
       return;
     }
+
     const currentTotal = userTotalAllocation.get(allocation.userId) ?? 0;
     const totalWithoutCurrent = currentTotal - allocation.allocationPercent;
     const nextTotal = totalWithoutCurrent + nextPercent;
@@ -156,30 +164,26 @@ export const ResourceAllocation: React.FC = () => {
       const updated = await AllocationsAPI.update(allocation.id, {
         allocationPercent: nextPercent,
       });
-      setAllocations((prev) =>
-        prev.map((entry) => (entry.id === allocation.id ? updated : entry))
-      );
+      setAllocations((prev) => prev.map((entry) => (entry.id === allocation.id ? updated : entry)));
     } catch (error) {
       toast.error('Failed to update allocation');
     }
   };
 
   const removeAllocation = async (id: string) => {
-    const confirmed = window.confirm('Remove this allocation entry?');
-    if (!confirmed) return;
-
     try {
       await AllocationsAPI.delete(id);
       setAllocations((prev) => prev.filter((entry) => entry.id !== id));
       toast.success('Allocation removed');
     } catch (error) {
       toast.error('Failed to remove allocation');
+    } finally {
+      setAllocationPendingDelete(null);
     }
   };
 
   const resolveUser = (userId: string) => users.find((user) => user.id === userId);
-  const resolveProject = (projectId: string) =>
-    projects.find((project) => project.id === projectId);
+  const resolveProject = (projectId: string) => projects.find((project) => project.id === projectId);
 
   return (
     <div className="min-h-screen bg-background">
@@ -192,203 +196,234 @@ export const ResourceAllocation: React.FC = () => {
         ]}
       />
 
-      <div className="p-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="bg-card border border-border rounded-lg p-5 h-fit">
-          <h3 className="text-lg font-semibold text-foreground mb-4">New Allocation</h3>
-          <form onSubmit={createAllocation} className="space-y-3">
-            <div>
-              <label className="block text-sm text-muted-foreground mb-1">Consultant</label>
-              <select
-                value={form.userId}
-                onChange={(e) => setForm((prev) => ({ ...prev, userId: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-              >
-                <option value="">Select user</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name} ({user.role})
-                  </option>
-                ))}
-              </select>
-            </div>
+      <div className="grid grid-cols-1 gap-6 p-6 xl:grid-cols-3 lg:p-8">
+        <Card className="h-fit bg-card/92">
+          <CardContent className="pt-6">
+            <h3 className="mb-4 text-lg font-semibold text-foreground">New Allocation</h3>
+            <form onSubmit={createAllocation} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="allocation-user">Consultant</Label>
+                <select
+                  id="allocation-user"
+                  value={form.userId}
+                  onChange={(event) => setForm((prev) => ({ ...prev, userId: event.target.value }))}
+                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                >
+                  <option value="">Select user</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm text-muted-foreground mb-1">Project</label>
-              <select
-                value={form.projectId}
-                onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-              >
-                <option value="">Select project</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="allocation-project">Project</Label>
+                <select
+                  id="allocation-project"
+                  value={form.projectId}
+                  onChange={(event) => setForm((prev) => ({ ...prev, projectId: event.target.value }))}
+                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                >
+                  <option value="">Select project</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm text-muted-foreground mb-1">
-                Allocation %
-              </label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={form.allocationPercent}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    allocationPercent: Number(e.target.value || 0),
-                  }))
-                }
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-sm text-muted-foreground mb-1">Start</label>
-                <input
-                  type="date"
-                  value={form.startDate}
-                  onChange={(e) => setForm((prev) => ({ ...prev, startDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
+              <div className="space-y-1.5">
+                <Label htmlFor="allocation-percent">Allocation %</Label>
+                <Input
+                  id="allocation-percent"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.allocationPercent}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, allocationPercent: Number(event.target.value || 0) }))
+                  }
                 />
               </div>
-              <div>
-                <label className="block text-sm text-muted-foreground mb-1">End</label>
-                <input
-                  type="date"
-                  value={form.endDate}
-                  onChange={(e) => setForm((prev) => ({ ...prev, endDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-                />
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="allocation-start">Start</Label>
+                  <Input
+                    id="allocation-start"
+                    type="date"
+                    value={form.startDate}
+                    onChange={(event) => setForm((prev) => ({ ...prev, startDate: event.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="allocation-end">End</Label>
+                  <Input
+                    id="allocation-end"
+                    type="date"
+                    value={form.endDate}
+                    onChange={(event) => setForm((prev) => ({ ...prev, endDate: event.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                <Plus className="h-4 w-4" />
+                {isSubmitting ? 'Saving...' : 'Add Allocation'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden bg-card/92 xl:col-span-2">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between gap-3 border-b border-border p-4">
+              <h3 className="text-lg font-semibold text-foreground">Allocation Matrix</h3>
+              <div className="space-y-1">
+                <Label htmlFor="allocation-project-filter" className="sr-only">
+                  Filter by project
+                </Label>
+                <select
+                  id="allocation-project-filter"
+                  value={projectFilter}
+                  onChange={(event) => setProjectFilter(event.target.value)}
+                  className="h-9 rounded-md border border-input bg-input-background px-3 text-sm"
+                >
+                  <option value="ALL">All Projects</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 flex items-center justify-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              {isSubmitting ? 'Saving...' : 'Add Allocation'}
-            </button>
-          </form>
-        </div>
-
-        <div className="xl:col-span-2 bg-card border border-border rounded-lg overflow-hidden">
-          <div className="p-4 border-b border-border flex items-center justify-between gap-3">
-            <h3 className="text-lg font-semibold text-foreground">Allocation Matrix</h3>
-            <select
-              value={projectFilter}
-              onChange={(e) => setProjectFilter(e.target.value)}
-              className="px-3 py-2 border border-border rounded bg-card text-foreground"
-            >
-              <option value="ALL">All Projects</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Consultant
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Project
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Allocation
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Total/User
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Period
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs uppercase text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {loading ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[840px]">
+                <thead className="bg-muted/65">
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                      Loading allocations...
-                    </td>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Consultant
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Project
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Allocation
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Total/User
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Period
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Actions
+                    </th>
                   </tr>
-                ) : filteredAllocations.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                      No allocations found.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredAllocations.map((allocation) => {
-                    const user = resolveUser(allocation.userId);
-                    const project = resolveProject(allocation.projectId);
-                    const total = userTotalAllocation.get(allocation.userId) ?? 0;
-                    return (
-                      <tr key={allocation.id} className="hover:bg-accent/40">
-                        <td className="px-4 py-3 text-sm text-foreground">{user?.name ?? '-'}</td>
-                        <td className="px-4 py-3 text-sm text-foreground">{project?.name ?? '-'}</td>
-                        <td className="px-4 py-3 text-sm text-foreground">
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            defaultValue={allocation.allocationPercent}
-                            onBlur={(e) =>
-                              void updatePercent(allocation, Number(e.target.value || 0))
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                (e.target as HTMLInputElement).blur();
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                        Loading allocations...
+                      </td>
+                    </tr>
+                  ) : filteredAllocations.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                        No allocations found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAllocations.map((allocation) => {
+                      const user = resolveUser(allocation.userId);
+                      const project = resolveProject(allocation.projectId);
+                      const total = userTotalAllocation.get(allocation.userId) ?? 0;
+
+                      return (
+                        <tr key={allocation.id} className="hover:bg-accent/40">
+                          <td className="px-4 py-3 text-sm text-foreground">{user?.name ?? '-'}</td>
+                          <td className="px-4 py-3 text-sm text-foreground">{project?.name ?? '-'}</td>
+                          <td className="px-4 py-3 text-sm text-foreground">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={100}
+                              defaultValue={allocation.allocationPercent}
+                              className="h-8 w-20"
+                              onBlur={(event) =>
+                                void updatePercent(allocation, Number(event.target.value || 0))
                               }
-                            }}
-                            className="w-20 px-2 py-1 border border-border rounded bg-card text-foreground"
-                          />
-                        </td>
-                        <td
-                          className={`px-4 py-3 text-sm font-medium ${
-                            total > 100 ? 'text-red-500' : 'text-foreground'
-                          }`}
-                        >
-                          {total}%
-                        </td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">
-                          {allocation.startDate} to {allocation.endDate}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-end">
-                            <button
-                              onClick={() => void removeAllocation(allocation.id)}
-                              className="px-3 py-1.5 text-xs rounded bg-red-500/10 text-red-600 hover:bg-red-500/20 flex items-center gap-1"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                              Remove
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  (event.target as HTMLInputElement).blur();
+                                }
+                              }}
+                            />
+                          </td>
+                          <td
+                            className={`px-4 py-3 text-sm font-medium ${
+                              total > 100 ? 'text-destructive' : 'text-foreground'
+                            }`}
+                          >
+                            {total}%
+                          </td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                            {allocation.startDate} to {allocation.endDate}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-end">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setAllocationPendingDelete(allocation)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Remove
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      <AlertDialog
+        open={allocationPendingDelete !== null}
+        onOpenChange={(open) => !open && setAllocationPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove allocation</AlertDialogTitle>
+            <AlertDialogDescription>
+              {allocationPendingDelete
+                ? 'This allocation entry will be removed from the mock data.'
+                : 'This action cannot be undone.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => allocationPendingDelete && void removeAllocation(allocationPendingDelete.id)}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

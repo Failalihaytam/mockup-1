@@ -10,6 +10,8 @@ import { Evaluation, Project, User } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
 import { Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '../../components/ui/button';
+import { Label } from '../../components/ui/label';
 
 interface EvaluationForm {
   userId: string;
@@ -156,8 +158,11 @@ export const TeamEvaluations: React.FC = () => {
           <h3 className="text-lg font-semibold text-foreground mb-4">New Monthly Evaluation</h3>
           <form onSubmit={submitEvaluation} className="space-y-4">
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Consultant</label>
+              <Label htmlFor="evaluation-consultant" className="mb-1 block text-sm text-muted-foreground">
+                Consultant
+              </Label>
               <select
+                id="evaluation-consultant"
                 value={form.userId}
                 onChange={(e) => setForm((prev) => ({ ...prev, userId: e.target.value }))}
                 className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
@@ -172,8 +177,11 @@ export const TeamEvaluations: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Project</label>
+              <Label htmlFor="evaluation-project" className="mb-1 block text-sm text-muted-foreground">
+                Project
+              </Label>
               <select
+                id="evaluation-project"
                 value={form.projectId}
                 onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))}
                 className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
@@ -188,8 +196,11 @@ export const TeamEvaluations: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Period (month)</label>
+              <Label htmlFor="evaluation-period" className="mb-1 block text-sm text-muted-foreground">
+                Period (month)
+              </Label>
               <input
+                id="evaluation-period"
                 type="month"
                 value={form.period}
                 onChange={(e) => setForm((prev) => ({ ...prev, period: e.target.value }))}
@@ -208,10 +219,13 @@ export const TeamEvaluations: React.FC = () => {
             ).map(([field, label]) => (
               <div key={field}>
                 <div className="flex justify-between text-sm mb-1">
-                  <label className="text-muted-foreground">{label}</label>
+                  <Label htmlFor={`evaluation-${field}`} className="text-muted-foreground">
+                    {label}
+                  </Label>
                   <span className="text-foreground">{form[field]}/5</span>
                 </div>
                 <input
+                  id={`evaluation-${field}`}
                   type="range"
                   min={1}
                   max={5}
@@ -226,8 +240,11 @@ export const TeamEvaluations: React.FC = () => {
             ))}
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Feedback</label>
+              <Label htmlFor="evaluation-feedback" className="mb-1 block text-sm text-muted-foreground">
+                Feedback
+              </Label>
               <textarea
+                id="evaluation-feedback"
                 value={form.feedback}
                 onChange={(e) => setForm((prev) => ({ ...prev, feedback: e.target.value }))}
                 rows={4}
@@ -241,14 +258,14 @@ export const TeamEvaluations: React.FC = () => {
               <span className="font-semibold text-foreground">{score.toFixed(2)} / 5</span>
             </div>
 
-            <button
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 flex items-center justify-center gap-2"
+              className="w-full"
             >
               <Save className="w-4 h-4" />
               {isSubmitting ? 'Saving...' : 'Save Evaluation'}
-            </button>
+            </Button>
           </form>
         </div>
 

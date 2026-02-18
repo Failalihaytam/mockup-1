@@ -7,6 +7,8 @@ import { TimesheetsAPI, ProjectsAPI, TasksAPI } from '../../services/odataClient
 import { Timesheet, Project, Task } from '../../types/entities';
 import { Plus, Calendar, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '../../components/ui/button';
+import { Label } from '../../components/ui/label';
 import {
   getISOWeekInputValue,
   getMondayOfWeek,
@@ -192,13 +194,10 @@ export const TimesheetPage: React.FC = () => {
           { label: 'Timesheet' },
         ]}
         actions={
-          <button
-            onClick={saveTimesheets}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          >
+          <Button type="button" onClick={saveTimesheets}>
             <Save className="w-4 h-4" />
             Save Timesheets
-          </button>
+          </Button>
         }
       />
 
@@ -208,8 +207,11 @@ export const TimesheetPage: React.FC = () => {
             <div className="flex items-center gap-4">
               <Calendar className="w-5 h-5 text-muted-foreground" />
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">Week</label>
+                <Label htmlFor="timesheet-week" className="mb-1 block text-sm font-medium text-muted-foreground">
+                  Week
+                </Label>
                 <input
+                  id="timesheet-week"
                   type="week"
                   value={getISOWeekInputValue(selectedWeek)}
                   onChange={(e) => setSelectedWeek(parseISOWeekInputValue(e.target.value))}
@@ -318,13 +320,10 @@ export const TimesheetPage: React.FC = () => {
           </div>
 
           <div className="px-6 py-4 border-t border-border bg-muted">
-            <button
-              onClick={addEntry}
-              className="flex items-center gap-2 text-primary hover:text-primary/80 font-medium"
-            >
+            <Button type="button" variant="ghost" onClick={addEntry}>
               <Plus className="w-4 h-4" />
               Add Entry
-            </button>
+            </Button>
           </div>
         </div>
 

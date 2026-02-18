@@ -1,4 +1,5 @@
 // Mock data service for development and testing
+// Data is persisted in localStorage so mutations survive page refreshes.
 
 import {
   User,
@@ -14,8 +15,70 @@ import {
   KPI,
 } from '../types/entities';
 
+// ---------------------------------------------------------------------------
+// localStorage-backed store helper
+// ---------------------------------------------------------------------------
+
+const STORAGE_PREFIX = 'sap_mock_';
+
+/**
+ * Creates a mutable array that is automatically persisted to localStorage.
+ * On first load it hydrates from localStorage; if nothing is stored it uses
+ * the provided `defaults`. Every mutation (push, splice, index set, etc.)
+ * triggers a write-back via a Proxy.
+ */
+function persistedArray<T>(key: string, defaults: T[]): T[] {
+  const storageKey = `${STORAGE_PREFIX}${key}`;
+
+  // Hydrate
+  let data: T[];
+  try {
+    const raw = localStorage.getItem(storageKey);
+    data = raw ? (JSON.parse(raw) as T[]) : [...defaults];
+  } catch {
+    data = [...defaults];
+  }
+
+  const persist = () => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    } catch {
+      // quota exceeded — degrade gracefully
+    }
+  };
+
+  // Persist initially so the defaults are stored on first visit
+  if (!localStorage.getItem(storageKey)) {
+    persist();
+  }
+
+  // Return proxied array that auto-persists on mutation
+  return new Proxy(data, {
+    set(target, prop, value, receiver) {
+      const result = Reflect.set(target, prop, value, receiver);
+      persist();
+      return result;
+    },
+    deleteProperty(target, prop) {
+      const result = Reflect.deleteProperty(target, prop);
+      persist();
+      return result;
+    },
+  });
+}
+
+/** Clears all persisted mock data and reloads the page. */
+export function resetMockData(): void {
+  const keys = Object.keys(localStorage).filter((k) => k.startsWith(STORAGE_PREFIX));
+  keys.forEach((k) => localStorage.removeItem(k));
+  window.location.reload();
+}
+
+// ---------------------------------------------------------------------------
 // Mock Users
-export const mockUsers: User[] = [
+// ---------------------------------------------------------------------------
+
+const _defaultUsers: User[] = [
   {
     id: 'u1',
     name: 'Jean Dupont',
@@ -73,8 +136,13 @@ export const mockUsers: User[] = [
   },
 ];
 
+export const mockUsers: User[] = persistedArray('users', _defaultUsers);
+
+// ---------------------------------------------------------------------------
 // Mock Projects
-export const mockProjects: Project[] = [
+// ---------------------------------------------------------------------------
+
+const _defaultProjects: Project[] = [
   {
     id: 'p1',
     name: 'SAP S/4HANA Migration',
@@ -113,8 +181,13 @@ export const mockProjects: Project[] = [
   },
 ];
 
+export const mockProjects: Project[] = persistedArray('projects', _defaultProjects);
+
+// ---------------------------------------------------------------------------
 // Mock Tasks
-export const mockTasks: Task[] = [
+// ---------------------------------------------------------------------------
+
+const _defaultTasks: Task[] = [
   {
     id: 't1',
     projectId: 'p1',
@@ -221,8 +294,13 @@ export const mockTasks: Task[] = [
   },
 ];
 
+export const mockTasks: Task[] = persistedArray('tasks', _defaultTasks);
+
+// ---------------------------------------------------------------------------
 // Mock Timesheets
-export const mockTimesheets: Timesheet[] = [
+// ---------------------------------------------------------------------------
+
+const _defaultTimesheets: Timesheet[] = [
   {
     id: 'ts1',
     userId: 'u3',
@@ -243,8 +321,13 @@ export const mockTimesheets: Timesheet[] = [
   },
 ];
 
+export const mockTimesheets: Timesheet[] = persistedArray('timesheets', _defaultTimesheets);
+
+// ---------------------------------------------------------------------------
 // Mock Evaluations
-export const mockEvaluations: Evaluation[] = [
+// ---------------------------------------------------------------------------
+
+const _defaultEvaluations: Evaluation[] = [
   {
     id: 'e1',
     userId: 'u3',
@@ -264,8 +347,13 @@ export const mockEvaluations: Evaluation[] = [
   },
 ];
 
+export const mockEvaluations: Evaluation[] = persistedArray('evaluations', _defaultEvaluations);
+
+// ---------------------------------------------------------------------------
 // Mock Deliverables
-export const mockDeliverables: Deliverable[] = [
+// ---------------------------------------------------------------------------
+
+const _defaultDeliverables: Deliverable[] = [
   {
     id: 'd1',
     projectId: 'p1',
@@ -288,8 +376,13 @@ export const mockDeliverables: Deliverable[] = [
   },
 ];
 
+export const mockDeliverables: Deliverable[] = persistedArray('deliverables', _defaultDeliverables);
+
+// ---------------------------------------------------------------------------
 // Mock Tickets
-export const mockTickets: Ticket[] = [
+// ---------------------------------------------------------------------------
+
+const _defaultTickets: Ticket[] = [
   {
     id: 'tk1',
     projectId: 'p1',
@@ -315,8 +408,13 @@ export const mockTickets: Ticket[] = [
   },
 ];
 
+export const mockTickets: Ticket[] = persistedArray('tickets', _defaultTickets);
+
+// ---------------------------------------------------------------------------
 // Mock Notifications
-export const mockNotifications: Notification[] = [
+// ---------------------------------------------------------------------------
+
+const _defaultNotifications: Notification[] = [
   {
     id: 'n1',
     userId: 'u3',
@@ -346,8 +444,13 @@ export const mockNotifications: Notification[] = [
   },
 ];
 
+export const mockNotifications: Notification[] = persistedArray('notifications', _defaultNotifications);
+
+// ---------------------------------------------------------------------------
 // Mock Reference Data
-export const mockReferenceData: ReferenceData[] = [
+// ---------------------------------------------------------------------------
+
+const _defaultReferenceData: ReferenceData[] = [
   {
     id: 'r1',
     type: 'SKILL',
@@ -374,8 +477,13 @@ export const mockReferenceData: ReferenceData[] = [
   },
 ];
 
+export const mockReferenceData: ReferenceData[] = persistedArray('referenceData', _defaultReferenceData);
+
+// ---------------------------------------------------------------------------
 // Mock Allocations
-export const mockAllocations: Allocation[] = [
+// ---------------------------------------------------------------------------
+
+const _defaultAllocations: Allocation[] = [
   {
     id: 'a1',
     userId: 'u3',
@@ -402,7 +510,12 @@ export const mockAllocations: Allocation[] = [
   },
 ];
 
-// Mock KPIs
+export const mockAllocations: Allocation[] = persistedArray('allocations', _defaultAllocations);
+
+// ---------------------------------------------------------------------------
+// Mock KPIs (static, not persisted)
+// ---------------------------------------------------------------------------
+
 export const mockKPI: KPI = {
   projectProgress: 63,
   tasksOnTrack: 3,
@@ -413,7 +526,10 @@ export const mockKPI: KPI = {
   activeRisks: 2,
 };
 
-// Chart data generators
+// ---------------------------------------------------------------------------
+// Chart data generators (static, not persisted)
+// ---------------------------------------------------------------------------
+
 export const getProjectProgressTrend = () => [
   { date: '2026-01', progress: 15 },
   { date: '2026-02', progress: 35 },

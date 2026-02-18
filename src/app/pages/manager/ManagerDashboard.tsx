@@ -1,245 +1,296 @@
-// Manager Performance Dashboard - SAP Fiori Overview Page (OVP) Pattern
-import React, { useEffect, useState } from 'react';
-import {
-  DynamicPage,
-  DynamicPageTitle,
-  DynamicPageHeader,
-  FlexBox,
-  FlexBoxDirection,
-  FlexBoxWrap,
-  Label,
-  Title,
-  Card,
-  CardHeader,
-  List,
-  ListItemStandard,
-  ValueColor,
-} from '@ui5/webcomponents-react';
-import {
-  BarChart,
-  DonutChart,
-  LineChart,
-} from '@ui5/webcomponents-react-charts';
+import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
+import { PageHeader } from '../../components/common/PageHeader';
 import { AnalyticalKPICard } from '../../components/common/AnalyticalKPICard';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import {
+  getAllocationByProject,
+  getConsultantWorkload,
   getProjectProgressTrend,
   getTasksByStatus,
-  getConsultantWorkload,
-  getAllocationByProject,
   mockKPI,
 } from '../../services/mockData';
+import { TasksAPI } from '../../services/odataClient';
+import { Task } from '../../types/entities';
 
-import '@ui5/webcomponents-icons/dist/trend-up.js';
-import '@ui5/webcomponents-icons/dist/alert.js';
-import '@ui5/webcomponents-icons/dist/history.js';
-import '@ui5/webcomponents-icons/dist/task.js';
-import '@ui5/webcomponents-icons/dist/warning.js';
-import '@ui5/webcomponents-icons/dist/performance.js';
+interface TrendData {
+  month: string;
+  progress: number;
+}
+
+interface StatusData {
+  status: string;
+  count: number;
+}
+
+interface WorkloadData {
+  name: string;
+  planned: number;
+  actual: number;
+}
+
+interface AllocationData {
+  name: string;
+  value: number;
+}
+
+const ProjectProgressTrendChart = lazy(() =>
+  import('../../components/charts/ProjectProgressTrendChart').then((module) => ({
+    default: module.ProjectProgressTrendChart,
+  }))
+);
+
+const TaskDistributionChart = lazy(() =>
+  import('../../components/charts/TaskDistributionChart').then((module) => ({
+    default: module.TaskDistributionChart,
+  }))
+);
+
+const WorkloadComparisonChart = lazy(() =>
+  import('../../components/charts/WorkloadComparisonChart').then((module) => ({
+    default: module.WorkloadComparisonChart,
+  }))
+);
+
+const AllocationPortfolioChart = lazy(() =>
+  import('../../components/charts/AllocationPortfolioChart').then((module) => ({
+    default: module.AllocationPortfolioChart,
+  }))
+);
+
+const piePalette = [
+  'var(--color-chart-1)',
+  'var(--color-chart-2)',
+  'var(--color-chart-3)',
+  'var(--color-chart-4)',
+  'var(--color-chart-5)',
+];
+
+const ChartCardFallback: React.FC = () => (
+  <Card className="border-border/80 bg-card">
+    <CardHeader>
+      <CardTitle className="text-lg">Loading chart...</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div className="h-[280px] rounded-md bg-surface-2" />
+    </CardContent>
+  </Card>
+);
 
 export const ManagerDashboard: React.FC = () => {
-  const [kpi, setKpi] = useState(mockKPI);
-  const [progressTrend, setProgressTrend] = useState<any[]>([]);
-  const [tasksByStatus, setTasksByStatus] = useState<any[]>([]);
-  const [consultantWorkload, setConsultantWorkload] = useState<any[]>([]);
-  const [allocationData, setAllocationData] = useState<any[]>([]);
+  const [progressTrend, setProgressTrend] = useState<TrendData[]>([]);
+  const [tasksByStatus, setTasksByStatus] = useState<StatusData[]>([]);
+  const [consultantWorkload, setConsultantWorkload] = useState<WorkloadData[]>([]);
+  const [allocationData, setAllocationData] = useState<AllocationData[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
-    loadDashboardData();
+    const loadData = async () => {
+      setProgressTrend(
+        getProjectProgressTrend().map((entry) => ({ month: entry.date, progress: entry.progress }))
+      );
+      setTasksByStatus(
+        getTasksByStatus().map((entry) => ({ status: entry.status, count: entry.count }))
+      );
+      setConsultantWorkload(
+        getConsultantWorkload().map((entry) => ({
+          name: entry.name,
+          planned: entry.planned,
+          actual: entry.actual,
+        }))
+      );
+      setAllocationData(
+        getAllocationByProject().map((entry) => ({ name: entry.project, value: entry.allocation }))
+      );
+      setTasks(await TasksAPI.getAll());
+    };
+
+    void loadData();
   }, []);
 
-  const loadDashboardData = async () => {
-    // Mapping data for UI5 Charts
-    setProgressTrend(getProjectProgressTrend().map(d => ({ month: d.date, progress: d.progress })));
-    setTasksByStatus(getTasksByStatus().map(d => ({ status: d.status, count: d.count })));
-    setConsultantWorkload(getConsultantWorkload().map(d => ({ name: d.name, planned: d.planned, actual: d.actual })));
-    setAllocationData(getAllocationByProject().map(d => ({ name: d.project, value: d.allocation })));
-  };
+  const completionRatio = useMemo(() => {
+    const total = mockKPI.tasksOnTrack + mockKPI.tasksLate;
+    if (!total) return 0;
+    return Math.round((mockKPI.tasksOnTrack / total) * 100);
+  }, []);
+
+  const productivityMetrics = useMemo(() => {
+    const completed = tasks.filter((task) => task.status === 'DONE');
+    const now = new Date();
+    const completedThisMonth = completed.filter((task) => {
+      if (!task.realEnd) return false;
+      const end = new Date(task.realEnd);
+      return end.getFullYear() === now.getFullYear() && end.getMonth() === now.getMonth();
+    }).length;
+
+    const cycleDurations = completed
+      .filter((task) => task.realStart && task.realEnd)
+      .map((task) => {
+        const start = new Date(task.realStart as string).getTime();
+        const end = new Date(task.realEnd as string).getTime();
+        return Math.max(0, end - start) / (1000 * 60 * 60 * 24);
+      });
+
+    const averageCycleTime = cycleDurations.length
+      ? cycleDurations.reduce((sum, days) => sum + days, 0) / cycleDurations.length
+      : 0;
+
+    const throughput = tasks.length ? (completed.length / tasks.length) * 100 : 0;
+    const criticalIssues = tasks.filter(
+      (task) => task.riskLevel === 'CRITICAL' || task.status === 'BLOCKED'
+    ).length;
+
+    return {
+      velocity: completedThisMonth,
+      cycleTimeDays: averageCycleTime,
+      throughputRate: throughput,
+      criticalIssues,
+      qualityCoverage: tasks.length ? Math.round((completed.length / tasks.length) * 100) : 0,
+    };
+  }, [tasks]);
 
   return (
-    <DynamicPage
-      titleArea={
-        <DynamicPageTitle
-          heading={<Title>Performance Overview</Title>}
-          subheading={<Label>Real-time project and team analytics</Label>}
-        />
-      }
-      headerArea={
-        <DynamicPageHeader>
-          <FlexBox wrap={FlexBoxWrap.Wrap} direction={FlexBoxDirection.Row} style={{ gap: '2rem' }}>
-            <FlexBox direction={FlexBoxDirection.Column}>
-              <Label>Manager</Label>
-              <Title level="H5">Marie Martin</Title>
-            </FlexBox>
-            <FlexBox direction={FlexBoxDirection.Column}>
-              <Label>Department</Label>
-              <Title level="H5">SAP Solutions</Title>
-            </FlexBox>
-            <FlexBox direction={FlexBoxDirection.Column}>
-              <Label>Reporting Period</Label>
-              <Title level="H5">Q1 2026</Title>
-            </FlexBox>
-          </FlexBox>
-        </DynamicPageHeader>
-      }
-      style={{ height: '100%' }}
-    >
-      <FlexBox direction={FlexBoxDirection.Column} style={{ padding: '1rem', gap: '1rem' }}>
-        {/* KPI Cards Row */}
-        <FlexBox wrap={FlexBoxWrap.Wrap} style={{ gap: '1rem' }}>
-          <div style={{ flex: '1 1 calc(25% - 1rem)', minWidth: '250px' }}>
-            <AnalyticalKPICard
-              title="Overall Progress"
-              value={kpi.projectProgress}
-              unit="%"
-              trend="Up"
-              state={ValueColor.Good}
-              subtitle="Current vs Target"
-              target={70}
-              icon="trend-up"
-            />
-          </div>
-          <div style={{ flex: '1 1 calc(25% - 1rem)', minWidth: '250px' }}>
-            <AnalyticalKPICard
-              title="Tasks Performance"
-              value={`${kpi.tasksOnTrack}/${kpi.tasksOnTrack + kpi.tasksLate}`}
-              subtitle="On Track / Total"
-              state={ValueColor.None}
-              icon="task"
-            />
-          </div>
-          <div style={{ flex: '1 1 calc(25% - 1rem)', minWidth: '250px' }}>
-            <AnalyticalKPICard
-              title="Critical Tasks"
-              value={kpi.criticalTasks}
-              state={ValueColor.Error}
-              trend="Up"
-              subtitle="Immediate Action Required"
-              deviation="High"
-              icon="warning"
-            />
-          </div>
-          <div style={{ flex: '1 1 calc(25% - 1rem)', minWidth: '250px' }}>
-            <AnalyticalKPICard
-              title="Team Productivity"
-              value={kpi.averageProductivity.toFixed(1)}
-              unit="/ 5"
-              state={ValueColor.Good}
-              subtitle="Average Performance"
-              target={5}
-              icon="performance"
-            />
-          </div>
-        </FlexBox>
+    <div className="min-h-screen bg-transparent">
+      <PageHeader
+        title="Manager Dashboard"
+        subtitle="Delivery progress, workload, and allocation in one view"
+        breadcrumbs={[
+          { label: 'Home', path: '/manager/dashboard' },
+          { label: 'Manager Dashboard' },
+        ]}
+      />
 
-        {/* Charts Row */}
-        <FlexBox wrap={FlexBoxWrap.Wrap} style={{ gap: '1rem' }}>
-          {/* Progress Trend Chart */}
-          <div style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: '400px' }}>
-            <Card 
-              header={
-                <CardHeader 
-                  titleText="Project Progress Trend" 
-                  subtitleText="Monthly growth percentage" 
-                />
-              }
-            >
-              <div style={{ padding: '1rem', height: '300px' }}>
-                <LineChart
-                  dimensions={[{ accessor: 'month' }]}
-                  measures={[{ accessor: 'progress', label: 'Progress %' }]}
-                  dataset={progressTrend}
-                  noLegend
-                />
-              </div>
-            </Card>
-          </div>
+      <div className="space-y-6 p-6 lg:p-8">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <AnalyticalKPICard
+            title="Portfolio Progress"
+            subtitle="Current quarter"
+            value={mockKPI.projectProgress}
+            unit="%"
+            trend="Up"
+            state="Positive"
+            target={85}
+            icon="trend-up"
+          />
+          <AnalyticalKPICard
+            title="Task Reliability"
+            subtitle="On-track ratio"
+            value={completionRatio}
+            unit="%"
+            state="Good"
+            target={100}
+            icon="task"
+          />
+          <AnalyticalKPICard
+            title="Critical Tasks"
+            subtitle="Requires immediate action"
+            value={mockKPI.criticalTasks}
+            state="Error"
+            trend="Up"
+            deviation="Escalation advised"
+            icon="warning"
+          />
+          <AnalyticalKPICard
+            title="Team Productivity"
+            subtitle="Average consultant score"
+            value={mockKPI.averageProductivity.toFixed(1)}
+            unit="/5"
+            state="Positive"
+            target={5}
+            icon="performance"
+          />
+        </div>
 
-          {/* Tasks Distribution Chart */}
-          <div style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: '400px' }}>
-            <Card 
-              header={
-                <CardHeader 
-                  titleText="Tasks Status Distribution" 
-                  subtitleText="Current workload status" 
-                />
-              }
-            >
-              <div style={{ padding: '1rem', height: '300px' }}>
-                <BarChart
-                  dimensions={[{ accessor: 'status' }]}
-                  measures={[{ accessor: 'count', label: 'Tasks' }]}
-                  dataset={tasksByStatus}
-                />
-              </div>
-            </Card>
-          </div>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <Suspense fallback={<ChartCardFallback />}>
+            <ProjectProgressTrendChart data={progressTrend} />
+          </Suspense>
 
-          {/* Consultant Workload Chart */}
-          <div style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: '400px' }}>
-            <Card 
-              header={
-                <CardHeader 
-                  titleText="Resource Workload Analysis" 
-                  subtitleText="Planned vs Actual Hours" 
-                />
-              }
-            >
-              <div style={{ padding: '1rem', height: '300px' }}>
-                <BarChart
-                  dimensions={[{ accessor: 'name' }]}
-                  measures={[
-                    { accessor: 'planned', label: 'Planned' },
-                    { accessor: 'actual', label: 'Actual' }
-                  ]}
-                  dataset={consultantWorkload}
-                />
-              </div>
-            </Card>
-          </div>
+          <Suspense fallback={<ChartCardFallback />}>
+            <TaskDistributionChart data={tasksByStatus} palette={piePalette} />
+          </Suspense>
 
-          {/* Allocation Donut Chart */}
-          <div style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: '400px' }}>
-            <Card 
-              header={
-                <CardHeader 
-                  titleText="Resource Allocation" 
-                  subtitleText="By Project Portfolio" 
-                />
-              }
-            >
-              <div style={{ padding: '1rem', height: '300px' }}>
-                <DonutChart
-                  dimension={{ accessor: 'name' }}
-                  measure={{ accessor: 'value' }}
-                  dataset={allocationData}
-                />
-              </div>
-            </Card>
-          </div>
-        </FlexBox>
+          <Suspense fallback={<ChartCardFallback />}>
+            <WorkloadComparisonChart data={consultantWorkload} />
+          </Suspense>
 
-        {/* Critical Alerts */}
-        <Card header={<CardHeader titleText="Critical Alerts & Risk Factors" />}>
-          <List>
-            <ListItemStandard
-              icon="alert"
-              description="Waiting for test environment access"
-              additionalText="Blocked"
-              additionalTextState="Negative"
-            >
-              Task Blocked: Testing & Validation
-            </ListItemStandard>
-            <ListItemStandard
-              icon="history"
-              description="Fiori App Configuration is due in 3 days"
-              additionalText="Due Soon"
-              additionalTextState="Critical"
-            >
-              Deadline Approaching
-            </ListItemStandard>
-          </List>
+          <Suspense fallback={<ChartCardFallback />}>
+            <AllocationPortfolioChart data={allocationData} palette={piePalette} />
+          </Suspense>
+        </div>
+
+        <Card className="border-border/80 bg-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              Critical Alerts
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+              <p className="font-semibold text-destructive">Task Blocked: Testing & Validation</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Waiting for test environment access. Mitigation owner pending confirmation.
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-surface-2 p-4">
+              <p className="font-semibold text-foreground">Deadline Risk: Fiori App Configuration</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Delivery due in 3 days with unresolved dependencies from integration squad.
+              </p>
+            </div>
+          </CardContent>
         </Card>
-      </FlexBox>
-    </DynamicPage>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <Card className="border-border/80 bg-card">
+            <CardHeader>
+              <CardTitle className="text-lg">Productivity Metrics (Mock)</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-border/70 bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">Velocity</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{productivityMetrics.velocity}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Completed tasks this month</p>
+              </div>
+              <div className="rounded-lg border border-border/70 bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">Cycle Time</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">
+                  {productivityMetrics.cycleTimeDays.toFixed(1)}d
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">Average real start to real end</p>
+              </div>
+              <div className="rounded-lg border border-border/70 bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">Throughput</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">
+                  {productivityMetrics.throughputRate.toFixed(0)}%
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">Completed over total tasks</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/80 bg-card">
+            <CardHeader>
+              <CardTitle className="text-lg">Code Quality Snapshot (Mock Integration)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-border/70 bg-surface-2 px-4 py-3 text-sm">
+                <span className="text-muted-foreground">Static analysis connector</span>
+                <span className="font-semibold text-foreground">Configured (mock)</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border/70 bg-surface-2 px-4 py-3 text-sm">
+                <span className="text-muted-foreground">Open critical findings</span>
+                <span className="font-semibold text-destructive">{productivityMetrics.criticalIssues}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border/70 bg-surface-2 px-4 py-3 text-sm">
+                <span className="text-muted-foreground">Quality gate coverage</span>
+                <span className="font-semibold text-foreground">{productivityMetrics.qualityCoverage}%</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 };

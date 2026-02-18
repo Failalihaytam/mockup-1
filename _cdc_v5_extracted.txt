@@ -1,0 +1,287 @@
+
+
+===== PAGE 1 =====
+Cahier des Charges
+Plateforme de Suivi & Gestion des Performances
+Pour Équipes Techniques
+Version :1.0
+Date :13 février 2026
+Statut :Document de spécification
+Rédigé par : Equipe Tech
+13 février 2026
+
+===== PAGE 2 =====
+TABLE DES MATIÈRES 1
+Table des matières
+Historique des versions 2
+1 Introduction 3
+1.1 Objet du document . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 3
+1.2 Contexte du projet . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 3
+1.3 Objectifs . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 3
+1.4 Portée du projet . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 3
+2 Présentation générale 4
+2.1 Description du projet . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+2.2 Périmètre fonctionnel . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+2.3 Utilisateurs cibles . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+3 Besoins fonctionnels 5
+3.1 Acteurs du système . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+3.2 Rôle 1 : Administrateur (ADMIN) . . . . . . . . . . . . . . . . . . . . . . . 6
+3.2.1 Tâches et responsabilités . . . . . . . . . . . . . . . . . . . . . . . . 6
+3.3 Rôle 2 : Manager (MANAGER) . . . . . . . . . . . . . . . . . . . . . . . . 6
+3.3.1 Tâches et responsabilités . . . . . . . . . . . . . . . . . . . . . . . . 6
+3.4 Rôle 3 : Consultant Technique . . . . . . . . . . . . . . . . . . . . . . . . . 7
+3.4.1 Tâches et responsabilités . . . . . . . . . . . . . . . . . . . . . . . . 7
+3.5 Rôle 4 : Consultant Fonctionnel . . . . . . . . . . . . . . . . . . . . . . . . 8
+3.5.1 Tâches et responsabilités . . . . . . . . . . . . . . . . . . . . . . . . 8
+4 Spécifications techniques 9
+4.1 Architecture SAP CAP . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+4.1.1 Vue d’ensemble . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+4.2 Stack technologique SAP CAP . . . . . . . . . . . . . . . . . . . . . . . . . 9
+4.2.1 Backend - SAP CAP . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+4.2.2 Frontend - SAP Fiori . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+4.2.3 Base de données . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+4.2.4 Architecture de déploiement . . . . . . . . . . . . . . . . . . . . . . 10
+4.2.5 Configuration multi-environnements . . . . . . . . . . . . . . . . . . 10
+4.3 Outils de développement . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+4.3.1 Environnement de développement . . . . . . . . . . . . . . . . . . . 10
+4.3.2 Tests . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+4.4 Intégrations possibles . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+4.4.1 Intégrations SAP . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+Cahier des Charges - Plateforme de Suivi & Gestion des Performances
+
+===== PAGE 3 =====
+TABLE DES MATIÈRES 2
+Historique des versions
+Version Date Modifications Auteur
+1.0 13 février 2026 Création du document Equipe Tech
+Cahier des Charges - Plateforme de Suivi & Gestion des Performances
+
+===== PAGE 4 =====
+1 INTRODUCTION 3
+1 Introduction
+1.1 Objet du document
+Ce document constitue le cahier des charges de la plateforme de suivi et gestion des
+performances pour équipes techniques. Il définit les besoins fonctionnels et techniques,
+ainsi que les contraintes de réalisation du projet.
+1.2 Contexte du projet
+Dans un environnement professionnel de plus en plus exigeant, le suivi et l’optimisa-
+tion des performances des équipes techniques sont devenus des enjeux majeurs pour les
+entreprises. Les managers et les équipes ont besoin d’outils permettant de mesurer, analy-
+ser et améliorer continuellement leur productivité, la qualité de leur travail et l’efficacité
+de leurs processus.
+1.3 Objectifs
+L’objectif principal de ce projet est de concevoir et développer une plateforme web
+permettant de :
+— Suivre et mesurer les performances individuelles et collectives des équipes techniques
+— Identifier les points forts et les axes d’amélioration
+— Optimiser la productivité et l’efficacité des équipes
+— Faciliter la gestion des compétences et la montée en compétences
+— Améliorer la qualité des livrables techniques
+— Fournir des indicateurs de performance (KPI) en temps réel
+— Favoriser la transparence et la communication au sein des équipes
+1.4 Portée du projet
+Ce projet couvre la conception, le développement, les tests et le déploiement d’une
+plateforme web complète de suivi et gestion des performances pour équipes techniques,
+accessible via navigateur web et intégrée à l’écosystème SAP.
+Cahier des Charges - Plateforme de Suivi & Gestion des Performances
+
+===== PAGE 5 =====
+2 PRÉSENTATION GÉNÉRALE 4
+2 Présentation générale
+2.1 Description du projet
+La plateforme de suivi et gestion des performances est une solution complète per-
+mettant aux managers et aux équipes techniques de mesurer, analyser et améliorer leurs
+performances. Elle offre des fonctionnalités de suivi des tâches techniques, d’évaluation
+des compétences, de mesure de la productivité, d’analyse de la qualité du code, et de
+génération de rapports de performance détaillés.
+2.2 Périmètre fonctionnel
+Le périmètre fonctionnel de la plateforme comprend :
+— Gestion des utilisateurs et des équipes techniques
+— Suivi des tâches et projets techniques
+— Mesure de la productivité (vélocité, temps de cycle, throughput)
+— Évaluation des compétences techniques et fonctionnelles
+— Analyse de la qualité du code (intégration avec outils de qualité)
+— Suivi des objectifs individuels et d’équipe (OKR)
+— Tableaux de bord de performance avec KPI
+— Rapports de performance et d’évolution
+— Système de feedback et d’évaluation continue
+— Gestion des plans de développement personnel
+2.3 Utilisateurs cibles
+—Managers :Suivi des performances d’équipe, évaluation, prise de décisions straté-
+giques
+—Consultants Techniques :Suivi de leurs performances, objectifs personnels, mon-
+tée en compétences
+—Consultants Fonctionnels :Suivi de leurs performances, objectifs personnels,
+développement des compétences métier
+—Administrateurs :Gestion des utilisateurs, configuration des KPI, paramétrage
+du système
+Cahier des Charges - Plateforme de Suivi & Gestion des Performances
+
+===== PAGE 6 =====
+3 BESOINS FONCTIONNELS 5
+3 Besoins fonctionnels
+3.1 Acteurs du système
+La plateforme est conçue pour quatre types d’acteurs principaux, chacun ayant des
+rôles, des vues et des permissions spécifiques :
+ADMIN (Administrateur)Responsable de la configuration globale du système, de la
+gestiondesutilisateurs,desrôlesetdesréférentiels(masterdata).Ilassureégalement
+la journalisation, l’audit et le suivi des statistiques globales de la plateforme.
+MANAGER (Manager / Chef de Projet)Supervise les projets et les équipes. Il at-
+tribue les ressources, suit la performance individuelle et collective, analyse la charge
+de travail, contrôle le respect des délais, détecte les risques et blocages, et évalue les
+performances par compétence SAP.
+CONSULTANT TECHNIQUEDéveloppeuroutechnicienSAPquiexécutelestâches
+techniques assignées, saisit son temps de travail (timesheet), suit son avancement,
+collabore avec le consultant fonctionnel et reçoit des notifications sur ses tâches.
+CONSULTANT FONCTIONNELExpert métier SAP qui consulte les projets et pé-
+rimètres fonctionnels, valide les livrables techniques, déclare les anomalies, dépose
+des documents fonctionnels et collabore avec les consultants techniques.
+Cahier des Charges - Plateforme de Suivi & Gestion des Performances
+
+===== PAGE 7 =====
+3 BESOINS FONCTIONNELS 6
+3.2 Rôle 1 : Administrateur (ADMIN)
+3.2.1 Tâches et responsabilités
+— Créer, modifier et supprimer des comptes utilisateurs
+— Assigner des rôles et gérer les droits d’accès
+— Paramétrer les référentiels globaux (statuts des tâches, niveaux de priorité, types de
+projets, compétences)
+3.3 Rôle 2 : Manager (MANAGER)
+3.3.1 Tâches et responsabilités
+— Accéder au tableau de bord de performance global (avancement des projets, perfor-
+mance des équipes, alertes)
+— Suivre la performance individuelle des collaborateurs (respect délais, volume travail)
+— Attribuer les ressources (consultants techniques et fonctionnels) aux projets et gérer
+le taux d’allocation
+— Évaluer la performance collective par projet (productivité, respect planning, qualité)
+— Afficher la disponibilté des consultants
+— Contrôler le respect des délais (comparaison dates prévues vs réelles) et identifier
+les tâches critiques (et autres KPI)
+— Détecter et gérer les risques, blocages et dérives de planning (réaffectation, ajuste-
+ment délais)
+— Consulter les rapports KPI automatiques par projet et consultant
+— Remplir les grilles d’évaluation qualitative des consultants( à revoir)
+Cahier des Charges - Plateforme de Suivi & Gestion des Performances
+
+===== PAGE 8 =====
+3 BESOINS FONCTIONNELS 7
+3.4 Rôle 3 : Consultant Technique
+3.4.1 Tâches et responsabilités
+— Accéder au dashboard personnel affichant le nombre de tâches assignées, tâches en
+retard, heures travaillées cette semaine et projets actifs
+— Consulter les notifications (nouvelle tâche, commentaire du manager)
+— Consulter la liste des projets où il est affecté (nom du projet, manager, dates, ses
+tâches)
+— Accéder aux détails de ses tâches dans chaque projet (lecture seule sur le projet)
+— Gérer ses tâches quotidiennes : description, statut, % avancement
+— Changer le statut des tâches (À faire / En cours / Bloquée / Terminée)
+— Mettre à jour le pourcentage d’avancement de ses tâches
+— Ajouter des commentaires sur les tâches (blocage ...)
+— Recevoir des notifications (lors de l’affectation de nouvelles tâches,changements de
+priorités, commentaires du manager ou consultant fonctionnel, approche d’une dead-
+line)
+— Poser des questions au consultant fonctionnel (direction vers discussion teams)
+— Consulter ses performances et évaluations
+— Gérer son profil personnel
+Cahier des Charges - Plateforme de Suivi & Gestion des Performances
+
+===== PAGE 9 =====
+3 BESOINS FONCTIONNELS 8
+3.5 Rôle 4 : Consultant Fonctionnel
+3.5.1 Tâches et responsabilités
+— Ajouter des commentaires (de validation sur les livrables, Demander des corrections
+si nécessaire, Signaler des anomalies fonctionnelles)
+— Retour de projet
+— Créer des tickets
+— Déposer des spécifications fonctionnelles
+— Échanger avec les consultants techniques (direction vers discussion teams)
+— Répondre aux questions sur les besoins métier
+— Gérer son profil personnel
+Cahier des Charges - Plateforme de Suivi & Gestion des Performances
+
+===== PAGE 10 =====
+4 SPÉCIFICATIONS TECHNIQUES 9
+4 Spécifications techniques
+4.1 Architecture SAP CAP
+4.1.1 Vue d’ensemble
+L’application sera développée en utilisant le framework SAP Cloud Application Pro-
+gramming Model (CAP), qui offre une approche moderne et efficace pour développer des
+applications d’entreprise.
+—Architecture :Architecture 3-tiers (Présentation, Logique métier, Données)
+—Modèle :Domain-Driven Design (DDD)
+—API :Services OData V4
+—Frontend :SAP Fiori Elements / UI5
+—Backend :Node.js avec SAP CAP
+—Base de données :SAP HANA Cloud / PostgreSQL / SQLite (développement)
+4.2 Stack technologique SAP CAP
+4.2.1 Backend - SAP CAP
+—Runtime :Node.js (version LTS recommandée)
+—Framework :@sap/cds (SAP Cloud Application Programming Model)
+—Langage :JavaScript / TypeScript
+—Modélisation :CDS (Core Data Services)
+—Services :
+— @sap/cds-dk - Development Kit
+— @sap/cds-compiler - Compilateur CDS
+— @sap/cds-runtime - Runtime CAP
+— @sap/xssec - Sécurité et authentification
+— @sap/audit-logging - Journalisation d’audit
+4.2.2 Frontend - SAP Fiori
+—Framework UI :SAPUI5 / OpenUI5
+—Approche :SAP Fiori Elements (génération automatique d’UI)
+—Templates Fiori :
+— List Report - Pour les listes de projets et tâches
+— Object Page - Pour les détails de projet/tâche
+— Analytical List Page - Pour les tableaux de bord
+— Overview Page - Pour la page d’accueil
+—Thème :SAP Fiori Horizon / Quartz
+—Composants :
+Cahier des Charges - Plateforme de Suivi & Gestion des Performances
+
+===== PAGE 11 =====
+4 SPÉCIFICATIONS TECHNIQUES 10
+— sap.m - Bibliothèque de contrôles mobiles
+— sap.ui.table - Tableaux complexes
+— sap.suite.ui.commons - Composants métier
+— sap.gantt - Diagrammes de Gantt
+4.2.3 Base de données
+—Production :SAP HANA Cloud (recommandé) ou PostgreSQL
+—Développement :SQLite (base de données locale)
+—ORM :Intégré dans SAP CAP (@sap/cds)
+—Migrations :Gérées par CDS Deploy
+—Seed Data :Fichiers CSV dans db/data/
+4.2.4 Architecture de déploiement
+—Backend :Application Node.js déployée sur Cloud Foundry
+—Frontend :Application Fiori hébergée dans HTML5 Application Repository
+—Base de données :Instance SAP HANA Cloud
+—Reverse Proxy :Application Router (@sap/approuter)
+—CI/CD :SAP Continuous Integration and Delivery Service
+4.2.5 Configuration multi-environnements
+—Développement :SQLite locale, mock users
+—Test :PostgreSQL ou HANA Cloud (instance de test)
+—Production :SAP HANA Cloud, authentification complète
+4.3 Outils de développement
+4.3.1 Environnement de développement
+—IDE :SAP Business Application Studio ou Visual Studio Code
+—Extensions VS Code :
+— SAP CDS Language Support
+— SAP Fiori Tools
+— SAP HANA Database Explorer
+—CLI :@sap/cds-dk (CDS Development Kit)
+—Versioning :Git / GitHub / GitLab
+Cahier des Charges - Plateforme de Suivi & Gestion des Performances
+
+===== PAGE 12 =====
+4 SPÉCIFICATIONS TECHNIQUES 11
+4.3.2 Tests
+—Tests unitaires :Jest ou Mocha
+—Tests d’intégration :Chai HTTP pour tester les services OData
+—Tests E2E :UI5 Test Recorder / Selenium
+—Couverture de code :Istanbul / NYC
+—Objectif :Couverture > 70%
+4.4 Intégrations possibles
+4.4.1 Intégrations SAP
+— SAP S/4HANA - Synchronisation des données projet
+— SAP SuccessFactors - Données RH et compétences
+— SAP Concur - Gestion des frais de déplacement
+— SAP Analytics Cloud - Reporting avancé
+Cahier des Charges - Plateforme de Suivi & Gestion des Performances

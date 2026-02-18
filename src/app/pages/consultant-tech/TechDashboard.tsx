@@ -1,301 +1,215 @@
-﻿// Technical Consultant Dashboard
-
 import React, { useEffect, useState } from 'react';
+import { CalendarClock, CheckCircle2, Clock3, FolderKanban } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import { PageHeader } from '../../components/common/PageHeader';
 import { KPICard } from '../../components/common/KPICard';
 import { useAuth } from '../../context/AuthContext';
-import { TasksAPI, ProjectsAPI, EvaluationsAPI, TimesheetsAPI } from '../../services/odataClient';
-import { Task, Project, Evaluation, Timesheet } from '../../types/entities';
-import { useNavigate } from 'react-router';
+import { EvaluationsAPI, ProjectsAPI, TasksAPI, TimesheetsAPI } from '../../services/odataClient';
+import { Evaluation, Project, Task, Timesheet } from '../../types/entities';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Progress } from '../../components/ui/progress';
 import { getFridayOfWeek, getMondayOfWeek, toLocalDateKey } from '../../utils/date';
-import {
-  Card,
-  CardHeader,
-  AnalyticalTable,
-  Button,
-  ProgressIndicator,
-  List,
-  ListItemStandard,
-  Icon,
-  FlexBox,
-  FlexBoxAlignItems,
-  FlexBoxJustifyContent,
-} from '@ui5/webcomponents-react';
-import '@ui5/webcomponents-icons/dist/table-view.js';
-import '@ui5/webcomponents-icons/dist/task.js';
-import '@ui5/webcomponents-icons/dist/project-definition-triangle-2.js';
-import '@ui5/webcomponents-icons/dist/nav-back.js';
-
-const kpiColumns = [
-  { Header: 'KPI', accessor: 'name', width: 200 },
-  { Header: 'Formula', accessor: 'formula', width: 320 },
-  { Header: 'Source', accessor: 'source', width: 150 },
-  { Header: 'Refresh', accessor: 'refresh', width: 150 },
-];
-
-const kpiReferences = [
-  {
-    name: 'My Tasks',
-    formula: 'count(tasks assigned to current user)',
-    source: 'Tasks',
-    refresh: 'On dashboard load',
-  },
-  {
-    name: 'Overdue Tasks',
-    formula: "count(status != 'DONE' and plannedEnd < today)",
-    source: 'Tasks',
-    refresh: 'On dashboard load',
-  },
-  {
-    name: 'Hours This Week',
-    formula: 'sum(timesheet.hours) for current week',
-    source: 'Timesheets',
-    refresh: 'On dashboard load',
-  },
-  {
-    name: 'Active Projects',
-    formula: "count(project.status = 'ACTIVE' for assigned tasks)",
-    source: 'Projects + Tasks',
-    refresh: 'On dashboard load',
-  },
-  {
-    name: 'Performance Score',
-    formula: 'avg(evaluation.score)',
-    source: 'Evaluations',
-    refresh: 'On dashboard load',
-  },
-];
 
 export const TechDashboard: React.FC = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    if (currentUser) {
-      loadDashboardData();
-    }
-  }, [currentUser]);
-
-  const loadDashboardData = async () => {
     if (!currentUser) return;
-    setLoading(true);
-    try {
-      const [tasksData, allProjects, evals, timesheetsData] = await Promise.all([
-        TasksAPI.getByUser(currentUser.id),
-        ProjectsAPI.getAll(),
-        EvaluationsAPI.getByUser(currentUser.id),
-        TimesheetsAPI.getByUser(currentUser.id),
-      ]);
 
-      setTasks(tasksData);
-      const myProjectIds = new Set(tasksData.map((t) => t.projectId));
-      const myProjects = allProjects.filter((p) => myProjectIds.has(p.id));
-      setProjects(myProjects);
-      setEvaluations(evals);
-      setTimesheets(timesheetsData);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const loadDashboardData = async () => {
+      setLoading(true);
+
+      try {
+        const [taskData, allProjects, evals, timesheetData] = await Promise.all([
+          TasksAPI.getByUser(currentUser.id),
+          ProjectsAPI.getAll(),
+          EvaluationsAPI.getByUser(currentUser.id),
+          TimesheetsAPI.getByUser(currentUser.id),
+        ]);
+
+        const myProjectIds = new Set(taskData.map((task) => task.projectId));
+        setTasks(taskData);
+        setProjects(allProjects.filter((project) => myProjectIds.has(project.id)));
+        setEvaluations(evals);
+        setTimesheets(timesheetData);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadDashboardData();
+  }, [currentUser]);
 
   const myTasksCount = tasks.length;
   const overdueTasks = tasks.filter(
-    (t) =>
-      t.status !== 'DONE' && new Date(t.plannedEnd) < new Date() && !t.realEnd
+    (task) => task.status !== 'DONE' && new Date(task.plannedEnd) < new Date() && !task.realEnd
   ).length;
+
   const weekStart = toLocalDateKey(getMondayOfWeek(new Date()));
   const weekEnd = toLocalDateKey(getFridayOfWeek(new Date()));
   const hoursThisWeek = timesheets
     .filter((entry) => entry.date >= weekStart && entry.date <= weekEnd)
     .reduce((sum, entry) => sum + entry.hours, 0);
-  const activeProjects = projects.filter((p) => p.status === 'ACTIVE').length;
+
+  const activeProjects = projects.filter((project) => project.status === 'ACTIVE').length;
   const averageScore =
     evaluations.length > 0
-      ? evaluations.reduce((sum, e) => sum + e.score, 0) / evaluations.length
+      ? evaluations.reduce((sum, evaluation) => sum + evaluation.score, 0) / evaluations.length
       : 0;
 
   const upcomingTasks = tasks
-    .filter((t) => t.status === 'TO_DO' || t.status === 'IN_PROGRESS')
-    .sort(
-      (a, b) =>
-        new Date(a.plannedEnd).getTime() - new Date(b.plannedEnd).getTime()
-    )
+    .filter((task) => task.status === 'TO_DO' || task.status === 'IN_PROGRESS')
+    .sort((a, b) => new Date(a.plannedEnd).getTime() - new Date(b.plannedEnd).getTime())
     .slice(0, 5);
 
-  const getPriorityState = (priority: string) => {
-    switch (priority) {
-      case 'CRITICAL':
-        return 'Negative';
-      case 'HIGH':
-        return 'Critical';
-      case 'MEDIUM':
-        return 'None';
-      case 'LOW':
-        return 'Positive';
-      default:
-        return 'None';
-    }
-  };
-
-  const getProgressState = (percent: number) => {
-    if (percent >= 80) return 'Positive';
-    if (percent >= 40) return 'None';
-    return 'Critical';
-  };
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <PageHeader
-        title={`Welcome back, ${currentUser?.name.split(' ')[0]}!`}
-        subtitle="Your personal performance dashboard"
+        title={`Welcome back, ${currentUser?.name.split(' ')[0] ?? 'Consultant'}`}
+        subtitle="Execution cockpit for your deliveries, workload, and quality score"
         breadcrumbs={[{ label: 'My Dashboard' }]}
       />
 
-      <div className="p-6 space-y-6">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          <KPICard
-            title="My Tasks"
-            value={myTasksCount}
-            icon="task"
-            color="blue"
-          />
-          <KPICard
-            title="Overdue Tasks"
-            value={overdueTasks}
-            icon="alert"
-            color="red"
-          />
-          <KPICard
-            title="Hours This Week"
-            value={hoursThisWeek}
-            icon="timesheet"
-            color="green"
-          />
+      <div className="space-y-6 p-6 lg:p-8">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <KPICard title="My Tasks" value={myTasksCount} icon="task" color="blue" />
+          <KPICard title="Overdue Tasks" value={overdueTasks} icon="alert" color="red" />
+          <KPICard title="Hours This Week" value={hoursThisWeek} icon="timesheet" color="green" />
           <KPICard
             title="Active Projects"
             value={activeProjects}
             icon="project-definition-triangle-2"
-            color="purple"
+            color="yellow"
           />
           <KPICard
             title="Performance Score"
             value={averageScore.toFixed(1)}
-            subtitle="Out of 5.0"
+            unit="/5"
             icon="trend-up"
             color="blue"
             progress={(averageScore / 5) * 100}
           />
         </div>
 
-        {/* KPI Definitions */}
-        <Card
-          header={
-            <CardHeader
-              titleText="KPI Definitions"
-              subtitleText="Formula / Source / Refresh"
-              avatar={<Icon name="table-view" />}
-            />
-          }
-        >
-          <AnalyticalTable
-            columns={kpiColumns}
-            data={kpiReferences}
-            minRows={5}
-            visibleRows={5}
-            scaleWidthMode="Smart"
-            alternateRowColor
-          />
-        </Card>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_1fr]">
+          <Card className="bg-card/92">
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-lg">Upcoming Tasks</CardTitle>
+              <Button variant="secondary" size="sm" onClick={() => navigate('/consultant-tech/tasks')}>
+                View All
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {loading ? (
+                <p className="text-sm text-muted-foreground">Loading tasks...</p>
+              ) : upcomingTasks.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No upcoming tasks.</p>
+              ) : (
+                upcomingTasks.map((task) => (
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => navigate('/consultant-tech/tasks')}
+                    className="w-full rounded-xl border border-border/70 bg-surface-1 p-4 text-left transition hover-lift"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-foreground">{task.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{task.description}</p>
+                      </div>
+                      <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                        {task.priority}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        Due {new Date(task.plannedEnd).toLocaleDateString()}
+                      </span>
+                      <span>{task.progressPercent}% done</span>
+                    </div>
+                    <Progress className="mt-2" value={task.progressPercent} />
+                  </button>
+                ))
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Upcoming Tasks */}
-        <Card
-          header={
-            <CardHeader
-              titleText="Upcoming Tasks"
-              subtitleText={`${upcomingTasks.length} task${upcomingTasks.length !== 1 ? 's' : ''} pending`}
-              avatar={<Icon name="task" />}
-              action={
-                <Button design="Transparent" onClick={() => navigate('/consultant-tech/tasks')}>
-                  View All
-                </Button>
-              }
-            />
-          }
-        >
-          {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading...</div>
-          ) : upcomingTasks.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No upcoming tasks
-            </div>
-          ) : (
-            <List>
-              {upcomingTasks.map((task) => (
-                <ListItemStandard
-                  key={task.id}
-                  description={`Due: ${new Date(task.plannedEnd).toLocaleDateString()}`}
-                  additionalText={task.priority}
-                  additionalTextState={getPriorityState(task.priority)}
-                  onClick={() => navigate('/consultant-tech/tasks')}
-                >
-                  {task.title}
-                </ListItemStandard>
-              ))}
-            </List>
-          )}
-        </Card>
-
-        {/* My Projects */}
-        <Card
-          header={
-            <CardHeader
-              titleText="My Projects"
-              subtitleText={`${projects.length} project${projects.length !== 1 ? 's' : ''} assigned`}
-              avatar={<Icon name="project-definition-triangle-2" />}
-              action={
-                <Button design="Transparent" onClick={() => navigate('/consultant-tech/projects')}>
-                  View All
-                </Button>
-              }
-            />
-          }
-        >
-          <div className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {projects.map((project) => (
-                <Card
-                  key={project.id}
-                  header={
-                    <CardHeader
-                      titleText={project.name}
-                      subtitleText={project.description}
-                    />
-                  }
-                >
-                  <div className="p-3">
-                    <FlexBox
-                      alignItems={FlexBoxAlignItems.Center}
-                      justifyContent={FlexBoxJustifyContent.SpaceBetween}
-                      className="mb-2"
-                    >
-                      <span className="text-sm text-muted-foreground">Progress</span>
-                      <span className="text-sm font-semibold">{project.progress || 0}%</span>
-                    </FlexBox>
-                    <ProgressIndicator
-                      value={project.progress || 0}
-                      valueState={getProgressState(project.progress || 0)}
-                    />
+          <Card className="bg-card/92">
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-lg">Assigned Projects</CardTitle>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate('/consultant-tech/projects')}
+              >
+                Open Projects
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {projects.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No assigned projects.</p>
+              ) : (
+                projects.map((project) => (
+                  <div key={project.id} className="rounded-xl border border-border/70 bg-surface-1 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-foreground">{project.name}</p>
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                          {project.description}
+                        </p>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-1 text-xs font-medium text-primary">
+                        <FolderKanban className="h-3.5 w-3.5" />
+                        {project.status}
+                      </span>
+                    </div>
+                    <div className="mt-3">
+                      <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Progress</span>
+                        <span>{project.progress ?? 0}%</span>
+                      </div>
+                      <Progress value={project.progress ?? 0} />
+                    </div>
                   </div>
-                </Card>
-              ))}
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="bg-card/92">
+          <CardHeader>
+            <CardTitle className="text-lg">Productivity Snapshot</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-border/70 bg-surface-1 p-4">
+              <p className="text-xs uppercase tracking-[0.1em] text-muted-foreground">This Week</p>
+              <p className="mt-2 inline-flex items-center gap-2 text-2xl font-semibold text-foreground">
+                <Clock3 className="h-5 w-5 text-primary" />
+                {hoursThisWeek}h
+              </p>
             </div>
-          </div>
+            <div className="rounded-xl border border-border/70 bg-surface-1 p-4">
+              <p className="text-xs uppercase tracking-[0.1em] text-muted-foreground">Tasks Completed</p>
+              <p className="mt-2 inline-flex items-center gap-2 text-2xl font-semibold text-foreground">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                {tasks.filter((task) => task.status === 'DONE').length}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border/70 bg-surface-1 p-4">
+              <p className="text-xs uppercase tracking-[0.1em] text-muted-foreground">Quality Score</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{averageScore.toFixed(2)} / 5</p>
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>

@@ -1,16 +1,24 @@
-// Deliverables Validation for Functional Consultant
-
 import React, { useEffect, useState } from 'react';
-import { PageHeader } from '../../components/common/PageHeader';
-import {
-  DeliverablesAPI,
-  NotificationsAPI,
-  ProjectsAPI,
-} from '../../services/odataClient';
-import { Deliverable, Project, ValidationStatus } from '../../types/entities';
-import { FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { CheckCircle, Clock, FileText, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageHeader } from '../../components/common/PageHeader';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
 import { useAuth } from '../../context/AuthContext';
+import { DeliverablesAPI, NotificationsAPI, ProjectsAPI } from '../../services/odataClient';
+import { Deliverable, Project, ValidationStatus } from '../../types/entities';
 
 interface UploadForm {
   projectId: string;
@@ -26,14 +34,32 @@ const EMPTY_UPLOAD_FORM: UploadForm = {
   fileRef: '',
 };
 
+const getStatusBadge = (status: ValidationStatus) => {
+  switch (status) {
+    case 'APPROVED':
+      return {
+        tone: 'bg-primary/12 text-primary',
+        icon: CheckCircle,
+      };
+    case 'CHANGES_REQUESTED':
+      return {
+        tone: 'bg-destructive/12 text-destructive',
+        icon: XCircle,
+      };
+    case 'PENDING':
+      return {
+        tone: 'bg-muted text-muted-foreground',
+        icon: Clock,
+      };
+  }
+};
+
 export const Deliverables: React.FC = () => {
   const { currentUser } = useAuth();
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDeliverable, setSelectedDeliverable] = useState<Deliverable | null>(
-    null
-  );
+  const [selectedDeliverable, setSelectedDeliverable] = useState<Deliverable | null>(null);
   const [comment, setComment] = useState('');
   const [uploadForm, setUploadForm] = useState<UploadForm>(EMPTY_UPLOAD_FORM);
   const [isUploading, setIsUploading] = useState(false);
@@ -57,6 +83,11 @@ export const Deliverables: React.FC = () => {
     }
   };
 
+  const closeReviewDialog = () => {
+    setSelectedDeliverable(null);
+    setComment('');
+  };
+
   const updateValidationStatus = async (
     id: string,
     status: ValidationStatus,
@@ -68,9 +99,8 @@ export const Deliverables: React.FC = () => {
         validationStatus: status,
         functionalComment,
       });
-      setDeliverables((prev) =>
-        prev.map((entry) => (entry.id === id ? updated : entry))
-      );
+      setDeliverables((prev) => prev.map((entry) => (entry.id === id ? updated : entry)));
+
       const project = projects.find((entry) => entry.id === updated.projectId);
       if (project) {
         await NotificationsAPI.create({
@@ -81,9 +111,9 @@ export const Deliverables: React.FC = () => {
           read: false,
         });
       }
+
       toast.success('Deliverable status updated');
-      setSelectedDeliverable(null);
-      setComment('');
+      closeReviewDialog();
     } catch (error) {
       toast.error('Failed to update deliverable');
     } finally {
@@ -91,8 +121,8 @@ export const Deliverables: React.FC = () => {
     }
   };
 
-  const createSpecification = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const createSpecification = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!currentUser) return;
     if (!uploadForm.projectId || !uploadForm.name.trim() || !uploadForm.type.trim()) {
       toast.error('Project, name and type are required');
@@ -131,17 +161,6 @@ export const Deliverables: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: ValidationStatus) => {
-    switch (status) {
-      case 'APPROVED':
-        return { color: 'bg-green-100 text-green-800', icon: CheckCircle };
-      case 'CHANGES_REQUESTED':
-        return { color: 'bg-red-100 text-red-800', icon: XCircle };
-      case 'PENDING':
-        return { color: 'bg-yellow-100 text-yellow-800', icon: Clock };
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
@@ -153,231 +172,211 @@ export const Deliverables: React.FC = () => {
         ]}
       />
 
-      <div className="p-6 space-y-6">
-        <div className="bg-card rounded-lg shadow-sm border border-border p-5">
-          <h3 className="text-lg font-semibold text-foreground mb-4">
-            Deposit Functional Specification (Mock)
-          </h3>
-          <form onSubmit={createSpecification} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm text-muted-foreground mb-1">Project</label>
-              <select
-                value={uploadForm.projectId}
-                onChange={(e) =>
-                  setUploadForm((prev) => ({ ...prev, projectId: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-              >
-                <option value="">Select project</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm text-muted-foreground mb-1">Type</label>
-              <input
-                value={uploadForm.type}
-                onChange={(e) =>
-                  setUploadForm((prev) => ({ ...prev, type: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-muted-foreground mb-1">Document Name</label>
-              <input
-                value={uploadForm.name}
-                onChange={(e) =>
-                  setUploadForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-                placeholder="Functional scope definition v1"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-muted-foreground mb-1">
-                File Reference (optional)
-              </label>
-              <input
-                value={uploadForm.fileRef}
-                onChange={(e) =>
-                  setUploadForm((prev) => ({ ...prev, fileRef: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-                placeholder="SharePoint/Teams link or file code"
-              />
-            </div>
-            <div className="md:col-span-2 flex justify-end">
-              <button
-                type="submit"
-                disabled={isUploading}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
-              >
-                {isUploading ? 'Submitting...' : 'Submit for Validation'}
-              </button>
-            </div>
-          </form>
-        </div>
+      <div className="space-y-6 p-6 lg:p-8">
+        <Card className="bg-card/92">
+          <CardHeader>
+            <CardTitle className="text-lg">Deposit Functional Specification (Mock)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={createSpecification} className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="deliverable-project">Project</Label>
+                <select
+                  id="deliverable-project"
+                  value={uploadForm.projectId}
+                  onChange={(event) =>
+                    setUploadForm((prev) => ({ ...prev, projectId: event.target.value }))
+                  }
+                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                >
+                  <option value="">Select project</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="deliverable-type">Type</Label>
+                <Input
+                  id="deliverable-type"
+                  value={uploadForm.type}
+                  onChange={(event) => setUploadForm((prev) => ({ ...prev, type: event.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="deliverable-name">Document Name</Label>
+                <Input
+                  id="deliverable-name"
+                  value={uploadForm.name}
+                  onChange={(event) => setUploadForm((prev) => ({ ...prev, name: event.target.value }))}
+                  placeholder="Functional scope definition v1"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="deliverable-file-ref">File Reference (optional)</Label>
+                <Input
+                  id="deliverable-file-ref"
+                  value={uploadForm.fileRef}
+                  onChange={(event) =>
+                    setUploadForm((prev) => ({ ...prev, fileRef: event.target.value }))
+                  }
+                  placeholder="SharePoint/Teams link or file code"
+                />
+              </div>
+
+              <div className="md:col-span-2 flex justify-end">
+                <Button type="submit" disabled={isUploading}>
+                  {isUploading ? 'Submitting...' : 'Submit for Validation'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
         {loading ? (
-          <div className="bg-card rounded-lg border border-border p-10 text-center text-muted-foreground">
-            Loading deliverables...
-          </div>
+          <Card className="bg-card/92">
+            <CardContent className="py-10 text-center text-muted-foreground">
+              Loading deliverables...
+            </CardContent>
+          </Card>
+        ) : deliverables.length === 0 ? (
+          <Card className="bg-card/92">
+            <CardContent className="py-12 text-center">
+              <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <h3 className="text-lg font-semibold text-foreground">No deliverables</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                No deliverables to review at the moment.
+              </p>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {deliverables.map((deliverable) => {
               const badge = getStatusBadge(deliverable.validationStatus);
               const StatusIcon = badge.icon;
+              const projectName =
+                projects.find((project) => project.id === deliverable.projectId)?.name ??
+                deliverable.projectId;
 
               return (
-                <div
-                  key={deliverable.id}
-                  className="bg-card rounded-lg shadow-sm border border-border p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
-                      <FileText className="w-6 h-6" />
+                <Card key={deliverable.id} className="bg-card/92">
+                  <CardContent className="space-y-4 pt-6">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/12 text-primary">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <Badge className={badge.tone}>
+                        <StatusIcon className="mr-1 h-3.5 w-3.5" />
+                        {deliverable.validationStatus}
+                      </Badge>
                     </div>
-                    <span className={`flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full ${badge.color}`}>
-                      <StatusIcon className="w-3 h-3" />
-                      {deliverable.validationStatus}
-                    </span>
-                  </div>
 
-                  <h3 className="font-semibold text-foreground mb-2">
-                    {deliverable.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-2">{deliverable.type}</p>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Project:{' '}
-                    {projects.find((project) => project.id === deliverable.projectId)?.name ??
-                      deliverable.projectId}
-                  </p>
-
-                  {deliverable.functionalComment && (
-                    <div className="mb-4 p-3 bg-muted rounded text-sm">
-                      <p className="text-muted-foreground">{deliverable.functionalComment}</p>
+                    <div>
+                      <h3 className="font-semibold text-foreground">{deliverable.name}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{deliverable.type}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">Project: {projectName}</p>
                     </div>
-                  )}
 
-                  <div className="text-xs text-muted-foreground mb-4">
-                    Created: {new Date(deliverable.createdAt).toLocaleDateString()}
-                  </div>
+                    {deliverable.functionalComment && (
+                      <div className="rounded-md border border-border/70 bg-surface-2 p-3 text-sm text-muted-foreground">
+                        {deliverable.functionalComment}
+                      </div>
+                    )}
 
-                  {deliverable.validationStatus === 'PENDING' && (
-                    <button
-                      onClick={() => {
-                        setSelectedDeliverable(deliverable);
-                        setComment(deliverable.functionalComment || '');
-                      }}
-                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Review
-                    </button>
-                  )}
-                </div>
+                    <p className="text-xs text-muted-foreground">
+                      Created: {new Date(deliverable.createdAt).toLocaleDateString()}
+                    </p>
+
+                    {deliverable.validationStatus === 'PENDING' && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        onClick={() => {
+                          setSelectedDeliverable(deliverable);
+                          setComment(deliverable.functionalComment || '');
+                        }}
+                      >
+                        Review
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
         )}
-
-        {/* Empty State */}
-        {deliverables.length === 0 && !loading && (
-          <div className="text-center py-12 bg-card rounded-lg border border-border">
-            <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              No deliverables
-            </h3>
-            <p className="text-muted-foreground">No deliverables to review at the moment.</p>
-          </div>
-        )}
       </div>
 
-      {/* Review Modal */}
-      {selectedDeliverable && (
-        <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedDeliverable(null)}
-        >
-          <div
-            className="bg-card rounded-lg shadow-xl max-w-2xl w-full p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-2xl font-semibold text-foreground mb-4">
-              Review Deliverable
-            </h2>
+      <Dialog open={selectedDeliverable !== null} onOpenChange={(open) => !open && closeReviewDialog()}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Review Deliverable</DialogTitle>
+            <DialogDescription>
+              Validate the deliverable and provide actionable feedback.
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="space-y-4 mb-6">
+          {selectedDeliverable && (
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                  Name
-                </label>
-                <p className="text-foreground">{selectedDeliverable.name}</p>
+                <Label htmlFor="review-deliverable-name">Name</Label>
+                <Input id="review-deliverable-name" value={selectedDeliverable.name} disabled />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                  Type
-                </label>
-                <p className="text-foreground">{selectedDeliverable.type}</p>
+                <Label htmlFor="review-deliverable-type">Type</Label>
+                <Input id="review-deliverable-type" value={selectedDeliverable.type} disabled />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                  Functional Comments
-                </label>
-                <textarea
+              <div className="space-y-1.5">
+                <Label htmlFor="review-comment">Functional Comments</Label>
+                <Textarea
+                  id="review-comment"
                   value={comment}
-                  onChange={(e) => setComment(e.target.value)}
+                  onChange={(event) => setComment(event.target.value)}
                   rows={4}
-                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-card text-foreground"
                   placeholder="Add your comments or feedback..."
                 />
               </div>
             </div>
+          )}
 
-            <div className="flex gap-3">
-              <button
-                onClick={() =>
-                  updateValidationStatus(
-                    selectedDeliverable.id,
-                    'APPROVED',
-                    comment
-                  )
-                }
-                disabled={isReviewSubmitting}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-              >
-                <CheckCircle className="w-4 h-4" />
-                {isReviewSubmitting ? 'Saving...' : 'Approve'}
-              </button>
-              <button
-                onClick={() =>
-                  updateValidationStatus(
-                    selectedDeliverable.id,
-                    'CHANGES_REQUESTED',
-                    comment
-                  )
-                }
-                disabled={isReviewSubmitting}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
-              >
-                <XCircle className="w-4 h-4" />
-                {isReviewSubmitting ? 'Saving...' : 'Request Changes'}
-              </button>
-              <button
-                onClick={() => setSelectedDeliverable(null)}
-                className="px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeReviewDialog}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={!selectedDeliverable || isReviewSubmitting}
+              onClick={() =>
+                selectedDeliverable &&
+                void updateValidationStatus(selectedDeliverable.id, 'APPROVED', comment)
+              }
+            >
+              <CheckCircle className="h-4 w-4" />
+              {isReviewSubmitting ? 'Saving...' : 'Approve'}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={!selectedDeliverable || isReviewSubmitting}
+              onClick={() =>
+                selectedDeliverable &&
+                void updateValidationStatus(selectedDeliverable.id, 'CHANGES_REQUESTED', comment)
+              }
+            >
+              <XCircle className="h-4 w-4" />
+              {isReviewSubmitting ? 'Saving...' : 'Request Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

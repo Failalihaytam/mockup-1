@@ -1,153 +1,148 @@
-// SAP Fiori AnalyticalCard with NumericContent for KPIs
 import React from 'react';
 import {
-  Card,
-  CardHeader,
-  NumericSideIndicator,
-  DeviationIndicator,
-  ValueColor,
-} from '@ui5/webcomponents-react';
+  AlertTriangle,
+  Gauge,
+  ListTodo,
+  TrendingDown,
+  TrendingUp,
+  LucideIcon,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { cn } from '../ui/utils';
 
 export interface AnalyticalKPICardProps {
   title: string;
   subtitle?: string;
   value: string | number;
   unit?: string;
-  state?: ValueColor;
+  state?: string;
   trend?: 'Up' | 'Down' | 'None';
   deviation?: string;
   target?: number;
   icon?: string;
 }
 
+const iconMap: Record<string, LucideIcon> = {
+  'trend-up': TrendingUp,
+  warning: AlertTriangle,
+  task: ListTodo,
+  performance: Gauge,
+};
+
+const getTone = (state?: string) => {
+  const normalized = (state ?? '').toLowerCase();
+
+  if (normalized.includes('good') || normalized.includes('positive')) {
+    return {
+      value: 'text-primary',
+      badge: 'bg-primary/12 text-primary',
+      progress: 'var(--color-primary)',
+    };
+  }
+
+  if (normalized.includes('error') || normalized.includes('negative')) {
+    return {
+      value: 'text-destructive',
+      badge: 'bg-destructive/12 text-destructive',
+      progress: 'var(--color-destructive)',
+    };
+  }
+
+  if (normalized.includes('critical') || normalized.includes('warning')) {
+    return {
+      value: 'text-accent-foreground',
+      badge: 'bg-accent text-accent-foreground',
+      progress: 'var(--color-chart-5)',
+    };
+  }
+
+  return {
+    value: 'text-primary',
+    badge: 'bg-primary/12 text-primary',
+    progress: 'var(--color-primary)',
+  };
+};
+
 export const AnalyticalKPICard: React.FC<AnalyticalKPICardProps> = ({
   title,
   subtitle,
   value,
   unit,
-  state = ValueColor.None,
+  state,
   trend = 'None',
   deviation,
   target,
   icon,
 }) => {
-  const getStateColor = (state: ValueColor) => {
-    switch (state) {
-      case ValueColor.Good:
-      case ValueColor.Positive:
-        return 'var(--sapPositiveColor)';
-      case ValueColor.Error:
-      case ValueColor.Negative:
-        return 'var(--sapNegativeColor)';
-      case ValueColor.Critical:
-        return 'var(--sapCriticalColor)';
-      default:
-        return 'var(--sapNeutralColor)';
-    }
-  };
+  const Icon = icon ? iconMap[icon] : undefined;
+  const tone = getTone(state);
 
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case 'Up':
-        return '↑';
-      case 'Down':
-        return '↓';
-      default:
-        return '';
-    }
-  };
+  const numericValue = typeof value === 'number' ? value : Number(value);
+  const hasNumericValue = Number.isFinite(numericValue);
+  const progressValue =
+    target !== undefined && hasNumericValue && target > 0
+      ? Math.max(0, Math.min(100, (numericValue / target) * 100))
+      : undefined;
 
   return (
-    <Card
-      header={
-        <CardHeader
-          titleText={title}
-          subtitleText={subtitle}
-          avatar={icon ? <ui5-icon name={icon} /> : undefined}
-        />
-      }
-      style={{
-        width: '100%',
-        minHeight: '180px',
-      }}
-    >
-      <div
-        style={{
-          padding: '1rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem',
-        }}
-      >
-        {/* Main Value */}
-        <div
-          style={{
-            fontSize: '2rem',
-            fontWeight: 'bold',
-            color: getStateColor(state),
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: '0.25rem',
-          }}
-        >
-          <span>{value}</span>
-          {unit && (
-            <span style={{ fontSize: '1rem', fontWeight: 'normal', color: 'var(--sapTextColor)' }}>
-              {unit}
+    <Card className="overflow-hidden border-border/80 bg-card shadow-none">
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              {title}
+            </CardTitle>
+            {subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
+          </div>
+
+          {Icon && (
+            <span className={cn('inline-flex h-9 w-9 items-center justify-center rounded-md', tone.badge)}>
+              <Icon className="h-4 w-4" />
             </span>
           )}
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-3">
+        <div className="flex items-end gap-2">
+          <span className={cn('text-3xl font-semibold tracking-tight', tone.value)}>{value}</span>
+          {unit && <span className="pb-1 text-sm text-muted-foreground">{unit}</span>}
           {trend !== 'None' && (
-            <span style={{ fontSize: '1.5rem', marginLeft: '0.5rem' }}>
-              {getTrendIcon(trend)}
+            <span className="pb-1">
+              {trend === 'Up' ? (
+                <TrendingUp className="h-4 w-4 text-primary" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-destructive" />
+              )}
             </span>
           )}
         </div>
 
-        {/* Deviation */}
-        {deviation && (
-          <div style={{ fontSize: '0.875rem', color: 'var(--sapNeutralTextColor)' }}>
-            {deviation}
-          </div>
+        {(deviation || target !== undefined) && (
+          <p className="text-xs text-muted-foreground">
+            {deviation ? `${deviation} · ` : ''}
+            {target !== undefined ? `Target: ${target}` : ''}
+          </p>
         )}
 
-        {/* Target Progress */}
-        {target !== undefined && typeof value === 'number' && (
-          <div style={{ marginTop: '0.5rem' }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '0.75rem',
-                color: 'var(--sapNeutralTextColor)',
-                marginBottom: '0.25rem',
-              }}
-            >
-              <span>Progress</span>
-              <span>
-                {value} / {target}
-              </span>
+        {progressValue !== undefined && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Progress to Target</span>
+              <span>{progressValue.toFixed(0)}%</span>
             </div>
-            <div
-              style={{
-                width: '100%',
-                height: '4px',
-                backgroundColor: 'var(--sapNeutralBackground)',
-                borderRadius: '2px',
-                overflow: 'hidden',
-              }}
-            >
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
+                className="h-full rounded-full transition-all duration-300"
                 style={{
-                  width: `${Math.min(100, (value / target) * 100)}%`,
-                  height: '100%',
-                  backgroundColor: getStateColor(state),
-                  transition: 'width 0.3s ease',
+                  width: `${progressValue}%`,
+                  background: tone.progress,
                 }}
               />
             </div>
           </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   );
 };

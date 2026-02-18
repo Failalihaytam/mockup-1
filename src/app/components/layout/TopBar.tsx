@@ -1,233 +1,265 @@
-// SAP Fiori-style top bar with search, notifications, and user menu
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import {
-  ShellBar,
-  ShellBarItem,
-  Avatar,
-  Input,
-  Icon,
-  List,
-  ListItemStandard,
-  Popover,
-  ResponsivePopover,
-} from '@ui5/webcomponents-react';
+  Bell,
+  LogOut,
+  Menu,
+  Moon,
+  PanelLeft,
+  Search,
+  Settings,
+  Sun,
+  User,
+  Users,
+  X,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { getDefaultRouteForRole, useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { NotificationsAPI, UsersAPI } from '../../services/odataClient';
 import { Notification, User as UserEntity } from '../../types/entities';
-import { useNavigate } from 'react-router';
-import inetumLogoWhite from '@/assets/inetum-logo.svg';
-import inetumLogoDark from '@/assets/inetum-logo-dark.svg';
-import '@ui5/webcomponents-icons/dist/search.js';
-import '@ui5/webcomponents-icons/dist/bell.js';
-import '@ui5/webcomponents-icons/dist/palette.js';
-import '@ui5/webcomponents-icons/dist/log.js';
-import '@ui5/webcomponents-icons/dist/switch-classes.js';
-import '@ui5/webcomponents-icons/dist/employee.js';
-import '@ui5/webcomponents-icons/dist/action-settings.js';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
+import { Input } from '../ui/input';
 
 interface TopBarProps {
+  mobileOpen: boolean;
+  sidebarCollapsed: boolean;
   onMenuToggle: () => void;
+  onToggleCollapse: () => void;
 }
 
-export const TopBar: React.FC<TopBarProps> = ({ onMenuToggle }) => {
+export const TopBar: React.FC<TopBarProps> = ({
+  mobileOpen,
+  sidebarCollapsed,
+  onMenuToggle,
+  onToggleCollapse,
+}) => {
   const { currentUser, logout, switchUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [allUsers, setAllUsers] = useState<UserEntity[]>([]);
-  const navigate = useNavigate();
-  const [popoverOpen, setPopoverOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const displayName = currentUser?.name ?? 'Guest';
 
-  // Opener elements for popovers — stored in state to trigger re-render
-  const [notifOpener, setNotifOpener] = useState<HTMLElement | undefined>(undefined);
-  const [profileOpener, setProfileOpener] = useState<HTMLElement | undefined>(undefined);
-  const [switcherOpener, setSwitcherOpener] = useState<HTMLElement | undefined>(undefined);
+  const initials = useMemo(() => {
+    if (!displayName.trim()) return 'G';
+    const parts = displayName.trim().split(/\s+/);
+    const first = parts[0]?.[0] ?? '';
+    const second = parts[1]?.[0] ?? '';
+    return `${first}${second}`.toUpperCase();
+  }, [displayName]);
 
   useEffect(() => {
-    if (currentUser) {
-      loadNotifications();
-      loadUsers();
-    }
+    if (!currentUser) return;
+
+    const load = async () => {
+      try {
+        const [notificationData, users] = await Promise.all([
+          NotificationsAPI.getByUser(currentUser.id),
+          UsersAPI.getAll(),
+        ]);
+        setNotifications(notificationData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+        setAllUsers(users);
+      } catch (error) {
+        toast.error('Failed to load header data');
+      }
+    };
+
+    void load();
   }, [currentUser]);
 
-  const loadNotifications = async () => {
-    if (currentUser) {
-      const data = await NotificationsAPI.getByUser(currentUser.id);
-      setNotifications(data);
+  const unreadCount = useMemo(
+    () => notifications.filter((notification) => !notification.read).length,
+    [notifications]
+  );
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      await NotificationsAPI.markAsRead(notificationId);
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === notificationId ? { ...notification, read: true } : notification
+        )
+      );
+    } catch (error) {
+      toast.error('Failed to update notification');
     }
-  };
-
-  const loadUsers = async () => {
-    const users = await UsersAPI.getAll();
-    setAllUsers(users);
-  };
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const handleMarkAsRead = async (notificationId: string) => {
-    await NotificationsAPI.markAsRead(notificationId);
-    loadNotifications();
   };
 
   const handleSwitchUser = async (userId: string) => {
-    const selectedUser = allUsers.find((user) => user.id === userId);
-    await switchUser(userId);
-    setSwitcherOpen(false);
-    if (selectedUser) {
-      navigate(getDefaultRouteForRole(selectedUser.role), { replace: true });
-      return;
+    try {
+      const selectedUser = allUsers.find((user) => user.id === userId);
+      await switchUser(userId);
+
+      if (selectedUser) {
+        navigate(getDefaultRouteForRole(selectedUser.role), { replace: true });
+      }
+    } catch (error) {
+      toast.error('Unable to switch user');
     }
-    navigate('/dashboard', { replace: true });
   };
 
   return (
-    <>
-      <ShellBar
-        primaryTitle="Performance Portal"
-        logo={<img src={theme === 'dark' ? inetumLogoWhite : inetumLogoDark} alt="Inetum Logo" style={{ height: '28px' }} />}
-        profile={
-          <Avatar>
-            <img
-              src={`https://ui-avatars.com/api/?name=${currentUser?.name}&background=random`}
-              alt="Profile"
-            />
-          </Avatar>
-        }
-        onProfileClick={(e) => {
-          setProfileOpener(e.detail.targetRef as HTMLElement);
-          setUserMenuOpen(true);
-        }}
-        notificationsCount={unreadCount > 0 ? unreadCount.toString() : undefined}
-        showNotifications={unreadCount > 0}
-        onNotificationsClick={(e) => {
-          setNotifOpener(e.detail.targetRef as HTMLElement);
-          setPopoverOpen(true);
-        }}
-        startButton={
-          <Icon
-            name="menu2"
-            onClick={onMenuToggle}
-            className="ui5-shellbar-menu-button-left"
-          />
-        }
-      >
-        <Input
-          slot="searchField"
-          icon={<Icon name="search" />}
-          placeholder="Search (mock)"
-        />
-        <ShellBarItem
-          icon="palette"
-          text="Theme"
-          onClick={toggleTheme}
-          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-        />
-        <ShellBarItem
-          icon="switch-classes"
-          text="Switch User"
-          onClick={(e) => {
-            setSwitcherOpener(e.detail.targetRef as HTMLElement);
-            setSwitcherOpen(true);
-          }}
-          title="Switch User (Demo)"
-        />
-      </ShellBar>
+    <header className="sticky top-0 z-30 border-b border-border bg-surface-1">
+      <div className="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={onMenuToggle}
+          aria-expanded={mobileOpen}
+          aria-controls="app-mobile-navigation"
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <span className="sr-only">Toggle navigation</span>
+        </Button>
 
-      {/* Notifications Popover */}
-      <ResponsivePopover
-        open={popoverOpen}
-        opener={notifOpener}
-        onClose={() => setPopoverOpen(false)}
-        placement="Bottom"
-        headerText="Notifications"
-      >
-        <List>
-          {notifications.length === 0 ? (
-            <ListItemStandard>No notifications</ListItemStandard>
-          ) : (
-            notifications.map((notification) => (
-              <ListItemStandard
-                key={notification.id}
-                description={notification.message}
-                additionalText={new Date(notification.createdAt).toLocaleDateString()}
-                additionalTextState="None"
-                onClick={() => handleMarkAsRead(notification.id)}
-                icon={notification.read ? 'accept' : 'bell'}
-              >
-                {notification.title}
-              </ListItemStandard>
-            ))
-          )}
-        </List>
-      </ResponsivePopover>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden md:inline-flex"
+          onClick={onToggleCollapse}
+          aria-pressed={sidebarCollapsed}
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <PanelLeft className="h-4 w-4" />
+          <span className="sr-only">Toggle sidebar width</span>
+        </Button>
 
-      {/* User Menu Popover */}
-      <Popover
-        open={userMenuOpen}
-        opener={profileOpener}
-        onClose={() => setUserMenuOpen(false)}
-        placement="Bottom"
-        headerText="User Profile"
-      >
-        <div className="p-4">
-          <div className="font-bold text-foreground">{currentUser?.name}</div>
-          <div className="text-sm text-muted-foreground">{currentUser?.email}</div>
-          <div className="text-xs text-muted-foreground mt-1">{currentUser?.role}</div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            SAP Performance Management
+          </p>
+          <p className="truncate text-sm font-semibold text-foreground sm:text-base">{displayName}</p>
         </div>
-        <List>
-          <ListItemStandard
-            icon="employee"
-            onClick={() => {
-              setUserMenuOpen(false);
-              navigate('/profile');
-            }}
-          >
-            My Profile
-          </ListItemStandard>
-          <ListItemStandard
-            icon="action-settings"
-            onClick={() => {
-              setUserMenuOpen(false);
-              navigate('/settings');
-            }}
-          >
-            Settings
-          </ListItemStandard>
-          <ListItemStandard icon="log" onClick={handleLogout}>
-            Logout
-          </ListItemStandard>
-        </List>
-      </Popover>
 
-      {/* User Switcher Popover */}
-      <Popover
-        open={switcherOpen}
-        opener={switcherOpener}
-        onClose={() => setSwitcherOpen(false)}
-        placement="Bottom"
-        headerText="Switch User"
-      >
-        <List>
-          {allUsers.map((user) => (
-            <ListItemStandard
-              key={user.id}
-              description={user.role}
-              onClick={() => handleSwitchUser(user.id)}
-              selected={currentUser?.id === user.id}
+        <div className="relative ml-auto hidden w-full max-w-sm lg:block">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="border-border/70 bg-surface-2 pl-9 focus-visible:ring-2"
+            placeholder="Search projects, users, tickets..."
+          />
+        </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground"
+          onClick={toggleTheme}
+          aria-pressed={theme === 'dark'}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative text-muted-foreground">
+              <Bell className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <Badge className="absolute -right-1.5 -top-1.5 h-5 min-w-5 rounded-full px-1.5 text-[10px]">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Badge>
+              )}
+              <span className="sr-only">Open notifications</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[320px]">
+            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {notifications.length === 0 ? (
+              <p className="px-2 py-4 text-sm text-muted-foreground">No notifications</p>
+            ) : (
+              notifications.slice(0, 8).map((notification) => (
+                <DropdownMenuItem
+                  key={notification.id}
+                  onSelect={() => void markNotificationAsRead(notification.id)}
+                  className="flex cursor-pointer flex-col items-start gap-1"
+                >
+                  <div className="flex w-full items-start justify-between gap-2">
+                    <span className="font-medium text-foreground">{notification.title}</span>
+                    {!notification.read && <span className="mt-1 h-2 w-2 rounded-full bg-primary" />}
+                  </div>
+                  <span className="text-xs text-muted-foreground">{notification.message}</span>
+                </DropdownMenuItem>
+              ))
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-10 gap-2 rounded-full px-2" aria-label="Open account menu">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary/12 font-semibold text-primary">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuLabel className="space-y-1">
+              <p className="font-semibold text-foreground">{currentUser?.name}</p>
+              <p className="text-xs font-normal text-muted-foreground">{currentUser?.email}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => navigate('/profile')}>
+              <User className="h-4 w-4" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate('/settings')}>
+              <Settings className="h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+            {allUsers.length > 1 && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Users className="h-4 w-4" />
+                    Switch User
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-56">
+                    {allUsers.map((user) => (
+                      <DropdownMenuItem key={user.id} onSelect={() => void handleSwitchUser(user.id)}>
+                        <span className="truncate">{user.name}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={(e) => {
+                // Prevent Radix from closing the menu and interfering
+                e.preventDefault();
+                logout();
+                // Navigate after state has cleared
+                queueMicrotask(() => navigate('/login', { replace: true }));
+              }}
             >
-              {user.name}
-            </ListItemStandard>
-          ))}
-        </List>
-      </Popover>
-    </>
+              <LogOut className="h-4 w-4" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
   );
 };

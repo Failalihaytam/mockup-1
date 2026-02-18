@@ -1,17 +1,29 @@
-// Theme context for dark/light mode toggle
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ThemeProvider as UI5ThemeProvider } from '@ui5/webcomponents-react';
-import { setTheme as setUI5Theme } from '@ui5/webcomponents-base/dist/config/Theme.js';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
+  setTheme: (theme: Theme) => void;
 }
 
+const STORAGE_KEY = 'theme';
+
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+const getInitialTheme = (): Theme => {
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
+
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  if (stored === 'light' || stored === 'dark') {
+    return stored;
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
@@ -21,38 +33,48 @@ export const useTheme = () => {
   return context;
 };
 
-const UI5_LIGHT = 'sap_horizon';
-const UI5_DARK = 'sap_horizon_dark';
-
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem('theme') as Theme | null;
-    if (stored) return stored;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-
-    // Sync UI5 Web Components theme
-    void setUI5Theme(theme === 'dark' ? UI5_DARK : UI5_LIGHT);
+    root.classList.toggle('dark', theme === 'dark');
+    root.style.colorScheme = theme;
+    window.localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY) return;
+      if (event.newValue === 'light' || event.newValue === 'dark') {
+        setThemeState(event.newValue);
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  const setTheme = useCallback((nextTheme: Theme) => {
+    setThemeState(nextTheme);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      theme,
+      toggleTheme,
+      setTheme,
+    }),
+    [setTheme, theme, toggleTheme]
+  );
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <UI5ThemeProvider>
-        {children}
-      </UI5ThemeProvider>
+    <ThemeContext.Provider value={value}>
+      {children}
     </ThemeContext.Provider>
   );
 };

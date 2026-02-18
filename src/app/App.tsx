@@ -1,17 +1,21 @@
 import { RouterProvider } from 'react-router';
-import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
-import { router } from './routes';
 import { Toaster } from 'sonner';
-import '@ui5/webcomponents/dist/Assets';
-import '@ui5/webcomponents-fiori/dist/Assets';
+import { router } from './routes';
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+
+const ThemedToaster = () => {
+  const { theme } = useTheme();
+
+  return <Toaster position="top-right" richColors theme={theme} />;
+};
 
 export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <RouterProvider router={router} />
-        <Toaster position="top-right" richColors />
+        <ThemedToaster />
       </AuthProvider>
     </ThemeProvider>
   );

@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
-import { ProjectsAPI, TasksAPI, UsersAPI } from '../../services/odataClient';
+import { NotificationsAPI, ProjectsAPI, TasksAPI, UsersAPI } from '../../services/odataClient';
 import { Project, Task, TaskStatus, User } from '../../types/entities';
 import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { Label } from '../../components/ui/label';
+import { Input } from '../../components/ui/input';
 
 export const RisksAndCriticalTasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -66,17 +68,99 @@ export const RisksAndCriticalTasks: React.FC = () => {
     };
   }, [tasks]);
 
-  const updateTask = async (taskId: string, patch: Partial<Task>) => {
+  const consultantAssignees = useMemo(
+    () =>
+      users.filter(
+        (user) =>
+          user.role === 'CONSULTANT_TECHNIQUE' || user.role === 'CONSULTANT_FONCTIONNEL'
+      ),
+    [users]
+  );
+
+  const notifyAssignee = async (userId: string | undefined, title: string, message: string) => {
+    if (!userId) return;
+    try {
+      await NotificationsAPI.create({
+        userId,
+        type: 'TASK_UPDATED',
+        title,
+        message,
+        read: false,
+      });
+    } catch {
+      // Silent in mock mode.
+    }
+  };
+
+  const updateTask = async (taskId: string, patch: Partial<Task>): Promise<Task | null> => {
     try {
       const updated = await TasksAPI.update(taskId, patch);
       setTasks((prev) => prev.map((task) => (task.id === taskId ? updated : task)));
+      return updated;
     } catch (error) {
       toast.error('Failed to update task');
+      return null;
     }
   };
 
   const setMitigation = async (task: Task, mitigation: string) => {
-    await updateTask(task.id, { comments: mitigation });
+    const nextComment = mitigation.trim();
+    if ((task.comments ?? '') === nextComment) return;
+
+    const updated = await updateTask(task.id, { comments: nextComment });
+    if (updated) {
+      await notifyAssignee(
+        updated.assigneeId,
+        'Mitigation Updated',
+        `${updated.title}: mitigation notes were updated by manager.`
+      );
+    }
+  };
+
+  const setStatus = async (task: Task, status: TaskStatus) => {
+    const updated = await updateTask(task.id, { status });
+    if (updated) {
+      await notifyAssignee(
+        updated.assigneeId,
+        'Task Status Updated',
+        `${updated.title}: status changed to ${status}.`
+      );
+    }
+  };
+
+  const setRisk = async (task: Task, riskLevel: Task['riskLevel']) => {
+    const updated = await updateTask(task.id, { riskLevel });
+    if (updated) {
+      await notifyAssignee(
+        updated.assigneeId,
+        'Risk Level Updated',
+        `${updated.title}: risk level changed to ${riskLevel}.`
+      );
+    }
+  };
+
+  const setAssignee = async (task: Task, assigneeId: string) => {
+    const nextAssigneeId = assigneeId || undefined;
+    const updated = await updateTask(task.id, { assigneeId: nextAssigneeId });
+    if (updated && nextAssigneeId) {
+      await notifyAssignee(
+        nextAssigneeId,
+        'Task Reassigned',
+        `${updated.title}: you have been assigned as mitigation owner.`
+      );
+    }
+  };
+
+  const setDeadline = async (task: Task, plannedEnd: string) => {
+    if (!plannedEnd || task.plannedEnd === plannedEnd) return;
+    const updated = await updateTask(task.id, { plannedEnd });
+    if (updated) {
+      await notifyAssignee(
+        updated.assigneeId,
+        'Deadline Updated',
+        `${updated.title}: deadline changed to ${new Date(plannedEnd).toLocaleDateString()}.`
+      );
+    }
   };
 
   const statusOptions: TaskStatus[] = ['TO_DO', 'IN_PROGRESS', 'BLOCKED', 'DONE'];
@@ -96,15 +180,15 @@ export const RisksAndCriticalTasks: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-card border border-border rounded-lg p-4">
             <p className="text-xs text-muted-foreground">Blocked Tasks</p>
-            <p className="text-2xl font-semibold text-red-500">{counts.blocked}</p>
+            <p className="text-2xl font-semibold text-destructive">{counts.blocked}</p>
           </div>
           <div className="bg-card border border-border rounded-lg p-4">
             <p className="text-xs text-muted-foreground">High Risk</p>
-            <p className="text-2xl font-semibold text-orange-500">{counts.highRisk}</p>
+            <p className="text-2xl font-semibold text-primary">{counts.highRisk}</p>
           </div>
           <div className="bg-card border border-border rounded-lg p-4">
             <p className="text-xs text-muted-foreground">Critical Risk</p>
-            <p className="text-2xl font-semibold text-red-600">{counts.criticalRisk}</p>
+            <p className="text-2xl font-semibold text-destructive">{counts.criticalRisk}</p>
           </div>
           <div className="bg-card border border-border rounded-lg p-4">
             <p className="text-xs text-muted-foreground">Critical Tasks</p>
@@ -113,14 +197,15 @@ export const RisksAndCriticalTasks: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-between">
-          <label className="inline-flex items-center gap-2 text-sm text-foreground">
+          <Label htmlFor="show-critical-risks" className="inline-flex items-center gap-2 text-sm text-foreground">
             <input
+              id="show-critical-risks"
               type="checkbox"
               checked={showOnlyCritical}
               onChange={(e) => setShowOnlyCritical(e.target.checked)}
             />
             Show only critical or risky tasks
-          </label>
+          </Label>
           <div className="text-sm text-muted-foreground">
             {rows.length} tasks displayed
           </div>
@@ -146,6 +231,9 @@ export const RisksAndCriticalTasks: React.FC = () => {
                   Risk
                 </th>
                 <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
+                  Deadline
+                </th>
+                <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
                   Mitigation
                 </th>
               </tr>
@@ -153,13 +241,13 @@ export const RisksAndCriticalTasks: React.FC = () => {
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                     Loading risk register...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                     No matching tasks.
                   </td>
                 </tr>
@@ -170,7 +258,7 @@ export const RisksAndCriticalTasks: React.FC = () => {
                       <div className="font-medium flex items-center gap-2">
                         {task.title}
                         {task.isCritical && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-red-500/10 text-red-600">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-destructive/12 text-destructive">
                             <AlertTriangle className="w-3 h-3" />
                             Critical
                           </span>
@@ -184,16 +272,23 @@ export const RisksAndCriticalTasks: React.FC = () => {
                       {projects.find((project) => project.id === task.projectId)?.name ?? '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {users.find((user) => user.id === task.assigneeId)?.name ?? 'Unassigned'}
+                      <select
+                        value={task.assigneeId ?? ''}
+                        onChange={(event) => void setAssignee(task, event.target.value)}
+                        className="min-w-[190px] rounded border border-border bg-card px-2 py-1 text-sm text-foreground"
+                      >
+                        <option value="">Unassigned</option>
+                        {consultantAssignees.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.name}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-4 py-3">
                       <select
                         value={task.status}
-                        onChange={(e) =>
-                          void updateTask(task.id, {
-                            status: e.target.value as TaskStatus,
-                          })
-                        }
+                        onChange={(event) => void setStatus(task, event.target.value as TaskStatus)}
                         className="px-2 py-1 border border-border rounded bg-card text-sm text-foreground"
                       >
                         {statusOptions.map((status) => (
@@ -206,11 +301,7 @@ export const RisksAndCriticalTasks: React.FC = () => {
                     <td className="px-4 py-3">
                       <select
                         value={task.riskLevel}
-                        onChange={(e) =>
-                          void updateTask(task.id, {
-                            riskLevel: e.target.value as Task['riskLevel'],
-                          })
-                        }
+                        onChange={(event) => void setRisk(task, event.target.value as Task['riskLevel'])}
                         className="px-2 py-1 border border-border rounded bg-card text-sm text-foreground"
                       >
                         <option value="NONE">NONE</option>
@@ -221,9 +312,17 @@ export const RisksAndCriticalTasks: React.FC = () => {
                       </select>
                     </td>
                     <td className="px-4 py-3">
+                      <Input
+                        type="date"
+                        defaultValue={task.plannedEnd}
+                        className="min-w-[170px]"
+                        onBlur={(event) => void setDeadline(task, event.target.value)}
+                      />
+                    </td>
+                    <td className="px-4 py-3">
                       <textarea
                         defaultValue={task.comments ?? ''}
-                        onBlur={(e) => void setMitigation(task, e.target.value)}
+                        onBlur={(event) => void setMitigation(task, event.target.value)}
                         placeholder="Mitigation action / blocker details"
                         rows={2}
                         className="w-full min-w-[240px] px-2 py-1 border border-border rounded bg-card text-sm text-foreground"

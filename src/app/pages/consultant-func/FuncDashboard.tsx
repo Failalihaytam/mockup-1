@@ -1,229 +1,151 @@
-﻿// Functional Consultant Dashboard
-
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { CheckCircle2, ClipboardList, FileText, TicketCheck, Timer } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { KPICard } from '../../components/common/KPICard';
 import { useAuth } from '../../context/AuthContext';
 import { DeliverablesAPI, TicketsAPI } from '../../services/odataClient';
 import { Deliverable, Ticket } from '../../types/entities';
-import { useNavigate } from 'react-router';
-import {
-  Card,
-  CardHeader,
-  AnalyticalTable,
-  Button,
-  List,
-  ListItemStandard,
-  Icon,
-} from '@ui5/webcomponents-react';
-import '@ui5/webcomponents-icons/dist/table-view.js';
-import '@ui5/webcomponents-icons/dist/document.js';
-import '@ui5/webcomponents-icons/dist/incident.js';
-
-const kpiColumns = [
-  { Header: 'KPI', accessor: 'name', width: 200 },
-  { Header: 'Formula', accessor: 'formula', width: 320 },
-  { Header: 'Source', accessor: 'source', width: 150 },
-  { Header: 'Refresh', accessor: 'refresh', width: 150 },
-];
-
-const kpiReferences = [
-  {
-    name: 'Pending Deliverables',
-    formula: "count(deliverable.validationStatus = 'PENDING')",
-    source: 'Deliverables',
-    refresh: 'On dashboard load',
-  },
-  {
-    name: 'Approved Deliverables',
-    formula: "count(deliverable.validationStatus = 'APPROVED')",
-    source: 'Deliverables',
-    refresh: 'On dashboard load',
-  },
-  {
-    name: 'Open Tickets',
-    formula: "count(ticket.status in ['OPEN', 'IN_PROGRESS'])",
-    source: 'Tickets',
-    refresh: 'On dashboard load',
-  },
-  {
-    name: 'Resolved Tickets',
-    formula: "count(ticket.status = 'RESOLVED')",
-    source: 'Tickets',
-    refresh: 'On dashboard load',
-  },
-];
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
 
 export const FuncDashboard: React.FC = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
+
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    if (currentUser) {
-      loadDashboardData();
-    }
+    if (!currentUser) return;
+
+    const loadData = async () => {
+      setLoading(true);
+
+      try {
+        const [deliverableData, ticketData] = await Promise.all([
+          DeliverablesAPI.getAll(),
+          TicketsAPI.getAll(),
+        ]);
+
+        setDeliverables(deliverableData);
+        setTickets(ticketData.filter((ticket) => ticket.createdBy === currentUser.id));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadData();
   }, [currentUser]);
 
-  const loadDashboardData = async () => {
-    if (!currentUser) return;
-    setLoading(true);
-    try {
-      const deliverablesData = await DeliverablesAPI.getAll();
-      setDeliverables(deliverablesData);
-
-      const ticketsData = await TicketsAPI.getAll();
-      const myTickets = ticketsData.filter((t) => t.createdBy === currentUser.id);
-      setTickets(myTickets);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const pendingDeliverables = deliverables.filter(
-    (d) => d.validationStatus === 'PENDING'
+    (deliverable) => deliverable.validationStatus === 'PENDING'
   ).length;
   const approvedDeliverables = deliverables.filter(
-    (d) => d.validationStatus === 'APPROVED'
+    (deliverable) => deliverable.validationStatus === 'APPROVED'
   ).length;
   const openTickets = tickets.filter(
-    (t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS'
+    (ticket) => ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS'
   ).length;
-  const resolvedTickets = tickets.filter((t) => t.status === 'RESOLVED').length;
-
-  const getTicketState = (status: string) => {
-    switch (status) {
-      case 'RESOLVED':
-        return 'Positive';
-      case 'IN_PROGRESS':
-        return 'Information';
-      case 'OPEN':
-        return 'Critical';
-      default:
-        return 'None';
-    }
-  };
+  const resolvedTickets = tickets.filter((ticket) => ticket.status === 'RESOLVED').length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <PageHeader
-        title={`Welcome back, ${currentUser?.name.split(' ')[0]}!`}
-        subtitle="Your functional consultant dashboard"
+        title={`Welcome back, ${currentUser?.name.split(' ')[0] ?? 'Consultant'}`}
+        subtitle="Functional delivery cockpit for validations, tickets, and collaboration"
         breadcrumbs={[{ label: 'My Dashboard' }]}
       />
 
-      <div className="p-6 space-y-6">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <KPICard
-            title="Pending Deliverables"
-            value={pendingDeliverables}
-            icon="document"
-            color="yellow"
-          />
-          <KPICard
-            title="Approved Deliverables"
-            value={approvedDeliverables}
-            icon="accept"
-            color="green"
-          />
-          <KPICard
-            title="Open Tickets"
-            value={openTickets}
-            icon="incident"
-            color="blue"
-          />
-          <KPICard
-            title="Resolved Tickets"
-            value={resolvedTickets}
-            icon="history"
-            color="purple"
-          />
+      <div className="space-y-6 p-6 lg:p-8">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <KPICard title="Pending Deliverables" value={pendingDeliverables} icon="document" color="yellow" />
+          <KPICard title="Approved Deliverables" value={approvedDeliverables} icon="accept" color="green" />
+          <KPICard title="Open Tickets" value={openTickets} icon="incident" color="blue" />
+          <KPICard title="Resolved Tickets" value={resolvedTickets} icon="history" color="purple" />
         </div>
 
-        {/* KPI Definitions */}
-        <Card
-          header={
-            <CardHeader
-              titleText="KPI Definitions"
-              subtitleText="Formula / Source / Refresh"
-              avatar={<Icon name="table-view" />}
-            />
-          }
-        >
-          <AnalyticalTable
-            columns={kpiColumns}
-            data={kpiReferences}
-            minRows={4}
-            visibleRows={4}
-            scaleWidthMode="Smart"
-            alternateRowColor
-          />
-        </Card>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <Card className="bg-card/92">
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+              <CardTitle className="inline-flex items-center gap-2 text-lg">
+                <FileText className="h-4 w-4 text-primary" />
+                Deliverables Awaiting Validation
+              </CardTitle>
+              <Button variant="secondary" size="sm" onClick={() => navigate('/consultant-func/deliverables')}>
+                View All
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {loading ? (
+                <p className="text-sm text-muted-foreground">Loading deliverables...</p>
+              ) : (
+                deliverables
+                  .filter((deliverable) => deliverable.validationStatus === 'PENDING')
+                  .slice(0, 6)
+                  .map((deliverable) => (
+                    <button
+                      key={deliverable.id}
+                      type="button"
+                      onClick={() => navigate('/consultant-func/deliverables')}
+                      className="w-full rounded-xl border border-border/70 bg-surface-1 p-4 text-left transition hover-lift"
+                    >
+                      <p className="font-semibold text-foreground">{deliverable.name}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{deliverable.type}</p>
+                      <div className="mt-3 flex items-center justify-between text-xs">
+                        <span className="inline-flex items-center gap-1 text-primary">
+                          <Timer className="h-3.5 w-3.5" /> Pending Review
+                        </span>
+                        <span className="text-muted-foreground">
+                          {new Date(deliverable.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </button>
+                  ))
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Pending Deliverables */}
-        <Card
-          header={
-            <CardHeader
-              titleText="Deliverables Awaiting Validation"
-              subtitleText={`${deliverables.filter((d) => d.validationStatus === 'PENDING').length} pending`}
-              avatar={<Icon name="document" />}
-              action={
-                <Button design="Transparent" onClick={() => navigate('/consultant-func/deliverables')}>
-                  View All
-                </Button>
-              }
-            />
-          }
-        >
-          <List>
-            {deliverables
-              .filter((d) => d.validationStatus === 'PENDING')
-              .slice(0, 5)
-              .map((deliverable) => (
-                <ListItemStandard
-                  key={deliverable.id}
-                  description={deliverable.type}
-                  additionalText="Pending"
-                  additionalTextState="Critical"
-                  onClick={() => navigate('/consultant-func/deliverables')}
-                >
-                  {deliverable.name}
-                </ListItemStandard>
+          <Card className="bg-card/92">
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+              <CardTitle className="inline-flex items-center gap-2 text-lg">
+                <ClipboardList className="h-4 w-4 text-primary" />
+                My Recent Tickets
+              </CardTitle>
+              <Button variant="secondary" size="sm" onClick={() => navigate('/consultant-func/tickets')}>
+                Manage Tickets
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {tickets.slice(0, 6).map((ticket) => (
+                <div key={ticket.id} className="rounded-xl border border-border/70 bg-surface-1 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-semibold text-foreground">{ticket.title}</p>
+                    <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                      {ticket.priority}
+                    </span>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{ticket.description}</p>
+                  <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      {ticket.status === 'RESOLVED' ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                      ) : (
+                        <TicketCheck className="h-3.5 w-3.5 text-primary" />
+                      )}
+                      {ticket.status}
+                    </span>
+                    <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
               ))}
-          </List>
-        </Card>
-
-        {/* Recent Tickets */}
-        <Card
-          header={
-            <CardHeader
-              titleText="My Recent Tickets"
-              subtitleText={`${tickets.length} total ticket${tickets.length !== 1 ? 's' : ''}`}
-              avatar={<Icon name="incident" />}
-              action={
-                <Button design="Transparent" onClick={() => navigate('/consultant-func/tickets')}>
-                  View All
-                </Button>
-              }
-            />
-          }
-        >
-          <List>
-            {tickets.slice(0, 5).map((ticket) => (
-              <ListItemStandard
-                key={ticket.id}
-                description={ticket.description}
-                additionalText={ticket.status}
-                additionalTextState={getTicketState(ticket.status)}
-              >
-                {ticket.title}
-              </ListItemStandard>
-            ))}
-          </List>
-        </Card>
+              {tickets.length === 0 && (
+                <p className="text-sm text-muted-foreground">No tickets created yet.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

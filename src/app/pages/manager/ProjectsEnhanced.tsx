@@ -1,63 +1,99 @@
-// Projects List - SAP Fiori AnalyticalTable with FilterBar Pattern
-import React, { useEffect, useState } from 'react';
-import {
-  DynamicPage,
-  DynamicPageTitle,
-  DynamicPageHeader,
-  FlexBox,
-  FlexBoxDirection,
-  FlexBoxJustifyContent,
-  FlexBoxAlignItems,
-  Button,
-  FilterBar,
-  FilterGroupItem,
-  Input,
-  Select,
-  Option,
-  Label,
-  Title,
-  AnalyticalTable,
-  Tag,
-  ProgressIndicator,
-  ObjectStatus,
-  Dialog,
-  Form,
-  FormGroup,
-  FormItem,
-  TextArea,
-  DatePicker,
-} from '@ui5/webcomponents-react';
-import { ProjectsAPI } from '../../services/odataClient';
-import { Project, ProjectStatus, Priority } from '../../types/entities';
+﻿import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { Edit3, Plus, RefreshCcw, Trash2, FolderSearch } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageHeader } from '../../components/common/PageHeader';
+import { useAuth } from '../../context/AuthContext';
+import { ProjectsAPI } from '../../services/odataClient';
+import { Priority, Project, ProjectStatus } from '../../types/entities';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
+import { Progress } from '../../components/ui/progress';
 
-import '@ui5/webcomponents-icons/dist/add.js';
-import '@ui5/webcomponents-icons/dist/edit.js';
-import '@ui5/webcomponents-icons/dist/delete.js';
-import '@ui5/webcomponents-icons/dist/refresh.js';
-import '@ui5/webcomponents-icons/dist/excel-attachment.js';
-import '@ui5/webcomponents-icons/dist/filter.js';
+const STATUS_OPTIONS: ProjectStatus[] = ['PLANNED', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
+const PRIORITY_OPTIONS: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+
+type DialogMode = 'create' | 'edit' | null;
+
+interface ProjectFormState {
+  name: string;
+  description: string;
+  status: ProjectStatus;
+  priority: Priority;
+  startDate: string;
+  endDate: string;
+  progress: number;
+  budget: string;
+}
+
+const DEFAULT_FORM: ProjectFormState = {
+  name: '',
+  description: '',
+  status: 'PLANNED',
+  priority: 'MEDIUM',
+  startDate: new Date().toISOString().slice(0, 10),
+  endDate: new Date().toISOString().slice(0, 10),
+  progress: 0,
+  budget: '',
+};
+
+const statusStyles: Record<ProjectStatus, string> = {
+  PLANNED: 'bg-muted text-muted-foreground',
+  ACTIVE: 'bg-primary/12 text-primary',
+  ON_HOLD: 'bg-accent text-accent-foreground',
+  COMPLETED: 'bg-secondary text-secondary-foreground',
+  CANCELLED: 'bg-destructive/12 text-destructive',
+};
+
+const priorityStyles: Record<Priority, string> = {
+  LOW: 'bg-secondary text-secondary-foreground',
+  MEDIUM: 'bg-accent text-accent-foreground',
+  HIGH: 'bg-primary/12 text-primary',
+  CRITICAL: 'bg-destructive/12 text-destructive',
+};
 
 export const ProjectsEnhanced: React.FC = () => {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+
   const [projects, setProjects] = useState<Project[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  
-  // Filter states
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'ALL'>('ALL');
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'ALL'>('ALL');
 
-  useEffect(() => {
-    loadProjects();
-  }, []);
+  const [dialogMode, setDialogMode] = useState<DialogMode>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [form, setForm] = useState<ProjectFormState>(DEFAULT_FORM);
+  const [saving, setSaving] = useState(false);
+  const [projectPendingDelete, setProjectPendingDelete] = useState<Project | null>(null);
 
   useEffect(() => {
-    applyFilters();
-  }, [projects, searchQuery, statusFilter, priorityFilter]);
+    void loadProjects();
+  }, []);
 
   const loadProjects = async () => {
     setLoading(true);
@@ -71,351 +107,484 @@ export const ProjectsEnhanced: React.FC = () => {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...projects];
+  const filteredProjects = useMemo(() => {
+    return projects.filter((project) => {
+      const query = searchQuery.trim().toLowerCase();
+      const matchesQuery =
+        !query ||
+        project.name.toLowerCase().includes(query) ||
+        project.description.toLowerCase().includes(query);
+      const matchesStatus = statusFilter === 'ALL' || project.status === statusFilter;
+      const matchesPriority = priorityFilter === 'ALL' || project.priority === priorityFilter;
+      return matchesQuery && matchesStatus && matchesPriority;
+    });
+  }, [projects, priorityFilter, searchQuery, statusFilter]);
 
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(query) ||
-          p.description.toLowerCase().includes(query)
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== 'ALL') {
-      filtered = filtered.filter((p) => p.status === statusFilter);
-    }
-
-    // Priority filter
-    if (priorityFilter !== 'ALL') {
-      filtered = filtered.filter((p) => p.priority === priorityFilter);
-    }
-
-    setFilteredProjects(filtered);
-  };
-
-  const handleClearFilters = () => {
+  const resetFilters = () => {
     setSearchQuery('');
     setStatusFilter('ALL');
     setPriorityFilter('ALL');
   };
 
-  const getStatusState = (status: ProjectStatus): string => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'Positive';
-      case 'PLANNED':
-        return 'Information';
-      case 'ON_HOLD':
-        return 'Critical';
-      case 'COMPLETED':
-        return 'Positive';
-      case 'CANCELLED':
-        return 'Negative';
-      default:
-        return 'None';
+  const openCreateDialog = () => {
+    setSelectedProject(null);
+    setForm(DEFAULT_FORM);
+    setDialogMode('create');
+  };
+
+  const openEditDialog = (project: Project) => {
+    setSelectedProject(project);
+    setForm({
+      name: project.name,
+      description: project.description,
+      status: project.status,
+      priority: project.priority,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      progress: project.progress ?? 0,
+      budget: project.budget !== undefined ? String(project.budget) : '',
+    });
+    setDialogMode('edit');
+  };
+
+  const closeDialog = () => {
+    setDialogMode(null);
+    setSelectedProject(null);
+    setForm(DEFAULT_FORM);
+  };
+
+  const saveProject = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!form.name.trim()) {
+      toast.error('Project name is required');
+      return;
     }
-  };
 
-  const getPriorityColorScheme = (priority: Priority): string => {
-    switch (priority) {
-      case 'CRITICAL':
-        return '1';
-      case 'HIGH':
-        return '2';
-      case 'MEDIUM':
-        return '6';
-      case 'LOW':
-        return '8';
-      default:
-        return '8';
+    if (!form.startDate || !form.endDate) {
+      toast.error('Start and end dates are required');
+      return;
     }
-  };
 
-  const formatStatus = (status: ProjectStatus): string => {
-    return status.replace('_', ' ');
-  };
+    if (form.endDate < form.startDate) {
+      toast.error('End date cannot be before start date');
+      return;
+    }
 
-  const handleDeleteProject = async (project: Project) => {
-    if (confirm(`Are you sure you want to delete "${project.name}"?`)) {
-      try {
-        await ProjectsAPI.delete(project.id);
-        toast.success('Project deleted successfully');
-        await loadProjects();
-      } catch (error) {
-        toast.error('Failed to delete project');
+    const progress = Math.max(0, Math.min(100, Number(form.progress) || 0));
+    const budgetValue = form.budget.trim() === '' ? undefined : Number(form.budget);
+
+    if (budgetValue !== undefined && Number.isNaN(budgetValue)) {
+      toast.error('Budget must be a valid number');
+      return;
+    }
+
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      status: form.status,
+      priority: form.priority,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      progress,
+      budget: budgetValue,
+      managerId: selectedProject?.managerId ?? currentUser?.id ?? 'u2',
+    };
+
+    try {
+      setSaving(true);
+      if (dialogMode === 'create') {
+        const created = await ProjectsAPI.create(payload);
+        setProjects((prev) => [created, ...prev]);
+        toast.success('Project created successfully');
+      } else if (dialogMode === 'edit' && selectedProject) {
+        const updated = await ProjectsAPI.update(selectedProject.id, payload);
+        setProjects((prev) =>
+          prev.map((project) => (project.id === selectedProject.id ? updated : project))
+        );
+        toast.success('Project updated successfully');
       }
+      closeDialog();
+    } catch (error) {
+      toast.error('Failed to save project');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const columns = [
-    {
-      Header: 'Project Name',
-      accessor: 'name',
-      width: 250,
-      Cell: ({ row }: any) => (
-        <FlexBox direction={FlexBoxDirection.Column} style={{ gap: '0.25rem' }}>
-          <span style={{ fontWeight: 600 }}>{row.original.name}</span>
-          <span style={{ fontSize: '0.875rem', color: 'var(--sapNeutralTextColor)' }}>
-            ID: {row.original.id}
-          </span>
-        </FlexBox>
-      ),
-    },
-    {
-      Header: 'Status',
-      accessor: 'status',
-      width: 150,
-      Cell: ({ value }: any) => (
-        <ObjectStatus state={getStatusState(value) as any}>
-          {formatStatus(value)}
-        </ObjectStatus>
-      ),
-    },
-    {
-      Header: 'Priority',
-      accessor: 'priority',
-      width: 120,
-      Cell: ({ value }: any) => (
-        <Tag colorScheme={getPriorityColorScheme(value)}>
-          {value}
-        </Tag>
-      ),
-    },
-    {
-      Header: 'Progress',
-      accessor: 'progress',
-      width: 200,
-      Cell: ({ value }: any) => (
-        <FlexBox direction={FlexBoxDirection.Column} style={{ gap: '0.25rem', width: '100%' }}>
-          <ProgressIndicator
-            value={value || 0}
-            valueState={value >= 75 ? 'Positive' : value >= 50 ? 'Information' : 'Critical'}
-            displayValue={`${value || 0}%`}
-          />
-        </FlexBox>
-      ),
-    },
-    {
-      Header: 'Start Date',
-      accessor: 'startDate',
-      width: 120,
-      Cell: ({ value }: any) => new Date(value).toLocaleDateString(),
-    },
-    {
-      Header: 'End Date',
-      accessor: 'endDate',
-      width: 120,
-      Cell: ({ value }: any) => new Date(value).toLocaleDateString(),
-    },
-    {
-      Header: 'Budget',
-      accessor: 'budget',
-      width: 120,
-      Cell: ({ value }: any) => (value ? `€${value.toLocaleString()}` : '-'),
-    },
-    {
-      Header: 'Actions',
-      accessor: 'id',
-      width: 150,
-      disableSortBy: true,
-      Cell: ({ row }: any) => (
-        <FlexBox style={{ gap: '0.5rem' }}>
-          <Button
-            icon="edit"
-            design="Transparent"
-            onClick={() => {
-              setSelectedProject(row.original);
-              setEditDialogOpen(true);
-            }}
-            tooltip="Edit Project"
-          />
-          <Button
-            icon="delete"
-            design="Transparent"
-            onClick={() => handleDeleteProject(row.original)}
-            tooltip="Delete Project"
-          />
-        </FlexBox>
-      ),
-    },
-  ];
+  const deleteProject = async (projectId: string) => {
+    try {
+      await ProjectsAPI.delete(projectId);
+      setProjects((prev) => prev.filter((project) => project.id !== projectId));
+      toast.success('Project deleted');
+    } catch (error) {
+      toast.error('Failed to delete project');
+    } finally {
+      setProjectPendingDelete(null);
+    }
+  };
 
   return (
-    <>
-      <DynamicPage
-        titleArea={
-          <DynamicPageTitle
-            heading={<Title>Projects</Title>}
-            actionsBar={
-              <FlexBox style={{ gap: '0.5rem' }}>
-                <Button
-                  icon="refresh"
-                  design="Transparent"
-                  onClick={loadProjects}
-                  tooltip="Refresh"
-                />
-                <Button
-                  icon="excel-attachment"
-                  design="Transparent"
-                  tooltip="Export to Excel"
-                />
-                <Button
-                  icon="add"
-                  design="Emphasized"
-                  onClick={() => setCreateDialogOpen(true)}
-                >
-                  Create Project
-                </Button>
-              </FlexBox>
-            }
-          />
+    <div className="min-h-screen bg-transparent">
+      <PageHeader
+        title="Projects"
+        subtitle="Portfolio pipeline with smart filtering, quick edits, and KPI context"
+        breadcrumbs={[
+          { label: 'Home', path: '/manager/dashboard' },
+          { label: 'Projects' },
+        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => void loadProjects()}>
+              <RefreshCcw className="h-4 w-4" />
+              Refresh
+            </Button>
+            <Button size="sm" onClick={openCreateDialog}>
+              <Plus className="h-4 w-4" />
+              New Project
+            </Button>
+          </div>
         }
-        headerArea={
-          <DynamicPageHeader>
-            <FilterBar
-              onGo={applyFilters}
-              onClear={handleClearFilters}
-              showClearOnFB
-              showGoOnFB
-              showRestoreOnFB
-              hideFilterConfiguration
-            >
-              <FilterGroupItem label="Search" filterKey="search">
-                <Input
-                  placeholder="Search projects..."
-                  value={searchQuery}
-                  onInput={(e: any) => setSearchQuery(e.target.value)}
-                  style={{ width: '300px' }}
-                />
-              </FilterGroupItem>
-              <FilterGroupItem label="Status" filterKey="status">
-                <Select
-                  value={statusFilter}
-                  onChange={(e: any) => setStatusFilter(e.detail.selectedOption.value)}
-                >
-                  <Option value="ALL">All Statuses</Option>
-                  <Option value="PLANNED">Planned</Option>
-                  <Option value="ACTIVE">Active</Option>
-                  <Option value="ON_HOLD">On Hold</Option>
-                  <Option value="COMPLETED">Completed</Option>
-                  <Option value="CANCELLED">Cancelled</Option>
-                </Select>
-              </FilterGroupItem>
-              <FilterGroupItem label="Priority" filterKey="priority">
-                <Select
-                  value={priorityFilter}
-                  onChange={(e: any) => setPriorityFilter(e.detail.selectedOption.value)}
-                >
-                  <Option value="ALL">All Priorities</Option>
-                  <Option value="LOW">Low</Option>
-                  <Option value="MEDIUM">Medium</Option>
-                  <Option value="HIGH">High</Option>
-                  <Option value="CRITICAL">Critical</Option>
-                </Select>
-              </FilterGroupItem>
-            </FilterBar>
-          </DynamicPageHeader>
-        }
-        style={{ height: '100%' }}
-      >
-        <FlexBox direction={FlexBoxDirection.Column} style={{ padding: '1rem', height: '100%' }}>
-          {filteredProjects.length === 0 && !loading ? (
-            <FlexBox
-              direction={FlexBoxDirection.Column}
-              alignItems={FlexBoxAlignItems.Center}
-              justifyContent={FlexBoxJustifyContent.Center}
-              style={{ height: '400px', gap: '1rem' }}
-            >
-              <Title level="H3">No Projects Found</Title>
-              <Label>Try adjusting your filters or create a new project</Label>
-              <Button
-                icon="add"
-                design="Emphasized"
-                onClick={() => setCreateDialogOpen(true)}
-              >
-                Create Project
-              </Button>
-            </FlexBox>
-          ) : (
-            <AnalyticalTable
-              columns={columns}
-              data={filteredProjects}
-              loading={loading}
-              sortable
-              filterable
-              groupable
-              visibleRows={15}
-              minRows={5}
-              selectionMode="Single"
-              onRowClick={(e: any) => {
-                setSelectedProject(e.detail.row.original);
-              }}
-              style={{ width: '100%', height: 'calc(100vh - 300px)' }}
-              className="animate-fade-in"
-            />
-          )}
-        </FlexBox>
-      </DynamicPage>
+      />
 
-      {/* Create Project Dialog */}
-      <Dialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        headerText="Create New Project"
-        footer={
-          <FlexBox justifyContent={FlexBoxJustifyContent.End} style={{ gap: '0.5rem', padding: '0.5rem' }}>
-            <Button design="Transparent" onClick={() => setCreateDialogOpen(false)}>
-              Cancel
+      <div className="space-y-6 p-6 lg:p-8">
+        <Card className="bg-card/92">
+          <CardContent className="grid grid-cols-1 gap-3 pt-6 md:grid-cols-[2fr_1fr_1fr_auto]">
+            <div className="space-y-1">
+              <Label htmlFor="projects-search" className="sr-only">
+                Search projects
+              </Label>
+              <Input
+                id="projects-search"
+                placeholder="Search by name or description"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="projects-status-filter" className="sr-only">
+                Filter by status
+              </Label>
+              <select
+                id="projects-status-filter"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as ProjectStatus | 'ALL')}
+                className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+              >
+                <option value="ALL">All statuses</option>
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="projects-priority-filter" className="sr-only">
+                Filter by priority
+              </Label>
+              <select
+                id="projects-priority-filter"
+                value={priorityFilter}
+                onChange={(event) => setPriorityFilter(event.target.value as Priority | 'ALL')}
+                className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+              >
+                <option value="ALL">All priorities</option>
+                {PRIORITY_OPTIONS.map((priority) => (
+                  <option key={priority} value={priority}>
+                    {priority}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Button variant="secondary" onClick={resetFilters}>
+              Reset
             </Button>
-            <Button design="Emphasized" onClick={() => {
-              toast.success('Project created successfully');
-              setCreateDialogOpen(false);
-              loadProjects();
-            }}>
-              Create
-            </Button>
-          </FlexBox>
-        }
-      >
-        <Form style={{ padding: '1rem' }}>
-          <FormGroup headerText="Basic Information">
-            <FormItem labelContent={<Label>Project Name</Label>}>
-              <Input placeholder="Enter project name" required />
-            </FormItem>
-            <FormItem labelContent={<Label>Description</Label>}>
-              <TextArea placeholder="Enter project description" rows={3} />
-            </FormItem>
-          </FormGroup>
-          <FormGroup headerText="Schedule">
-            <FormItem labelContent={<Label>Start Date</Label>}>
-              <DatePicker />
-            </FormItem>
-            <FormItem labelContent={<Label>End Date</Label>}>
-              <DatePicker />
-            </FormItem>
-          </FormGroup>
-          <FormGroup headerText="Classification">
-            <FormItem labelContent={<Label>Status</Label>}>
-              <Select>
-                <Option value="PLANNED">Planned</Option>
-                <Option value="ACTIVE">Active</Option>
-              </Select>
-            </FormItem>
-            <FormItem labelContent={<Label>Priority</Label>}>
-              <Select>
-                <Option value="LOW">Low</Option>
-                <Option value="MEDIUM">Medium</Option>
-                <Option value="HIGH">High</Option>
-                <Option value="CRITICAL">Critical</Option>
-              </Select>
-            </FormItem>
-          </FormGroup>
-        </Form>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden bg-card/92">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[980px]">
+                <thead className="bg-muted/65">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Project
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Priority
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Timeline
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Progress
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Budget
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                        Loading projects...
+                      </td>
+                    </tr>
+                  ) : filteredProjects.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-12 text-center">
+                        <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-sm text-muted-foreground">
+                          <FolderSearch className="h-8 w-8 text-muted-foreground" />
+                          <p>No projects match the current filters.</p>
+                          <Button variant="secondary" size="sm" onClick={openCreateDialog}>
+                            <Plus className="h-4 w-4" />
+                            Create project
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProjects.map((project) => (
+                      <tr key={project.id} className="border-t border-border/60 transition hover:bg-accent/35">
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/manager/projects/${project.id}`)}
+                            className="text-left font-semibold text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            {project.name}
+                          </button>
+                          <p className="mt-1 line-clamp-2 max-w-[360px] text-xs text-muted-foreground">
+                            {project.description}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={statusStyles[project.status]}>{project.status}</Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={priorityStyles[project.priority]}>{project.priority}</Badge>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          <div>{new Date(project.startDate).toLocaleDateString()}</div>
+                          <div>{new Date(project.endDate).toLocaleDateString()}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="w-44">
+                            <div className="mb-1 flex justify-between text-xs text-muted-foreground">
+                              <span>{project.progress ?? 0}%</span>
+                            </div>
+                            <Progress value={project.progress ?? 0} />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-foreground">
+                          {project.budget !== undefined ? `€${project.budget.toLocaleString()}` : '-'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => openEditDialog(project)}
+                              aria-label={`Edit ${project.name}`}
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setProjectPendingDelete(project)}
+                              aria-label={`Delete ${project.name}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Dialog open={dialogMode !== null} onOpenChange={(open) => !open && closeDialog()}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{dialogMode === 'create' ? 'Create Project' : 'Edit Project'}</DialogTitle>
+            <DialogDescription>
+              Capture project planning metadata and portfolio tracking fields.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-4" onSubmit={saveProject}>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-1.5 md:col-span-2">
+                <Label htmlFor="project-name">Project Name</Label>
+                <Input
+                  id="project-name"
+                  value={form.name}
+                  onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+                  placeholder="S/4HANA Migration Program"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5 md:col-span-2">
+                <Label htmlFor="project-description">Description</Label>
+                <Textarea
+                  id="project-description"
+                  rows={3}
+                  value={form.description}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, description: event.target.value }))
+                  }
+                  placeholder="Describe project scope, outcomes, and execution context"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="project-status">Status</Label>
+                <select
+                  id="project-status"
+                  value={form.status}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, status: event.target.value as ProjectStatus }))
+                  }
+                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                >
+                  {STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="project-priority">Priority</Label>
+                <select
+                  id="project-priority"
+                  value={form.priority}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, priority: event.target.value as Priority }))
+                  }
+                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                >
+                  {PRIORITY_OPTIONS.map((priority) => (
+                    <option key={priority} value={priority}>
+                      {priority}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="project-start-date">Start Date</Label>
+                <Input
+                  id="project-start-date"
+                  type="date"
+                  value={form.startDate}
+                  onChange={(event) => setForm((prev) => ({ ...prev, startDate: event.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="project-end-date">End Date</Label>
+                <Input
+                  id="project-end-date"
+                  type="date"
+                  value={form.endDate}
+                  onChange={(event) => setForm((prev) => ({ ...prev, endDate: event.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="project-progress">Progress (%)</Label>
+                <Input
+                  id="project-progress"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.progress}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, progress: Number(event.target.value || 0) }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="project-budget">Budget (EUR)</Label>
+                <Input
+                  id="project-budget"
+                  type="number"
+                  min={0}
+                  value={form.budget}
+                  onChange={(event) => setForm((prev) => ({ ...prev, budget: event.target.value }))}
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={closeDialog}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving
+                  ? dialogMode === 'create'
+                    ? 'Creating...'
+                    : 'Saving...'
+                  : dialogMode === 'create'
+                    ? 'Create Project'
+                    : 'Save Changes'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
       </Dialog>
-    </>
+
+      <AlertDialog
+        open={projectPendingDelete !== null}
+        onOpenChange={(open) => !open && setProjectPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete project</AlertDialogTitle>
+            <AlertDialogDescription>
+              {projectPendingDelete
+                ? `This will remove "${projectPendingDelete.name}" from the mock portfolio data.`
+                : 'This action cannot be undone.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => projectPendingDelete && void deleteProject(projectPendingDelete.id)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 };

@@ -1,27 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { Save, Bell, Globe, Palette } from 'lucide-react';
+import { toast } from 'sonner';
 import { PageHeader } from '../../components/common/PageHeader';
 import { useTheme } from '../../context/ThemeContext';
-import { toast } from 'sonner';
-import {
-  Card,
-  CardHeader,
-  Title,
-  Switch,
-  Select,
-  Option,
-  Button,
-  Label,
-  FlexBox,
-  FlexBoxAlignItems,
-  FlexBoxJustifyContent,
-  FlexBoxDirection,
-  Icon,
-  MessageStrip,
-} from '@ui5/webcomponents-react';
-import '@ui5/webcomponents-icons/dist/palette.js';
-import '@ui5/webcomponents-icons/dist/bell.js';
-import '@ui5/webcomponents-icons/dist/globe.js';
-import '@ui5/webcomponents-icons/dist/save.js';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Label } from '../../components/ui/label';
+import { Switch } from '../../components/ui/switch';
 
 interface LocalSettings {
   emailNotifications: boolean;
@@ -40,12 +25,13 @@ const DEFAULT_SETTINGS: LocalSettings = {
 };
 
 export const SettingsPage: React.FC = () => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [settings, setSettings] = useState<LocalSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
+
     try {
       const parsed = JSON.parse(raw) as LocalSettings;
       setSettings(parsed);
@@ -54,153 +40,133 @@ export const SettingsPage: React.FC = () => {
     }
   }, []);
 
-  const save = () => {
+  useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    toast.success('Settings saved');
+  }, [settings]);
+
+  const save = () => {
+    toast.success('Settings saved', {
+      description: 'Preferences are already applied and stored locally.',
+    });
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <PageHeader
         title="Settings"
-        subtitle="Application preferences for this mock environment"
+        subtitle="Personalize your workspace behavior and interface preferences"
         breadcrumbs={[{ label: 'Settings' }]}
       />
 
-      <div className="p-6 max-w-3xl space-y-6">
-        {/* Appearance */}
-        <Card
-          header={
-            <CardHeader
-              titleText="Appearance"
-              subtitleText="Customize the look and feel"
-              avatar={<Icon name="palette" />}
+      <div className="mx-auto grid max-w-4xl gap-6 p-6 lg:p-8">
+        <Card className="bg-card/92">
+          <CardHeader>
+            <CardTitle className="inline-flex items-center gap-2 text-xl">
+              <Palette className="h-4 w-4 text-primary" />
+              Appearance
+            </CardTitle>
+            <CardDescription>Choose your visual environment.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-2 p-4">
+            <div>
+              <p className="font-semibold text-foreground">Theme</p>
+              <p className="text-sm text-muted-foreground">
+                Current mode: {theme === 'dark' ? 'Dark' : 'Light'}
+              </p>
+            </div>
+            <Switch
+              checked={theme === 'dark'}
+              onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
             />
-          }
-        >
-          <div className="p-4">
-            <FlexBox
-              alignItems={FlexBoxAlignItems.Center}
-              justifyContent={FlexBoxJustifyContent.SpaceBetween}
-            >
-              <FlexBox direction={FlexBoxDirection.Column}>
-                <Label className="font-medium">Theme</Label>
-                <span className="text-xs text-muted-foreground">
-                  Current: {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
-                </span>
-              </FlexBox>
-              <Switch
-                checked={theme === 'dark'}
-                onChange={toggleTheme}
-                tooltip={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              />
-            </FlexBox>
-          </div>
+          </CardContent>
         </Card>
 
-        {/* Notifications */}
-        <Card
-          header={
-            <CardHeader
-              titleText="Notifications"
-              subtitleText="Manage how you receive updates"
-              avatar={<Icon name="bell" />}
-            />
-          }
-        >
-          <div className="p-4 space-y-4">
-            <FlexBox
-              alignItems={FlexBoxAlignItems.Center}
-              justifyContent={FlexBoxJustifyContent.SpaceBetween}
-            >
-              <Label>Email notifications</Label>
+        <Card className="bg-card/92">
+          <CardHeader>
+            <CardTitle className="inline-flex items-center gap-2 text-xl">
+              <Bell className="h-4 w-4 text-primary" />
+              Notifications
+            </CardTitle>
+            <CardDescription>Control the way updates reach you.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-2 p-4">
+              <div>
+                <p className="font-semibold text-foreground">Email notifications</p>
+                <p className="text-sm text-muted-foreground">Receive direct project alerts by email.</p>
+              </div>
               <Switch
                 checked={settings.emailNotifications}
-                onChange={() =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    emailNotifications: !prev.emailNotifications,
-                  }))
+                onCheckedChange={(checked) =>
+                  setSettings((prev) => ({ ...prev, emailNotifications: Boolean(checked) }))
                 }
               />
-            </FlexBox>
+            </div>
 
-            <FlexBox
-              alignItems={FlexBoxAlignItems.Center}
-              justifyContent={FlexBoxJustifyContent.SpaceBetween}
-            >
-              <Label>Desktop notifications</Label>
+            <div className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-2 p-4">
+              <div>
+                <p className="font-semibold text-foreground">Desktop notifications</p>
+                <p className="text-sm text-muted-foreground">Get real-time updates while active in the app.</p>
+              </div>
               <Switch
                 checked={settings.desktopNotifications}
-                onChange={() =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    desktopNotifications: !prev.desktopNotifications,
-                  }))
+                onCheckedChange={(checked) =>
+                  setSettings((prev) => ({ ...prev, desktopNotifications: Boolean(checked) }))
                 }
               />
-            </FlexBox>
+            </div>
 
-            <FlexBox
-              alignItems={FlexBoxAlignItems.Center}
-              justifyContent={FlexBoxJustifyContent.SpaceBetween}
-            >
-              <Label>Weekly KPI digest</Label>
+            <div className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-2 p-4">
+              <div>
+                <p className="font-semibold text-foreground">Weekly KPI digest</p>
+                <p className="text-sm text-muted-foreground">Summary of performance indicators each week.</p>
+              </div>
               <Switch
                 checked={settings.weeklyDigest}
-                onChange={() =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    weeklyDigest: !prev.weeklyDigest,
-                  }))
+                onCheckedChange={(checked) =>
+                  setSettings((prev) => ({ ...prev, weeklyDigest: Boolean(checked) }))
                 }
               />
-            </FlexBox>
-          </div>
+            </div>
+          </CardContent>
         </Card>
 
-        {/* Locale */}
-        <Card
-          header={
-            <CardHeader
-              titleText="Locale"
-              subtitleText="Language and region settings"
-              avatar={<Icon name="globe" />}
-            />
-          }
-        >
-          <div className="p-4">
-            <FlexBox
-              alignItems={FlexBoxAlignItems.Center}
-              justifyContent={FlexBoxJustifyContent.SpaceBetween}
+        <Card className="bg-card/92">
+          <CardHeader>
+            <CardTitle className="inline-flex items-center gap-2 text-xl">
+              <Globe className="h-4 w-4 text-primary" />
+              Locale
+            </CardTitle>
+            <CardDescription>Select your preferred language format.</CardDescription>
+          </CardHeader>
+          <CardContent className="rounded-xl border border-border/70 bg-surface-2 p-4">
+            <Label htmlFor="settings-locale" className="mb-1 block text-sm text-muted-foreground">
+              Display language
+            </Label>
+            <select
+              id="settings-locale"
+              value={settings.locale}
+              onChange={(event) =>
+                setSettings((prev) => ({ ...prev, locale: event.target.value }))
+              }
+              className="h-9 w-full max-w-xs rounded-md border border-input bg-input-background px-3 text-sm"
             >
-              <Label>Display Language</Label>
-              <Select
-                onChange={(e) => {
-                  const selected = e.detail.selectedOption?.dataset?.value;
-                  if (selected) {
-                    setSettings((prev) => ({ ...prev, locale: selected }));
-                  }
-                }}
-              >
-                <Option data-value="en-US" selected={settings.locale === 'en-US'}>
-                  English (US)
-                </Option>
-                <Option data-value="fr-FR" selected={settings.locale === 'fr-FR'}>
-                  French (FR)
-                </Option>
-              </Select>
-            </FlexBox>
-          </div>
+              <option value="en-US">English (US)</option>
+              <option value="fr-FR">French (FR)</option>
+            </select>
+          </CardContent>
         </Card>
 
-        <MessageStrip hideCloseButton>
-          Settings are stored locally in the browser for this demo environment.
-        </MessageStrip>
+        <div className="rounded-xl border border-border/70 bg-surface-2 px-4 py-3 text-sm text-muted-foreground">
+          Settings are stored locally for this mock frontend environment.
+        </div>
 
-        <Button design="Emphasized" icon="save" onClick={save}>
-          Save Settings
-        </Button>
+        <div>
+          <Button onClick={save}>
+            <Save className="h-4 w-4" />
+            Save Settings
+          </Button>
+        </div>
       </div>
     </div>
   );

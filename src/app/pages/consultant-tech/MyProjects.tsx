@@ -108,11 +108,11 @@ export const MyProjects: React.FC = () => {
                     <div className="text-xs text-muted-foreground">Assigned</div>
                   </div>
                   <div className="rounded border border-border p-2 text-center">
-                    <div className="text-xl font-semibold text-green-600">{done}</div>
+                    <div className="text-xl font-semibold text-primary">{done}</div>
                     <div className="text-xs text-muted-foreground">Done</div>
                   </div>
                   <div className="rounded border border-border p-2 text-center">
-                    <div className="text-xl font-semibold text-red-500">{blocked}</div>
+                    <div className="text-xl font-semibold text-destructive">{blocked}</div>
                     <div className="text-xs text-muted-foreground">Blocked</div>
                   </div>
                 </div>

@@ -10,6 +10,10 @@ import { Project, Ticket, User } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
 
 interface TicketForm {
   projectId: string;
@@ -146,8 +150,9 @@ export const FuncTickets: React.FC = () => {
           <h3 className="text-lg font-semibold text-foreground mb-4">Create Ticket</h3>
           <form onSubmit={submitTicket} className="space-y-3">
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Project</label>
+              <Label htmlFor="ticket-project" className="mb-1 block text-sm text-muted-foreground">Project</Label>
               <select
+                id="ticket-project"
                 value={form.projectId}
                 onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))}
                 className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
@@ -162,8 +167,9 @@ export const FuncTickets: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Assign to</label>
+              <Label htmlFor="ticket-assignee" className="mb-1 block text-sm text-muted-foreground">Assign to</Label>
               <select
+                id="ticket-assignee"
                 value={form.assignedTo}
                 onChange={(e) => setForm((prev) => ({ ...prev, assignedTo: e.target.value }))}
                 className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
@@ -178,8 +184,9 @@ export const FuncTickets: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Priority</label>
+              <Label htmlFor="ticket-priority" className="mb-1 block text-sm text-muted-foreground">Priority</Label>
               <select
+                id="ticket-priority"
                 value={form.priority}
                 onChange={(e) =>
                   setForm((prev) => ({
@@ -197,61 +204,67 @@ export const FuncTickets: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Title</label>
-              <input
+              <Label htmlFor="ticket-title" className="mb-1 block text-sm text-muted-foreground">Title</Label>
+              <Input
+                id="ticket-title"
                 value={form.title}
                 onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
                 placeholder="Brief ticket title"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Description</label>
-              <textarea
+              <Label htmlFor="ticket-description" className="mb-1 block text-sm text-muted-foreground">Description</Label>
+              <Textarea
+                id="ticket-description"
                 value={form.description}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                 rows={4}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
                 placeholder="Detailed functional issue..."
               />
             </div>
 
-            <button
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-2"
+              className="w-full"
             >
               <Plus className="w-4 h-4" />
               {isSubmitting ? 'Creating...' : 'Create Ticket'}
-            </button>
+            </Button>
           </form>
         </div>
 
         <div className="xl:col-span-2 space-y-4">
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-card border border-border rounded-lg p-3 text-center">
-              <div className="text-xl font-semibold text-yellow-600">{grouped.open}</div>
+              <div className="text-xl font-semibold text-primary">{grouped.open}</div>
               <div className="text-xs text-muted-foreground">Open</div>
             </div>
             <div className="bg-card border border-border rounded-lg p-3 text-center">
-              <div className="text-xl font-semibold text-blue-600">{grouped.inProgress}</div>
+              <div className="text-xl font-semibold text-accent-foreground">{grouped.inProgress}</div>
               <div className="text-xs text-muted-foreground">In Progress</div>
             </div>
             <div className="bg-card border border-border rounded-lg p-3 text-center">
-              <div className="text-xl font-semibold text-green-600">{grouped.resolved}</div>
+              <div className="text-xl font-semibold text-primary">{grouped.resolved}</div>
               <div className="text-xs text-muted-foreground">Resolved</div>
             </div>
           </div>
 
           <div className="bg-card border border-border rounded-lg p-3 flex flex-col sm:flex-row gap-3">
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search title or description..."
-              className="flex-1 px-3 py-2 border border-border rounded bg-card text-foreground"
-            />
+            <div className="flex-1 space-y-1">
+              <Label htmlFor="ticket-search" className="sr-only">Search tickets</Label>
+              <Input
+                id="ticket-search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search title or description..."
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="ticket-status-filter" className="sr-only">Filter by status</Label>
             <select
+              id="ticket-status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as Ticket['status'] | 'ALL')}
               className="px-3 py-2 border border-border rounded bg-card text-foreground"
@@ -263,6 +276,7 @@ export const FuncTickets: React.FC = () => {
               <option value="RESOLVED">RESOLVED</option>
               <option value="CLOSED">CLOSED</option>
             </select>
+            </div>
           </div>
 
           <div className="bg-card border border-border rounded-lg overflow-x-auto">
