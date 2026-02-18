@@ -1,5 +1,6 @@
-// CAP OData v4 Client Layer
+// CAP OData v4 Client Layer - Strict OData v4 Compliance
 // This service provides a typed interface to the CAP OData backend
+// Follows SAP CAP and OData v4 conventions strictly
 
 import {
   User,
@@ -31,25 +32,100 @@ import {
 const USE_MOCK_DATA = true; // Set to false when backend is available
 const ODATA_BASE_URL = import.meta.env.VITE_ODATA_BASE_URL || '/odata/v4/performance';
 
-// Generic OData response wrapper
-interface ODataResponse<T> {
-  value: T[];
-  '@odata.count'?: number;
+// OData v4 Query Options
+export interface ODataQueryOptions {
+  $filter?: string;
+  $select?: string;
+  $expand?: string;
+  $orderby?: string;
+  $top?: number;
+  $skip?: number;
+  $count?: boolean;
+  $search?: string;
 }
 
-// Generic fetch wrapper with error handling
+// Generic OData response wrapper (OData v4 standard)
+export interface ODataResponse<T> {
+  '@odata.context'?: string;
+  '@odata.count'?: number;
+  '@odata.nextLink'?: string;
+  value: T[];
+}
+
+// OData v4 Single Entity Response
+export interface ODataSingleResponse<T> {
+  '@odata.context'?: string;
+  '@odata.etag'?: string;
+  value?: T;
+}
+
+// OData v4 Error Response (SAP standard)
+export interface ODataError {
+  error: {
+    code: string;
+    message: string;
+    target?: string;
+    details?: Array<{
+      code: string;
+      message: string;
+      target?: string;
+    }>;
+    innererror?: {
+      errordetails?: Array<{
+        code: string;
+        message: string;
+        severity?: string;
+      }>;
+    };
+  };
+}
+
+// Build OData query string from options
+function buildQueryString(options?: ODataQueryOptions): string {
+  if (!options) return '';
+  
+  const params = new URLSearchParams();
+  
+  if (options.$filter) params.append('$filter', options.$filter);
+  if (options.$select) params.append('$select', options.$select);
+  if (options.$expand) params.append('$expand', options.$expand);
+  if (options.$orderby) params.append('$orderby', options.$orderby);
+  if (options.$top !== undefined) params.append('$top', options.$top.toString());
+  if (options.$skip !== undefined) params.append('$skip', options.$skip.toString());
+  if (options.$count) params.append('$count', 'true');
+  if (options.$search) params.append('$search', options.$search);
+  
+  const queryString = params.toString();
+  return queryString ? `?${queryString}` : '';
+}
+
+// Generic fetch wrapper with OData v4 error handling
 async function odataFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
     const response = await fetch(`${ODATA_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...options?.headers,
       },
     });
 
     if (!response.ok) {
-      throw new Error(`OData request failed: ${response.statusText}`);
+      // Parse OData error response
+      let errorData: ODataError | null = null;
+      try {
+        errorData = await response.json() as ODataError;
+      } catch {
+        // If JSON parsing fails, throw generic error
+        throw new Error(`OData request failed: ${response.statusText}`);
+      }
+
+      // Extract error message from OData error structure
+      const errorMessage = errorData?.error?.message || response.statusText;
+      const errorCode = errorData?.error?.code || response.status.toString();
+      
+      throw new Error(`[${errorCode}] ${errorMessage}`);
     }
 
     return await response.json();
@@ -344,6 +420,23 @@ export const DeliverablesAPI = {
     }
     const response = await odataFetch<ODataResponse<Deliverable>>('/Deliverables');
     return response.value;
+  },
+
+  async create(deliverable: Omit<Deliverable, 'id' | 'createdAt'>): Promise<Deliverable> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const newDeliverable: Deliverable = {
+        ...deliverable,
+        id: `d${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      };
+      mockDeliverables.unshift(newDeliverable);
+      return newDeliverable;
+    }
+    return await odataFetch<Deliverable>('/Deliverables', {
+      method: 'POST',
+      body: JSON.stringify(deliverable),
+    });
   },
 
   async update(id: string, deliverable: Partial<Deliverable>): Promise<Deliverable> {

@@ -4,6 +4,51 @@ import React, { useEffect, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { KPICard } from '../../components/common/KPICard';
 import { UsersAPI, ProjectsAPI, TasksAPI } from '../../services/odataClient';
+import {
+  Card,
+  CardHeader,
+  AnalyticalTable,
+  List,
+  ListItemStandard,
+  ObjectStatus,
+  Icon,
+} from '@ui5/webcomponents-react';
+import '@ui5/webcomponents-icons/dist/sys-monitor.js';
+import '@ui5/webcomponents-icons/dist/table-view.js';
+
+const kpiColumns = [
+  { Header: 'KPI', accessor: 'name', width: 200 },
+  { Header: 'Formula', accessor: 'formula', width: 280 },
+  { Header: 'Source', accessor: 'source', width: 150 },
+  { Header: 'Refresh', accessor: 'refresh', width: 150 },
+];
+
+const kpiReferences = [
+  {
+    name: 'Total Users',
+    formula: 'count(all users)',
+    source: 'Users',
+    refresh: 'On dashboard load',
+  },
+  {
+    name: 'Active Users',
+    formula: 'count(users where active=true)',
+    source: 'Users',
+    refresh: 'On dashboard load',
+  },
+  {
+    name: 'Projects',
+    formula: 'count(all projects)',
+    source: 'Projects',
+    refresh: 'On dashboard load',
+  },
+  {
+    name: 'Total Tasks',
+    formula: 'count(all tasks)',
+    source: 'Tasks',
+    refresh: 'On dashboard load',
+  },
+];
 
 export const AdminDashboard: React.FC = () => {
   const [userCount, setUserCount] = useState(0);
@@ -52,27 +97,60 @@ export const AdminDashboard: React.FC = () => {
           <KPICard title="Total Tasks" value={taskCount} icon="task" color="yellow" />
         </div>
 
-        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">
-            System Information
-          </h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">Platform Version</span>
-              <span className="font-medium">v1.0.0</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">Backend Status</span>
-              <span className="font-medium text-green-600">Mock Mode Active</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">OData Endpoint</span>
-              <span className="font-medium text-muted-foreground">
-                /odata/v4/performance
-              </span>
-            </div>
-          </div>
-        </div>
+        {/* KPI Definitions Table */}
+        <Card
+          header={
+            <CardHeader
+              titleText="KPI Definitions"
+              subtitleText="Formula / Source / Refresh"
+              avatar={<Icon name="table-view" />}
+            />
+          }
+        >
+          <AnalyticalTable
+            columns={kpiColumns}
+            data={kpiReferences}
+            minRows={4}
+            visibleRows={4}
+            scaleWidthMode="Smart"
+            alternateRowColor
+          />
+        </Card>
+
+        {/* System Information */}
+        <Card
+          header={
+            <CardHeader
+              titleText="System Information"
+              subtitleText="Platform status and configuration"
+              avatar={<Icon name="sys-monitor" />}
+            />
+          }
+        >
+          <List>
+            <ListItemStandard
+              description="v1.0.0"
+              additionalText="Current"
+              additionalTextState="Information"
+            >
+              Platform Version
+            </ListItemStandard>
+            <ListItemStandard
+              description="Mock Mode"
+              additionalText="Active"
+              additionalTextState="Positive"
+            >
+              Backend Status
+            </ListItemStandard>
+            <ListItemStandard
+              description="/odata/v4/performance"
+              additionalText="Configured"
+              additionalTextState="None"
+            >
+              OData Endpoint
+            </ListItemStandard>
+          </List>
+        </Card>
       </div>
     </div>
   );

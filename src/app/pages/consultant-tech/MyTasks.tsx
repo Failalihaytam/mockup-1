@@ -281,6 +281,8 @@ export const MyTasks: React.FC = () => {
                 <button
                   onClick={() => setSelectedTask(null)}
                   className="text-muted-foreground hover:text-foreground"
+                  aria-label="Close task details panel"
+                  title="Close"
                 >
                   <X className="w-5 h-5" />
                 </button>

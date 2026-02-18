@@ -6,8 +6,53 @@ import { KPICard } from '../../components/common/KPICard';
 import { useAuth } from '../../context/AuthContext';
 import { DeliverablesAPI, TicketsAPI } from '../../services/odataClient';
 import { Deliverable, Ticket } from '../../types/entities';
-import { FileText } from 'lucide-react';
 import { useNavigate } from 'react-router';
+import {
+  Card,
+  CardHeader,
+  AnalyticalTable,
+  Button,
+  List,
+  ListItemStandard,
+  Icon,
+} from '@ui5/webcomponents-react';
+import '@ui5/webcomponents-icons/dist/table-view.js';
+import '@ui5/webcomponents-icons/dist/document.js';
+import '@ui5/webcomponents-icons/dist/incident.js';
+
+const kpiColumns = [
+  { Header: 'KPI', accessor: 'name', width: 200 },
+  { Header: 'Formula', accessor: 'formula', width: 320 },
+  { Header: 'Source', accessor: 'source', width: 150 },
+  { Header: 'Refresh', accessor: 'refresh', width: 150 },
+];
+
+const kpiReferences = [
+  {
+    name: 'Pending Deliverables',
+    formula: "count(deliverable.validationStatus = 'PENDING')",
+    source: 'Deliverables',
+    refresh: 'On dashboard load',
+  },
+  {
+    name: 'Approved Deliverables',
+    formula: "count(deliverable.validationStatus = 'APPROVED')",
+    source: 'Deliverables',
+    refresh: 'On dashboard load',
+  },
+  {
+    name: 'Open Tickets',
+    formula: "count(ticket.status in ['OPEN', 'IN_PROGRESS'])",
+    source: 'Tickets',
+    refresh: 'On dashboard load',
+  },
+  {
+    name: 'Resolved Tickets',
+    formula: "count(ticket.status = 'RESOLVED')",
+    source: 'Tickets',
+    refresh: 'On dashboard load',
+  },
+];
 
 export const FuncDashboard: React.FC = () => {
   const { currentUser } = useAuth();
@@ -48,6 +93,19 @@ export const FuncDashboard: React.FC = () => {
   ).length;
   const resolvedTickets = tickets.filter((t) => t.status === 'RESOLVED').length;
 
+  const getTicketState = (status: string) => {
+    switch (status) {
+      case 'RESOLVED':
+        return 'Positive';
+      case 'IN_PROGRESS':
+        return 'Information';
+      case 'OPEN':
+        return 'Critical';
+      default:
+        return 'None';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
@@ -85,94 +143,88 @@ export const FuncDashboard: React.FC = () => {
           />
         </div>
 
-        {/* Pending Deliverables */}
-        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">
-              Deliverables Awaiting Validation
-            </h3>
-            <button
-              onClick={() => navigate('/consultant-func/deliverables')}
-              className="text-primary hover:text-primary/80 text-sm font-medium"
-            >
-              View All -&gt;
-            </button>
-          </div>
+        {/* KPI Definitions */}
+        <Card
+          header={
+            <CardHeader
+              titleText="KPI Definitions"
+              subtitleText="Formula / Source / Refresh"
+              avatar={<Icon name="table-view" />}
+            />
+          }
+        >
+          <AnalyticalTable
+            columns={kpiColumns}
+            data={kpiReferences}
+            minRows={4}
+            visibleRows={4}
+            scaleWidthMode="Smart"
+            alternateRowColor
+          />
+        </Card>
 
-          <div className="space-y-3">
+        {/* Pending Deliverables */}
+        <Card
+          header={
+            <CardHeader
+              titleText="Deliverables Awaiting Validation"
+              subtitleText={`${deliverables.filter((d) => d.validationStatus === 'PENDING').length} pending`}
+              avatar={<Icon name="document" />}
+              action={
+                <Button design="Transparent" onClick={() => navigate('/consultant-func/deliverables')}>
+                  View All
+                </Button>
+              }
+            />
+          }
+        >
+          <List>
             {deliverables
               .filter((d) => d.validationStatus === 'PENDING')
               .slice(0, 5)
               .map((deliverable) => (
-                <div
+                <ListItemStandard
                   key={deliverable.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"
+                  description={deliverable.type}
+                  additionalText="Pending"
+                  additionalTextState="Critical"
+                  onClick={() => navigate('/consultant-func/deliverables')}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-foreground">
-                        {deliverable.name}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">{deliverable.type}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => navigate('/consultant-func/deliverables')}
-                    className="px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover:bg-primary/90"
-                  >
-                    Review
-                  </button>
-                </div>
+                  {deliverable.name}
+                </ListItemStandard>
               ))}
-          </div>
-        </div>
+          </List>
+        </Card>
 
         {/* Recent Tickets */}
-        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">My Recent Tickets</h3>
-            <button
-              onClick={() => navigate('/consultant-func/tickets')}
-              className="text-primary hover:text-primary/80 text-sm font-medium"
-            >
-              View All -&gt;
-            </button>
-          </div>
-
-          <div className="space-y-3">
+        <Card
+          header={
+            <CardHeader
+              titleText="My Recent Tickets"
+              subtitleText={`${tickets.length} total ticket${tickets.length !== 1 ? 's' : ''}`}
+              avatar={<Icon name="incident" />}
+              action={
+                <Button design="Transparent" onClick={() => navigate('/consultant-func/tickets')}>
+                  View All
+                </Button>
+              }
+            />
+          }
+        >
+          <List>
             {tickets.slice(0, 5).map((ticket) => (
-              <div
+              <ListItemStandard
                 key={ticket.id}
-                className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"
+                description={ticket.description}
+                additionalText={ticket.status}
+                additionalTextState={getTicketState(ticket.status)}
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium text-foreground">{ticket.title}</h4>
-                    <span
-                      className={`px-2 py-0.5 text-xs font-semibold rounded ${
-                        ticket.status === 'RESOLVED'
-                          ? 'bg-green-100 text-green-800'
-                          : ticket.status === 'IN_PROGRESS'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                    >
-                      {ticket.status}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-1">
-                    {ticket.description}
-                  </p>
-                </div>
-              </div>
+                {ticket.title}
+              </ListItemStandard>
             ))}
-          </div>
-        </div>
+          </List>
+        </Card>
       </div>
     </div>
   );
 };
-

@@ -91,6 +91,39 @@ export const ProjectDetails: React.FC = () => {
     return { onTrack, late, blocked, completed, critical, productivity };
   }, [tasks]);
 
+  const kpiRules = [
+    {
+      name: 'Tasks On Track',
+      formula: 'totalTasks - lateTasks - blockedTasks',
+      source: 'Tasks',
+    },
+    {
+      name: 'Late Tasks',
+      formula: "count(status != 'DONE' and plannedEnd < today)",
+      source: 'Tasks',
+    },
+    {
+      name: 'Blocked Tasks',
+      formula: "count(status = 'BLOCKED')",
+      source: 'Tasks',
+    },
+    {
+      name: 'Completed Tasks',
+      formula: "count(status = 'DONE')",
+      source: 'Tasks',
+    },
+    {
+      name: 'Critical Tasks',
+      formula: 'count(isCritical = true)',
+      source: 'Tasks',
+    },
+    {
+      name: 'Average Progress',
+      formula: 'avg(task.progressPercent)',
+      source: 'Tasks',
+    },
+  ] as const;
+
   const updateTask = async (taskId: string, patch: Partial<Task>) => {
     try {
       const updated = await TasksAPI.update(taskId, patch);
@@ -336,35 +369,65 @@ export const ProjectDetails: React.FC = () => {
         )}
 
         {activeTab === 'kpi' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="text-xs text-muted-foreground mb-1">Tasks On Track</div>
-              <div className="text-2xl font-semibold text-foreground">{kpis.onTrack}</div>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="text-xs text-muted-foreground mb-1">Late Tasks</div>
-              <div className="text-2xl font-semibold text-orange-500">{kpis.late}</div>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="text-xs text-muted-foreground mb-1">Blocked Tasks</div>
-              <div className="text-2xl font-semibold text-red-500">{kpis.blocked}</div>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="text-xs text-muted-foreground mb-1">Completed Tasks</div>
-              <div className="text-2xl font-semibold text-green-500">{kpis.completed}</div>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="text-xs text-muted-foreground mb-1">Critical Tasks</div>
-              <div className="text-2xl font-semibold text-red-500">{kpis.critical}</div>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="text-xs text-muted-foreground mb-1">Average Progress</div>
-              <div className="text-2xl font-semibold text-foreground">
-                {kpis.productivity.toFixed(1)}%
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-1">Tasks On Track</div>
+                <div className="text-2xl font-semibold text-foreground">{kpis.onTrack}</div>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Formula: avg(task.progressPercent), source: tasks, refresh: on page load
-              </p>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-1">Late Tasks</div>
+                <div className="text-2xl font-semibold text-orange-500">{kpis.late}</div>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-1">Blocked Tasks</div>
+                <div className="text-2xl font-semibold text-red-500">{kpis.blocked}</div>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-1">Completed Tasks</div>
+                <div className="text-2xl font-semibold text-green-500">{kpis.completed}</div>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-1">Critical Tasks</div>
+                <div className="text-2xl font-semibold text-red-500">{kpis.critical}</div>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-1">Average Progress</div>
+                <div className="text-2xl font-semibold text-foreground">
+                  {kpis.productivity.toFixed(1)}%
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted border-b border-border">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs uppercase text-muted-foreground">
+                      KPI
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs uppercase text-muted-foreground">
+                      Formula
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs uppercase text-muted-foreground">
+                      Source
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs uppercase text-muted-foreground">
+                      Refresh
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {kpiRules.map((rule) => (
+                    <tr key={rule.name} className="hover:bg-accent/40">
+                      <td className="px-3 py-2 text-sm text-foreground">{rule.name}</td>
+                      <td className="px-3 py-2 text-sm text-muted-foreground">{rule.formula}</td>
+                      <td className="px-3 py-2 text-sm text-foreground">{rule.source}</td>
+                      <td className="px-3 py-2 text-sm text-foreground">On page load</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

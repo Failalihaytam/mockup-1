@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
-import { ProjectsAPI, TicketsAPI, UsersAPI } from '../../services/odataClient';
+import {
+  NotificationsAPI,
+  ProjectsAPI,
+  TicketsAPI,
+  UsersAPI,
+} from '../../services/odataClient';
 import { Project, Ticket, User } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
 import { Plus } from 'lucide-react';
@@ -29,6 +34,9 @@ export const FuncTickets: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [form, setForm] = useState<TicketForm>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<Ticket['status'] | 'ALL'>('ALL');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -46,9 +54,9 @@ export const FuncTickets: React.FC = () => {
       setProjects(projectData);
       setUsers(userData.filter((user) => user.role === 'CONSULTANT_TECHNIQUE'));
       setTickets(
-        ticketData.filter(
-          (ticket) => ticket.createdBy === userId || ticket.assignedTo === userId
-        )
+        ticketData
+          .filter((ticket) => ticket.createdBy === userId || ticket.assignedTo === userId)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       );
     } finally {
       setLoading(false);
@@ -64,6 +72,7 @@ export const FuncTickets: React.FC = () => {
     }
 
     try {
+      setIsSubmitting(true);
       const created = await TicketsAPI.create({
         projectId: form.projectId,
         createdBy: currentUser.id,
@@ -74,10 +83,21 @@ export const FuncTickets: React.FC = () => {
         description: form.description.trim(),
       });
       setTickets((prev) => [created, ...prev]);
+      if (created.assignedTo) {
+        await NotificationsAPI.create({
+          userId: created.assignedTo,
+          type: 'TICKET_ASSIGNED',
+          title: 'New Ticket Assigned',
+          message: `${created.title} (${created.priority})`,
+          read: false,
+        });
+      }
       setForm(EMPTY_FORM);
       toast.success('Ticket created');
     } catch (error) {
       toast.error('Failed to create ticket');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -97,6 +117,18 @@ export const FuncTickets: React.FC = () => {
       resolved: tickets.filter((ticket) => ticket.status === 'RESOLVED').length,
     };
   }, [tickets]);
+
+  const filteredTickets = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return tickets.filter((ticket) => {
+      const matchesStatus = statusFilter === 'ALL' || ticket.status === statusFilter;
+      const matchesQuery =
+        !q ||
+        ticket.title.toLowerCase().includes(q) ||
+        ticket.description.toLowerCase().includes(q);
+      return matchesStatus && matchesQuery;
+    });
+  }, [tickets, searchQuery, statusFilter]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -187,10 +219,11 @@ export const FuncTickets: React.FC = () => {
 
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Create Ticket
+              {isSubmitting ? 'Creating...' : 'Create Ticket'}
             </button>
           </form>
         </div>
@@ -209,6 +242,27 @@ export const FuncTickets: React.FC = () => {
               <div className="text-xl font-semibold text-green-600">{grouped.resolved}</div>
               <div className="text-xs text-muted-foreground">Resolved</div>
             </div>
+          </div>
+
+          <div className="bg-card border border-border rounded-lg p-3 flex flex-col sm:flex-row gap-3">
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search title or description..."
+              className="flex-1 px-3 py-2 border border-border rounded bg-card text-foreground"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as Ticket['status'] | 'ALL')}
+              className="px-3 py-2 border border-border rounded bg-card text-foreground"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="OPEN">OPEN</option>
+              <option value="IN_PROGRESS">IN_PROGRESS</option>
+              <option value="WAITING_FEEDBACK">WAITING_FEEDBACK</option>
+              <option value="RESOLVED">RESOLVED</option>
+              <option value="CLOSED">CLOSED</option>
+            </select>
           </div>
 
           <div className="bg-card border border-border rounded-lg overflow-x-auto">
@@ -239,14 +293,14 @@ export const FuncTickets: React.FC = () => {
                       Loading tickets...
                     </td>
                   </tr>
-                ) : tickets.length === 0 ? (
+                ) : filteredTickets.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                      No tickets yet.
+                      No tickets match your filters.
                     </td>
                   </tr>
                 ) : (
-                  tickets.map((ticket) => (
+                  filteredTickets.map((ticket) => (
                     <tr key={ticket.id} className="hover:bg-accent/40">
                       <td className="px-4 py-3 text-sm text-foreground">
                         <div className="font-medium">{ticket.title}</div>

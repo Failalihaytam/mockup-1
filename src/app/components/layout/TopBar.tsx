@@ -17,7 +17,8 @@ import { useTheme } from '../../context/ThemeContext';
 import { NotificationsAPI, UsersAPI } from '../../services/odataClient';
 import { Notification, User as UserEntity } from '../../types/entities';
 import { useNavigate } from 'react-router';
-import inetumLogo from '@/assets/inetum-logo.svg';
+import inetumLogoWhite from '@/assets/inetum-logo.svg';
+import inetumLogoDark from '@/assets/inetum-logo-dark.svg';
 import '@ui5/webcomponents-icons/dist/search.js';
 import '@ui5/webcomponents-icons/dist/bell.js';
 import '@ui5/webcomponents-icons/dist/palette.js';
@@ -39,6 +40,11 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuToggle }) => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  // Opener elements for popovers — stored in state to trigger re-render
+  const [notifOpener, setNotifOpener] = useState<HTMLElement | undefined>(undefined);
+  const [profileOpener, setProfileOpener] = useState<HTMLElement | undefined>(undefined);
+  const [switcherOpener, setSwitcherOpener] = useState<HTMLElement | undefined>(undefined);
 
   useEffect(() => {
     if (currentUser) {
@@ -86,7 +92,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuToggle }) => {
     <>
       <ShellBar
         primaryTitle="Performance Portal"
-        logo={<img src={inetumLogo} alt="Inetum Logo" />}
+        logo={<img src={theme === 'dark' ? inetumLogoWhite : inetumLogoDark} alt="Inetum Logo" style={{ height: '28px' }} />}
         profile={
           <Avatar>
             <img
@@ -95,10 +101,16 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuToggle }) => {
             />
           </Avatar>
         }
-        onProfileClick={(e) => setUserMenuOpen(true)}
+        onProfileClick={(e) => {
+          setProfileOpener(e.detail.targetRef as HTMLElement);
+          setUserMenuOpen(true);
+        }}
         notificationsCount={unreadCount > 0 ? unreadCount.toString() : undefined}
         showNotifications={unreadCount > 0}
-        onNotificationsClick={(e) => setPopoverOpen(true)}
+        onNotificationsClick={(e) => {
+          setNotifOpener(e.detail.targetRef as HTMLElement);
+          setPopoverOpen(true);
+        }}
         startButton={
           <Icon
             name="menu2"
@@ -107,7 +119,11 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuToggle }) => {
           />
         }
       >
-        <Input slot="searchField" icon={<Icon name="search" />} placeholder="Search..." />
+        <Input
+          slot="searchField"
+          icon={<Icon name="search" />}
+          placeholder="Search (mock)"
+        />
         <ShellBarItem
           icon="palette"
           text="Theme"
@@ -117,7 +133,10 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuToggle }) => {
         <ShellBarItem
           icon="switch-classes"
           text="Switch User"
-          onClick={(e) => setSwitcherOpen(true)}
+          onClick={(e) => {
+            setSwitcherOpener(e.detail.targetRef as HTMLElement);
+            setSwitcherOpen(true);
+          }}
           title="Switch User (Demo)"
         />
       </ShellBar>
@@ -125,6 +144,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuToggle }) => {
       {/* Notifications Popover */}
       <ResponsivePopover
         open={popoverOpen}
+        opener={notifOpener}
         onClose={() => setPopoverOpen(false)}
         placement="Bottom"
         headerText="Notifications"
@@ -152,14 +172,15 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuToggle }) => {
       {/* User Menu Popover */}
       <Popover
         open={userMenuOpen}
+        opener={profileOpener}
         onClose={() => setUserMenuOpen(false)}
         placement="Bottom"
         headerText="User Profile"
       >
         <div className="p-4">
-          <div className="font-bold">{currentUser?.name}</div>
-          <div className="text-sm text-gray-500">{currentUser?.email}</div>
-          <div className="text-xs text-gray-400 mt-1">{currentUser?.role}</div>
+          <div className="font-bold text-foreground">{currentUser?.name}</div>
+          <div className="text-sm text-muted-foreground">{currentUser?.email}</div>
+          <div className="text-xs text-muted-foreground mt-1">{currentUser?.role}</div>
         </div>
         <List>
           <ListItemStandard
@@ -189,6 +210,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuToggle }) => {
       {/* User Switcher Popover */}
       <Popover
         open={switcherOpen}
+        opener={switcherOpener}
         onClose={() => setSwitcherOpen(false)}
         placement="Bottom"
         headerText="Switch User"

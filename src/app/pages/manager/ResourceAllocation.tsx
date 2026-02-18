@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
-import { AllocationsAPI, ProjectsAPI, UsersAPI } from '../../services/odataClient';
+import {
+  AllocationsAPI,
+  NotificationsAPI,
+  ProjectsAPI,
+  UsersAPI,
+} from '../../services/odataClient';
 import { Allocation, Project, User } from '../../types/entities';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -22,6 +27,13 @@ const EMPTY_FORM: NewAllocationForm = {
   endDate: todayLocalDateKey(),
 };
 
+const rangesOverlap = (
+  startA: string,
+  endA: string,
+  startB: string,
+  endB: string
+) => !(endA < startB || endB < startA);
+
 export const ResourceAllocation: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -29,6 +41,7 @@ export const ResourceAllocation: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<NewAllocationForm>(EMPTY_FORM);
   const [projectFilter, setProjectFilter] = useState<string>('ALL');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     void loadData();
@@ -72,8 +85,27 @@ export const ResourceAllocation: React.FC = () => {
       toast.error('User and project are required');
       return;
     }
+    if (form.endDate < form.startDate) {
+      toast.error('End date cannot be before start date');
+      return;
+    }
     if (form.allocationPercent < 0 || form.allocationPercent > 100) {
       toast.error('Allocation percent must be between 0 and 100');
+      return;
+    }
+    const duplicatePeriod = allocations.some(
+      (allocation) =>
+        allocation.userId === form.userId &&
+        allocation.projectId === form.projectId &&
+        rangesOverlap(
+          form.startDate,
+          form.endDate,
+          allocation.startDate,
+          allocation.endDate
+        )
+    );
+    if (duplicatePeriod) {
+      toast.error('This consultant already has an overlapping allocation for this project');
       return;
     }
     const currentTotal = userTotalAllocation.get(form.userId) ?? 0;
@@ -84,14 +116,26 @@ export const ResourceAllocation: React.FC = () => {
     }
 
     try {
+      setIsSubmitting(true);
       const created = await AllocationsAPI.create({
         ...form,
       });
       setAllocations((prev) => [created, ...prev]);
+      const projectName =
+        projects.find((project) => project.id === form.projectId)?.name ?? 'project';
+      await NotificationsAPI.create({
+        userId: form.userId,
+        type: 'ALLOCATION_UPDATED',
+        title: 'New Allocation Assigned',
+        message: `You have been allocated ${form.allocationPercent}% on ${projectName}.`,
+        read: false,
+      });
       setForm(EMPTY_FORM);
       toast.success('Allocation created');
     } catch (error) {
       toast.error('Failed to create allocation');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -121,6 +165,9 @@ export const ResourceAllocation: React.FC = () => {
   };
 
   const removeAllocation = async (id: string) => {
+    const confirmed = window.confirm('Remove this allocation entry?');
+    if (!confirmed) return;
+
     try {
       await AllocationsAPI.delete(id);
       setAllocations((prev) => prev.filter((entry) => entry.id !== id));
@@ -223,10 +270,11 @@ export const ResourceAllocation: React.FC = () => {
 
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Add Allocation
+              {isSubmitting ? 'Saving...' : 'Add Allocation'}
             </button>
           </form>
         </div>
@@ -299,10 +347,15 @@ export const ResourceAllocation: React.FC = () => {
                             type="number"
                             min={0}
                             max={100}
-                            value={allocation.allocationPercent}
-                            onChange={(e) =>
+                            defaultValue={allocation.allocationPercent}
+                            onBlur={(e) =>
                               void updatePercent(allocation, Number(e.target.value || 0))
                             }
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                (e.target as HTMLInputElement).blur();
+                              }
+                            }}
                             className="w-20 px-2 py-1 border border-border rounded bg-card text-foreground"
                           />
                         </td>

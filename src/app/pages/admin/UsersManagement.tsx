@@ -6,6 +6,7 @@ import { UsersAPI } from '../../services/odataClient';
 import { User, UserRole } from '../../types/entities';
 import { Plus, Search, Edit, Trash2, CheckCircle, XCircle, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '../../context/AuthContext';
 
 interface UserForm {
   name: string;
@@ -28,6 +29,7 @@ const EMPTY_FORM: UserForm = {
 };
 
 export const UsersManagement: React.FC = () => {
+  const { currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +37,7 @@ export const UsersManagement: React.FC = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [form, setForm] = useState<UserForm>(EMPTY_FORM);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     void loadUsers();
@@ -92,10 +95,20 @@ export const UsersManagement: React.FC = () => {
       toast.error('Name and email are required');
       return;
     }
+    const email = form.email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    if (form.availabilityPercent < 0 || form.availabilityPercent > 100) {
+      toast.error('Availability must be between 0 and 100');
+      return;
+    }
 
     const payload = {
       name: form.name.trim(),
-      email: form.email.trim().toLowerCase(),
+      email,
       role: form.role,
       active: form.active,
       skills: form.skills
@@ -111,6 +124,7 @@ export const UsersManagement: React.FC = () => {
     };
 
     try {
+      setIsSubmitting(true);
       if (editingUserId) {
         const updated = await UsersAPI.update(editingUserId, payload);
         setUsers((prev) => prev.map((user) => (user.id === editingUserId ? updated : user)));
@@ -123,10 +137,19 @@ export const UsersManagement: React.FC = () => {
       resetDialog();
     } catch (error) {
       toast.error('Failed to save user');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const deleteUser = async (userId: string) => {
+    if (currentUser?.id === userId) {
+      toast.error('You cannot delete the currently connected user');
+      return;
+    }
+    const confirmed = window.confirm('Delete this user account?');
+    if (!confirmed) return;
+
     try {
       await UsersAPI.delete(userId);
       setUsers((prev) => prev.filter((user) => user.id !== userId));
@@ -328,12 +351,16 @@ export const UsersManagement: React.FC = () => {
                         <button
                           onClick={() => openEdit(user)}
                           className="text-blue-600 hover:text-blue-800"
+                          aria-label={`Edit ${user.name}`}
+                          title={`Edit ${user.name}`}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => void deleteUser(user.id)}
                           className="text-red-600 hover:text-red-800"
+                          aria-label={`Delete ${user.name}`}
+                          title={`Delete ${user.name}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -360,7 +387,12 @@ export const UsersManagement: React.FC = () => {
               <h3 className="text-lg font-semibold text-foreground">
                 {editingUserId ? 'Edit User' : 'Create User'}
               </h3>
-              <button onClick={resetDialog} className="text-muted-foreground hover:text-foreground">
+              <button
+                onClick={resetDialog}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Close user dialog"
+                title="Close"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -466,10 +498,11 @@ export const UsersManagement: React.FC = () => {
                 </button>
                 <button
                   type="submit"
+                  disabled={isSubmitting}
                   className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 flex items-center gap-2"
                 >
                   <Save className="w-4 h-4" />
-                  {editingUserId ? 'Update User' : 'Create User'}
+                  {isSubmitting ? 'Saving...' : editingUserId ? 'Update User' : 'Create User'}
                 </button>
               </div>
             </form>

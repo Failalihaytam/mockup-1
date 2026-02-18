@@ -1,12 +1,8 @@
 // SAP Fiori-style sidebar navigation
 
-import React, { useState } from 'react';
-import {
-  SideNavigation,
-  SideNavigationItem,
-  SideNavigationSubItem,
-} from '@ui5/webcomponents-react';
-import { useNavigate } from 'react-router';
+import React from 'react';
+import { SideNavigation, SideNavigationItem } from '@ui5/webcomponents-react';
+import { useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types/entities';
 
@@ -155,6 +151,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (!currentUser) return null;
 
@@ -178,6 +175,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
           key={item.path}
           text={item.label}
           icon={item.icon}
+          tooltip={item.label}
+          selected={
+            location.pathname === item.path ||
+            location.pathname.startsWith(`${item.path}/`)
+          }
           data-path={item.path}
         />
       ))}

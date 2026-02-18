@@ -8,6 +8,63 @@ import { TasksAPI, ProjectsAPI, EvaluationsAPI, TimesheetsAPI } from '../../serv
 import { Task, Project, Evaluation, Timesheet } from '../../types/entities';
 import { useNavigate } from 'react-router';
 import { getFridayOfWeek, getMondayOfWeek, toLocalDateKey } from '../../utils/date';
+import {
+  Card,
+  CardHeader,
+  AnalyticalTable,
+  Button,
+  ProgressIndicator,
+  List,
+  ListItemStandard,
+  Icon,
+  FlexBox,
+  FlexBoxAlignItems,
+  FlexBoxJustifyContent,
+} from '@ui5/webcomponents-react';
+import '@ui5/webcomponents-icons/dist/table-view.js';
+import '@ui5/webcomponents-icons/dist/task.js';
+import '@ui5/webcomponents-icons/dist/project-definition-triangle-2.js';
+import '@ui5/webcomponents-icons/dist/nav-back.js';
+
+const kpiColumns = [
+  { Header: 'KPI', accessor: 'name', width: 200 },
+  { Header: 'Formula', accessor: 'formula', width: 320 },
+  { Header: 'Source', accessor: 'source', width: 150 },
+  { Header: 'Refresh', accessor: 'refresh', width: 150 },
+];
+
+const kpiReferences = [
+  {
+    name: 'My Tasks',
+    formula: 'count(tasks assigned to current user)',
+    source: 'Tasks',
+    refresh: 'On dashboard load',
+  },
+  {
+    name: 'Overdue Tasks',
+    formula: "count(status != 'DONE' and plannedEnd < today)",
+    source: 'Tasks',
+    refresh: 'On dashboard load',
+  },
+  {
+    name: 'Hours This Week',
+    formula: 'sum(timesheet.hours) for current week',
+    source: 'Timesheets',
+    refresh: 'On dashboard load',
+  },
+  {
+    name: 'Active Projects',
+    formula: "count(project.status = 'ACTIVE' for assigned tasks)",
+    source: 'Projects + Tasks',
+    refresh: 'On dashboard load',
+  },
+  {
+    name: 'Performance Score',
+    formula: 'avg(evaluation.score)',
+    source: 'Evaluations',
+    refresh: 'On dashboard load',
+  },
+];
 
 export const TechDashboard: React.FC = () => {
   const { currentUser } = useAuth();
@@ -70,19 +127,25 @@ export const TechDashboard: React.FC = () => {
     )
     .slice(0, 5);
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityState = (priority: string) => {
     switch (priority) {
       case 'CRITICAL':
-        return 'text-red-600 bg-red-50 border-red-200';
+        return 'Negative';
       case 'HIGH':
-        return 'text-orange-600 bg-orange-50 border-orange-200';
+        return 'Critical';
       case 'MEDIUM':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+        return 'None';
       case 'LOW':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'Positive';
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'None';
     }
+  };
+
+  const getProgressState = (percent: number) => {
+    if (percent >= 80) return 'Positive';
+    if (percent >= 40) return 'None';
+    return 'Critical';
   };
 
   return (
@@ -130,20 +193,41 @@ export const TechDashboard: React.FC = () => {
           />
         </div>
 
-        {/* Upcoming Tasks */}
-        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">
-              Upcoming Tasks
-            </h3>
-            <button
-              onClick={() => navigate('/consultant-tech/tasks')}
-              className="text-primary hover:text-primary/80 text-sm font-medium"
-            >
-              View All -&gt;
-            </button>
-          </div>
+        {/* KPI Definitions */}
+        <Card
+          header={
+            <CardHeader
+              titleText="KPI Definitions"
+              subtitleText="Formula / Source / Refresh"
+              avatar={<Icon name="table-view" />}
+            />
+          }
+        >
+          <AnalyticalTable
+            columns={kpiColumns}
+            data={kpiReferences}
+            minRows={5}
+            visibleRows={5}
+            scaleWidthMode="Smart"
+            alternateRowColor
+          />
+        </Card>
 
+        {/* Upcoming Tasks */}
+        <Card
+          header={
+            <CardHeader
+              titleText="Upcoming Tasks"
+              subtitleText={`${upcomingTasks.length} task${upcomingTasks.length !== 1 ? 's' : ''} pending`}
+              avatar={<Icon name="task" />}
+              action={
+                <Button design="Transparent" onClick={() => navigate('/consultant-tech/tasks')}>
+                  View All
+                </Button>
+              }
+            />
+          }
+        >
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">Loading...</div>
           ) : upcomingTasks.length === 0 ? (
@@ -151,90 +235,69 @@ export const TechDashboard: React.FC = () => {
               No upcoming tasks
             </div>
           ) : (
-            <div className="space-y-3">
+            <List>
               {upcomingTasks.map((task) => (
-                <div
+                <ListItemStandard
                   key={task.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                  description={`Due: ${new Date(task.plannedEnd).toLocaleDateString()}`}
+                  additionalText={task.priority}
+                  additionalTextState={getPriorityState(task.priority)}
                   onClick={() => navigate('/consultant-tech/tasks')}
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-foreground">{task.title}</h4>
-                      <span
-                        className={`px-2 py-0.5 text-xs font-semibold rounded border ${getPriorityColor(
-                          task.priority
-                        )}`}
-                      >
-                        {task.priority}
-                      </span>
-                      {task.isCritical && (
-                        <span className="px-2 py-0.5 text-xs font-semibold rounded bg-red-100 text-red-800">
-                          Critical
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Due: {new Date(task.plannedEnd).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground">
-                        {task.progressPercent}% Complete
-                      </div>
-                      <div className="w-32 bg-muted rounded-full h-2 mt-1">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${task.progressPercent}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  {task.title}
+                </ListItemStandard>
               ))}
-            </div>
+            </List>
           )}
-        </div>
+        </Card>
 
         {/* My Projects */}
-        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">My Projects</h3>
-            <button
-              onClick={() => navigate('/consultant-tech/projects')}
-              className="text-primary hover:text-primary/80 text-sm font-medium"
-            >
-              View All -&gt;
-            </button>
+        <Card
+          header={
+            <CardHeader
+              titleText="My Projects"
+              subtitleText={`${projects.length} project${projects.length !== 1 ? 's' : ''} assigned`}
+              avatar={<Icon name="project-definition-triangle-2" />}
+              action={
+                <Button design="Transparent" onClick={() => navigate('/consultant-tech/projects')}>
+                  View All
+                </Button>
+              }
+            />
+          }
+        >
+          <div className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projects.map((project) => (
+                <Card
+                  key={project.id}
+                  header={
+                    <CardHeader
+                      titleText={project.name}
+                      subtitleText={project.description}
+                    />
+                  }
+                >
+                  <div className="p-3">
+                    <FlexBox
+                      alignItems={FlexBoxAlignItems.Center}
+                      justifyContent={FlexBoxJustifyContent.SpaceBetween}
+                      className="mb-2"
+                    >
+                      <span className="text-sm text-muted-foreground">Progress</span>
+                      <span className="text-sm font-semibold">{project.progress || 0}%</span>
+                    </FlexBox>
+                    <ProgressIndicator
+                      value={project.progress || 0}
+                      valueState={getProgressState(project.progress || 0)}
+                    />
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((project) => (
-              <div
-                key={project.id}
-                className="p-4 border border-border rounded-lg hover:shadow-md transition-shadow"
-              >
-                <h4 className="font-medium text-foreground mb-2">{project.name}</h4>
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                  {project.description}
-                </p>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Progress</span>
-                  <span className="font-medium">{project.progress || 0}%</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2 mt-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: `${project.progress || 0}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        </Card>
       </div>
     </div>
   );
 };
-

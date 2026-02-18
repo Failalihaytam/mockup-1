@@ -3,6 +3,24 @@ import { PageHeader } from '../../components/common/PageHeader';
 import { useAuth } from '../../context/AuthContext';
 import { UsersAPI } from '../../services/odataClient';
 import { toast } from 'sonner';
+import {
+  Card,
+  CardHeader,
+  Avatar,
+  Input,
+  TextArea,
+  Label,
+  Button,
+  FlexBox,
+  FlexBoxDirection,
+  FlexBoxAlignItems,
+  FlexBoxJustifyContent,
+  Icon,
+  ObjectStatus,
+  Slider,
+} from '@ui5/webcomponents-react';
+import '@ui5/webcomponents-icons/dist/employee.js';
+import '@ui5/webcomponents-icons/dist/save.js';
 
 export const ProfilePage: React.FC = () => {
   const { currentUser, switchUser } = useAuth();
@@ -51,63 +69,109 @@ export const ProfilePage: React.FC = () => {
         breadcrumbs={[{ label: 'My Profile' }]}
       />
 
-      <div className="p-6 max-w-3xl">
-        <form onSubmit={saveProfile} className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <div>
-            <label className="block text-sm text-muted-foreground mb-1">Full Name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
+      <div className="p-6 max-w-3xl space-y-6">
+        {/* Profile Header Card */}
+        <Card
+          header={
+            <CardHeader
+              titleText={currentUser?.name ?? ''}
+              subtitleText={currentUser?.email ?? ''}
+              avatar={
+                <Avatar>
+                  <img
+                    src={`https://ui-avatars.com/api/?name=${currentUser?.name}&background=random`}
+                    alt="Avatar"
+                  />
+                </Avatar>
+              }
+              action={
+                <ObjectStatus
+                  state="Positive"
+                  showDefaultIcon
+                >
+                  {currentUser?.role?.replace(/_/g, ' ')}
+                </ObjectStatus>
+              }
             />
-          </div>
-          <div>
-            <label className="block text-sm text-muted-foreground mb-1">Email</label>
-            <input
-              value={currentUser?.email ?? ''}
-              disabled
-              className="w-full px-3 py-2 border border-border rounded bg-muted text-muted-foreground"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-muted-foreground mb-1">Skills (comma-separated)</label>
-            <textarea
-              rows={3}
-              value={skills}
-              onChange={(e) => setSkills(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-muted-foreground mb-1">
-              Certifications (comma-separated)
-            </label>
-            <textarea
-              rows={3}
-              value={certifications}
-              onChange={(e) => setCertifications(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-muted-foreground mb-1">Availability (%)</label>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={availabilityPercent}
-              onChange={(e) => setAvailabilityPercent(Number(e.target.value || 0))}
-              className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
-            />
-          </div>
+          }
+        />
 
-          <button
-            type="submit"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
-          >
-            Save Profile
-          </button>
-        </form>
+        {/* Edit Form */}
+        <Card
+          header={
+            <CardHeader
+              titleText="Edit Profile"
+              subtitleText="Update your personal details"
+              avatar={<Icon name="employee" />}
+            />
+          }
+        >
+          <form onSubmit={saveProfile} className="p-4 space-y-5">
+            <FlexBox direction={FlexBoxDirection.Column} style={{ gap: '0.5rem' }}>
+              <Label required>Full Name</Label>
+              <Input
+                value={name}
+                onInput={(e) => setName(e.target.value)}
+                className="w-full"
+              />
+            </FlexBox>
+
+            <FlexBox direction={FlexBoxDirection.Column} style={{ gap: '0.5rem' }}>
+              <Label>Email</Label>
+              <Input
+                value={currentUser?.email ?? ''}
+                disabled
+                className="w-full"
+              />
+            </FlexBox>
+
+            <FlexBox direction={FlexBoxDirection.Column} style={{ gap: '0.5rem' }}>
+              <Label>Skills (comma-separated)</Label>
+              <TextArea
+                rows={3}
+                value={skills}
+                onInput={(e) => setSkills(e.target.value)}
+                className="w-full"
+                growing
+              />
+            </FlexBox>
+
+            <FlexBox direction={FlexBoxDirection.Column} style={{ gap: '0.5rem' }}>
+              <Label>Certifications (comma-separated)</Label>
+              <TextArea
+                rows={3}
+                value={certifications}
+                onInput={(e) => setCertifications(e.target.value)}
+                className="w-full"
+                growing
+              />
+            </FlexBox>
+
+            <FlexBox direction={FlexBoxDirection.Column} style={{ gap: '0.5rem' }}>
+              <FlexBox
+                alignItems={FlexBoxAlignItems.Center}
+                justifyContent={FlexBoxJustifyContent.SpaceBetween}
+              >
+                <Label>Availability</Label>
+                <span className="text-sm font-semibold text-foreground">
+                  {availabilityPercent}%
+                </span>
+              </FlexBox>
+              <Slider
+                min={0}
+                max={100}
+                value={availabilityPercent}
+                onInput={(e) => setAvailabilityPercent(Number(e.target.value || 0))}
+                showTooltip
+                labelInterval={5}
+              />
+            </FlexBox>
+
+            <Button design="Emphasized" type="Submit" icon="save">
+              Save Profile
+            </Button>
+          </form>
+        </Card>
       </div>
     </div>
   );

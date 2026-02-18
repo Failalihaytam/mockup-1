@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
-import { EvaluationsAPI, ProjectsAPI, UsersAPI } from '../../services/odataClient';
+import {
+  EvaluationsAPI,
+  NotificationsAPI,
+  ProjectsAPI,
+  UsersAPI,
+} from '../../services/odataClient';
 import { Evaluation, Project, User } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
 import { Save } from 'lucide-react';
@@ -37,6 +42,7 @@ export const TeamEvaluations: React.FC = () => {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<EvaluationForm>(EMPTY_FORM);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     void loadData();
@@ -58,7 +64,9 @@ export const TeamEvaluations: React.FC = () => {
         )
       );
       setProjects(projectData);
-      setEvaluations(evalData);
+      setEvaluations(
+        [...evalData].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      );
     } finally {
       setLoading(false);
     }
@@ -81,8 +89,23 @@ export const TeamEvaluations: React.FC = () => {
       toast.error('Consultant and project are required');
       return;
     }
+    if (form.feedback.trim().length < 10) {
+      toast.error('Feedback must contain at least 10 characters');
+      return;
+    }
+    const duplicate = evaluations.find(
+      (evaluation) =>
+        evaluation.userId === form.userId &&
+        evaluation.projectId === form.projectId &&
+        evaluation.period === form.period
+    );
+    if (duplicate) {
+      toast.error('An evaluation already exists for this consultant/project/period');
+      return;
+    }
 
     try {
+      setIsSubmitting(true);
       const created = await EvaluationsAPI.create({
         userId: form.userId,
         evaluatorId: currentUser.id,
@@ -101,10 +124,19 @@ export const TeamEvaluations: React.FC = () => {
       });
 
       setEvaluations((prev) => [created, ...prev]);
+      await NotificationsAPI.create({
+        userId: form.userId,
+        type: 'EVALUATION_PUBLISHED',
+        title: 'New Evaluation Published',
+        message: `A new ${form.period} evaluation has been submitted.`,
+        read: false,
+      });
       setForm(EMPTY_FORM);
       toast.success('Evaluation submitted');
     } catch (error) {
       toast.error('Failed to submit evaluation');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -211,10 +243,11 @@ export const TeamEvaluations: React.FC = () => {
 
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 flex items-center justify-center gap-2"
             >
               <Save className="w-4 h-4" />
-              Save Evaluation
+              {isSubmitting ? 'Saving...' : 'Save Evaluation'}
             </button>
           </form>
         </div>

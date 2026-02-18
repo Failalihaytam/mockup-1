@@ -36,6 +36,7 @@ export const Projects: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<Project['status'] | 'ALL'>('ALL');
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState<ProjectForm>(EMPTY_FORM);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -74,7 +75,9 @@ export const Projects: React.FC = () => {
   };
 
   const filteredProjects = projects.filter((project) => {
-    const matchesName = project.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase();
+    const matchesName =
+      project.name.toLowerCase().includes(q) || project.description.toLowerCase().includes(q);
     const matchesStatus = statusFilter === 'ALL' || project.status === statusFilter;
     return matchesName && matchesStatus;
   });
@@ -85,8 +88,17 @@ export const Projects: React.FC = () => {
       toast.error('Project name is required');
       return;
     }
+    if (form.endDate < form.startDate) {
+      toast.error('End date cannot be before start date');
+      return;
+    }
+    if (form.budget < 0) {
+      toast.error('Budget cannot be negative');
+      return;
+    }
 
     try {
+      setIsSubmitting(true);
       const created = await ProjectsAPI.create({
         name: form.name.trim(),
         description: form.description.trim(),
@@ -104,6 +116,8 @@ export const Projects: React.FC = () => {
       toast.success('Project created');
     } catch (error) {
       toast.error('Failed to create project');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -262,6 +276,8 @@ export const Projects: React.FC = () => {
                           navigate(`/manager/projects/${project.id}`);
                         }}
                         className="text-primary hover:text-primary/80"
+                        aria-label={`Open ${project.name} details`}
+                        title={`Open ${project.name} details`}
                       >
                         <Eye className="w-5 h-5" />
                       </button>
@@ -288,6 +304,8 @@ export const Projects: React.FC = () => {
               <button
                 onClick={() => setShowCreate(false)}
                 className="text-muted-foreground hover:text-foreground"
+                aria-label="Close create project dialog"
+                title="Close"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -383,10 +401,11 @@ export const Projects: React.FC = () => {
                 </button>
                 <button
                   type="submit"
+                  disabled={isSubmitting}
                   className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 flex items-center gap-2"
                 >
                   <Save className="w-4 h-4" />
-                  Save Project
+                  {isSubmitting ? 'Saving...' : 'Save Project'}
                 </button>
               </div>
             </form>

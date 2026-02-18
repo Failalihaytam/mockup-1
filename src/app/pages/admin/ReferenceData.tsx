@@ -22,6 +22,7 @@ export const ReferenceDataManagement: React.FC = () => {
   const [search, setSearch] = useState('');
   const [form, setForm] = useState<Omit<ReferenceData, 'id'>>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     void loadData();
@@ -38,15 +39,21 @@ export const ReferenceDataManagement: React.FC = () => {
   };
 
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      const matchesType = typeFilter === 'ALL' || item.type === typeFilter;
-      const q = search.trim().toLowerCase();
-      if (!q) return matchesType;
-      return (
-        matchesType &&
-        (item.code.toLowerCase().includes(q) || item.label.toLowerCase().includes(q))
-      );
-    });
+    return items
+      .filter((item) => {
+        const matchesType = typeFilter === 'ALL' || item.type === typeFilter;
+        const q = search.trim().toLowerCase();
+        if (!q) return matchesType;
+        return (
+          matchesType &&
+          (item.code.toLowerCase().includes(q) || item.label.toLowerCase().includes(q))
+        );
+      })
+      .sort((a, b) => {
+        if (a.type !== b.type) return a.type.localeCompare(b.type);
+        if ((a.order ?? 0) !== (b.order ?? 0)) return (a.order ?? 0) - (b.order ?? 0);
+        return a.label.localeCompare(b.label);
+      });
   }, [items, search, typeFilter]);
 
   const resetForm = () => {
@@ -60,12 +67,28 @@ export const ReferenceDataManagement: React.FC = () => {
       toast.error('Code and label are required');
       return;
     }
+    if ((form.order ?? 1) < 1) {
+      toast.error('Order must be at least 1');
+      return;
+    }
+    const normalizedCode = form.code.trim().toUpperCase();
+    const duplicate = items.find(
+      (item) =>
+        item.type === form.type &&
+        item.code.toUpperCase() === normalizedCode &&
+        item.id !== editingId
+    );
+    if (duplicate) {
+      toast.error('A reference item with this type and code already exists');
+      return;
+    }
 
     try {
+      setIsSubmitting(true);
       if (editingId) {
         const updated = await ReferenceDataAPI.update(editingId, {
           ...form,
-          code: form.code.trim().toUpperCase(),
+          code: normalizedCode,
           label: form.label.trim(),
         });
         setItems((prev) => prev.map((item) => (item.id === editingId ? updated : item)));
@@ -73,7 +96,7 @@ export const ReferenceDataManagement: React.FC = () => {
       } else {
         const created = await ReferenceDataAPI.create({
           ...form,
-          code: form.code.trim().toUpperCase(),
+          code: normalizedCode,
           label: form.label.trim(),
         });
         setItems((prev) => [created, ...prev]);
@@ -82,6 +105,8 @@ export const ReferenceDataManagement: React.FC = () => {
       resetForm();
     } catch (error) {
       toast.error('Failed to save reference item');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -106,6 +131,9 @@ export const ReferenceDataManagement: React.FC = () => {
   };
 
   const removeItem = async (id: string) => {
+    const confirmed = window.confirm('Delete this reference item?');
+    if (!confirmed) return;
+
     try {
       await ReferenceDataAPI.delete(id);
       setItems((prev) => prev.filter((item) => item.id !== id));
@@ -200,10 +228,11 @@ export const ReferenceDataManagement: React.FC = () => {
             <div className="flex items-center gap-2 pt-2">
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 flex items-center justify-center gap-2"
               >
                 {editingId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                {editingId ? 'Update' : 'Create'}
+                {isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}
               </button>
               {editingId && (
                 <button

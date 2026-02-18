@@ -34,7 +34,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+    <header className="bg-card border-b border-border px-4 sm:px-6 py-4">
       {breadcrumbs && breadcrumbs.length > 0 && (
         <Breadcrumbs className="mb-2">
           {breadcrumbs.map((crumb, index) => (
@@ -48,22 +48,22 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           ))}
         </Breadcrumbs>
       )}
-      
+
       <FlexBox
         justifyContent={FlexBoxJustifyContent.SpaceBetween}
         alignItems={FlexBoxAlignItems.Center}
       >
         <FlexBox direction={FlexBoxDirection.Column}>
           <Title level="H2">{title}</Title>
-          {subtitle && <Text className="text-gray-500 mt-1">{subtitle}</Text>}
+          {subtitle && <Text className="text-muted-foreground mt-1">{subtitle}</Text>}
         </FlexBox>
-        
+
         {actions && (
           <FlexBox alignItems={FlexBoxAlignItems.Center} style={{ gap: '0.5rem' }}>
             {actions}
           </FlexBox>
         )}
       </FlexBox>
-    </div>
+    </header>
   );
 };

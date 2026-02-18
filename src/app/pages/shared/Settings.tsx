@@ -2,6 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { useTheme } from '../../context/ThemeContext';
 import { toast } from 'sonner';
+import {
+  Card,
+  CardHeader,
+  Title,
+  Switch,
+  Select,
+  Option,
+  Button,
+  Label,
+  FlexBox,
+  FlexBoxAlignItems,
+  FlexBoxJustifyContent,
+  FlexBoxDirection,
+  Icon,
+  MessageStrip,
+} from '@ui5/webcomponents-react';
+import '@ui5/webcomponents-icons/dist/palette.js';
+import '@ui5/webcomponents-icons/dist/bell.js';
+import '@ui5/webcomponents-icons/dist/globe.js';
+import '@ui5/webcomponents-icons/dist/save.js';
 
 interface LocalSettings {
   emailNotifications: boolean;
@@ -48,76 +68,139 @@ export const SettingsPage: React.FC = () => {
       />
 
       <div className="p-6 max-w-3xl space-y-6">
-        <section className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Appearance</h3>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground">Theme</p>
-              <p className="text-xs text-muted-foreground">
-                Current: {theme === 'dark' ? 'Dark' : 'Light'}
-              </p>
-            </div>
-            <button
-              onClick={toggleTheme}
-              className="px-4 py-2 border border-border rounded hover:bg-accent text-foreground"
-            >
-              Toggle Theme
-            </button>
-          </div>
-        </section>
-
-        <section className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Notifications</h3>
-          <label className="flex items-center justify-between text-sm">
-            <span className="text-foreground">Email notifications</span>
-            <input
-              type="checkbox"
-              checked={settings.emailNotifications}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, emailNotifications: e.target.checked }))
-              }
+        {/* Appearance */}
+        <Card
+          header={
+            <CardHeader
+              titleText="Appearance"
+              subtitleText="Customize the look and feel"
+              avatar={<Icon name="palette" />}
             />
-          </label>
-          <label className="flex items-center justify-between text-sm">
-            <span className="text-foreground">Desktop notifications</span>
-            <input
-              type="checkbox"
-              checked={settings.desktopNotifications}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, desktopNotifications: e.target.checked }))
-              }
-            />
-          </label>
-          <label className="flex items-center justify-between text-sm">
-            <span className="text-foreground">Weekly KPI digest</span>
-            <input
-              type="checkbox"
-              checked={settings.weeklyDigest}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, weeklyDigest: e.target.checked }))
-              }
-            />
-          </label>
-        </section>
-
-        <section className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Locale</h3>
-          <select
-            value={settings.locale}
-            onChange={(e) => setSettings((prev) => ({ ...prev, locale: e.target.value }))}
-            className="px-3 py-2 border border-border rounded bg-card text-foreground"
-          >
-            <option value="en-US">English (US)</option>
-            <option value="fr-FR">French (FR)</option>
-          </select>
-        </section>
-
-        <button
-          onClick={save}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+          }
         >
+          <div className="p-4">
+            <FlexBox
+              alignItems={FlexBoxAlignItems.Center}
+              justifyContent={FlexBoxJustifyContent.SpaceBetween}
+            >
+              <FlexBox direction={FlexBoxDirection.Column}>
+                <Label className="font-medium">Theme</Label>
+                <span className="text-xs text-muted-foreground">
+                  Current: {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                </span>
+              </FlexBox>
+              <Switch
+                checked={theme === 'dark'}
+                onChange={toggleTheme}
+                tooltip={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              />
+            </FlexBox>
+          </div>
+        </Card>
+
+        {/* Notifications */}
+        <Card
+          header={
+            <CardHeader
+              titleText="Notifications"
+              subtitleText="Manage how you receive updates"
+              avatar={<Icon name="bell" />}
+            />
+          }
+        >
+          <div className="p-4 space-y-4">
+            <FlexBox
+              alignItems={FlexBoxAlignItems.Center}
+              justifyContent={FlexBoxJustifyContent.SpaceBetween}
+            >
+              <Label>Email notifications</Label>
+              <Switch
+                checked={settings.emailNotifications}
+                onChange={() =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    emailNotifications: !prev.emailNotifications,
+                  }))
+                }
+              />
+            </FlexBox>
+
+            <FlexBox
+              alignItems={FlexBoxAlignItems.Center}
+              justifyContent={FlexBoxJustifyContent.SpaceBetween}
+            >
+              <Label>Desktop notifications</Label>
+              <Switch
+                checked={settings.desktopNotifications}
+                onChange={() =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    desktopNotifications: !prev.desktopNotifications,
+                  }))
+                }
+              />
+            </FlexBox>
+
+            <FlexBox
+              alignItems={FlexBoxAlignItems.Center}
+              justifyContent={FlexBoxJustifyContent.SpaceBetween}
+            >
+              <Label>Weekly KPI digest</Label>
+              <Switch
+                checked={settings.weeklyDigest}
+                onChange={() =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    weeklyDigest: !prev.weeklyDigest,
+                  }))
+                }
+              />
+            </FlexBox>
+          </div>
+        </Card>
+
+        {/* Locale */}
+        <Card
+          header={
+            <CardHeader
+              titleText="Locale"
+              subtitleText="Language and region settings"
+              avatar={<Icon name="globe" />}
+            />
+          }
+        >
+          <div className="p-4">
+            <FlexBox
+              alignItems={FlexBoxAlignItems.Center}
+              justifyContent={FlexBoxJustifyContent.SpaceBetween}
+            >
+              <Label>Display Language</Label>
+              <Select
+                onChange={(e) => {
+                  const selected = e.detail.selectedOption?.dataset?.value;
+                  if (selected) {
+                    setSettings((prev) => ({ ...prev, locale: selected }));
+                  }
+                }}
+              >
+                <Option data-value="en-US" selected={settings.locale === 'en-US'}>
+                  English (US)
+                </Option>
+                <Option data-value="fr-FR" selected={settings.locale === 'fr-FR'}>
+                  French (FR)
+                </Option>
+              </Select>
+            </FlexBox>
+          </div>
+        </Card>
+
+        <MessageStrip hideCloseButton>
+          Settings are stored locally in the browser for this demo environment.
+        </MessageStrip>
+
+        <Button design="Emphasized" icon="save" onClick={save}>
           Save Settings
-        </button>
+        </Button>
       </div>
     </div>
   );

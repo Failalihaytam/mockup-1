@@ -14,7 +14,7 @@ import { ReferenceDataManagement } from './pages/admin/ReferenceData';
 
 // Manager pages
 import { ManagerDashboard } from './pages/manager/ManagerDashboard';
-import { Projects } from './pages/manager/Projects';
+import { ProjectsEnhanced as Projects } from './pages/manager/ProjectsEnhanced';
 import { ProjectDetails } from './pages/manager/ProjectDetails';
 import { TeamPerformance } from './pages/manager/TeamPerformance';
 import { ResourceAllocation } from './pages/manager/ResourceAllocation';

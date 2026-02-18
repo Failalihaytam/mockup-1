@@ -1,36 +1,26 @@
-// Manager Performance Dashboard - Main KPI and charts view
-
+// Manager Performance Dashboard - SAP Fiori Overview Page (OVP) Pattern
 import React, { useEffect, useState } from 'react';
-import { PageHeader } from '../../components/common/PageHeader';
-import { KPICard } from '../../components/common/KPICard';
 import {
+  DynamicPage,
+  DynamicPageTitle,
+  DynamicPageHeader,
+  FlexBox,
+  FlexBoxDirection,
+  FlexBoxWrap,
+  Label,
+  Title,
   Card,
   CardHeader,
   List,
   ListItemStandard,
+  ValueColor,
 } from '@ui5/webcomponents-react';
-import '@ui5/webcomponents-icons/dist/trend-up.js';
-import '@ui5/webcomponents-icons/dist/sys-enter-2.js';
-import '@ui5/webcomponents-icons/dist/alert.js';
-import '@ui5/webcomponents-icons/dist/history.js';
-import '@ui5/webcomponents-icons/dist/group.js';
-import '@ui5/webcomponents-icons/dist/goal.js';
-import '@ui5/webcomponents-icons/dist/activity-items.js';
 import {
   BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Area,
-  AreaChart,
-} from 'recharts';
+  DonutChart,
+  LineChart,
+} from '@ui5/webcomponents-react-charts';
+import { AnalyticalKPICard } from '../../components/common/AnalyticalKPICard';
 import {
   getProjectProgressTrend,
   getTasksByStatus,
@@ -39,14 +29,12 @@ import {
   mockKPI,
 } from '../../services/mockData';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
-
-const tooltipStyle = {
-  backgroundColor: 'var(--popover)',
-  border: '1px solid var(--border)',
-  borderRadius: '8px',
-  color: 'var(--foreground)',
-};
+import '@ui5/webcomponents-icons/dist/trend-up.js';
+import '@ui5/webcomponents-icons/dist/alert.js';
+import '@ui5/webcomponents-icons/dist/history.js';
+import '@ui5/webcomponents-icons/dist/task.js';
+import '@ui5/webcomponents-icons/dist/warning.js';
+import '@ui5/webcomponents-icons/dist/performance.js';
 
 export const ManagerDashboard: React.FC = () => {
   const [kpi, setKpi] = useState(mockKPI);
@@ -60,172 +48,178 @@ export const ManagerDashboard: React.FC = () => {
   }, []);
 
   const loadDashboardData = async () => {
-    setProgressTrend(getProjectProgressTrend());
-    setTasksByStatus(getTasksByStatus());
-    setConsultantWorkload(getConsultantWorkload());
-    setAllocationData(getAllocationByProject());
+    // Mapping data for UI5 Charts
+    setProgressTrend(getProjectProgressTrend().map(d => ({ month: d.date, progress: d.progress })));
+    setTasksByStatus(getTasksByStatus().map(d => ({ status: d.status, count: d.count })));
+    setConsultantWorkload(getConsultantWorkload().map(d => ({ name: d.name, planned: d.planned, actual: d.actual })));
+    setAllocationData(getAllocationByProject().map(d => ({ name: d.project, value: d.allocation })));
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <PageHeader
-        title="Performance Dashboard"
-        subtitle="Global view of projects, tasks, and team performance"
-        breadcrumbs={[
-          { label: 'Home', path: '/manager/dashboard' },
-          { label: 'Dashboard' },
-        ]}
-      />
+    <DynamicPage
+      titleArea={
+        <DynamicPageTitle
+          heading={<Title>Performance Overview</Title>}
+          subheading={<Label>Real-time project and team analytics</Label>}
+        />
+      }
+      headerArea={
+        <DynamicPageHeader>
+          <FlexBox wrap={FlexBoxWrap.Wrap} direction={FlexBoxDirection.Row} style={{ gap: '2rem' }}>
+            <FlexBox direction={FlexBoxDirection.Column}>
+              <Label>Manager</Label>
+              <Title level="H5">Marie Martin</Title>
+            </FlexBox>
+            <FlexBox direction={FlexBoxDirection.Column}>
+              <Label>Department</Label>
+              <Title level="H5">SAP Solutions</Title>
+            </FlexBox>
+            <FlexBox direction={FlexBoxDirection.Column}>
+              <Label>Reporting Period</Label>
+              <Title level="H5">Q1 2026</Title>
+            </FlexBox>
+          </FlexBox>
+        </DynamicPageHeader>
+      }
+      style={{ height: '100%' }}
+    >
+      <FlexBox direction={FlexBoxDirection.Column} style={{ padding: '1rem', gap: '1rem' }}>
+        {/* KPI Cards Row */}
+        <FlexBox wrap={FlexBoxWrap.Wrap} style={{ gap: '1rem' }}>
+          <div style={{ flex: '1 1 calc(25% - 1rem)', minWidth: '250px' }}>
+            <AnalyticalKPICard
+              title="Overall Progress"
+              value={kpi.projectProgress}
+              unit="%"
+              trend="Up"
+              state={ValueColor.Good}
+              subtitle="Current vs Target"
+              target={70}
+              icon="trend-up"
+            />
+          </div>
+          <div style={{ flex: '1 1 calc(25% - 1rem)', minWidth: '250px' }}>
+            <AnalyticalKPICard
+              title="Tasks Performance"
+              value={`${kpi.tasksOnTrack}/${kpi.tasksOnTrack + kpi.tasksLate}`}
+              subtitle="On Track / Total"
+              state={ValueColor.None}
+              icon="task"
+            />
+          </div>
+          <div style={{ flex: '1 1 calc(25% - 1rem)', minWidth: '250px' }}>
+            <AnalyticalKPICard
+              title="Critical Tasks"
+              value={kpi.criticalTasks}
+              state={ValueColor.Error}
+              trend="Up"
+              subtitle="Immediate Action Required"
+              deviation="High"
+              icon="warning"
+            />
+          </div>
+          <div style={{ flex: '1 1 calc(25% - 1rem)', minWidth: '250px' }}>
+            <AnalyticalKPICard
+              title="Team Productivity"
+              value={kpi.averageProductivity.toFixed(1)}
+              unit="/ 5"
+              state={ValueColor.Good}
+              subtitle="Average Performance"
+              target={5}
+              icon="performance"
+            />
+          </div>
+        </FlexBox>
 
-      <div className="space-y-6 mt-6">
-        {/* Top KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <KPICard
-            title="Overall Project Progress"
-            value={`${kpi.projectProgress}%`}
-            icon="trend-up"
-            color="blue"
-            progress={kpi.projectProgress}
-            trend={{ value: 8, label: 'vs last month' }}
-          />
-          <KPICard
-            title="Tasks Performance"
-            value={`${kpi.tasksOnTrack}/${kpi.tasksOnTrack + kpi.tasksLate}`}
-            subtitle="On Track / Total"
-            icon="sys-enter-2"
-            color="green"
-          />
-          <KPICard
-            title="Critical Tasks"
-            value={kpi.criticalTasks}
-            subtitle="Require immediate attention"
-            icon="alert"
-            color="red"
-          />
-          <KPICard
-            title="Team Productivity"
-            value={kpi.averageProductivity.toFixed(1)}
-            subtitle="Average score out of 5"
-            icon="goal"
-            color="purple"
-            progress={(kpi.averageProductivity / 5) * 100}
-          />
-        </div>
+        {/* Charts Row */}
+        <FlexBox wrap={FlexBoxWrap.Wrap} style={{ gap: '1rem' }}>
+          {/* Progress Trend Chart */}
+          <div style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: '400px' }}>
+            <Card 
+              header={
+                <CardHeader 
+                  titleText="Project Progress Trend" 
+                  subtitleText="Monthly growth percentage" 
+                />
+              }
+            >
+              <div style={{ padding: '1rem', height: '300px' }}>
+                <LineChart
+                  dimensions={[{ accessor: 'month' }]}
+                  measures={[{ accessor: 'progress', label: 'Progress %' }]}
+                  dataset={progressTrend}
+                  noLegend
+                />
+              </div>
+            </Card>
+          </div>
 
-        {/* Second Row KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <KPICard
-            title="Resource Allocation Rate"
-            value={`${kpi.allocationRate}%`}
-            icon="group"
-            color="blue"
-            progress={kpi.allocationRate}
-          />
-          <KPICard
-            title="Active Risks"
-            value={kpi.activeRisks}
-            subtitle="Blocked or at-risk tasks"
-            icon="activity-items"
-            color="yellow"
-          />
-          <KPICard
-            title="Tasks Late"
-            value={kpi.tasksLate}
-            subtitle="Behind schedule"
-            icon="history"
-            color="red"
-          />
-        </div>
+          {/* Tasks Distribution Chart */}
+          <div style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: '400px' }}>
+            <Card 
+              header={
+                <CardHeader 
+                  titleText="Tasks Status Distribution" 
+                  subtitleText="Current workload status" 
+                />
+              }
+            >
+              <div style={{ padding: '1rem', height: '300px' }}>
+                <BarChart
+                  dimensions={[{ accessor: 'status' }]}
+                  measures={[{ accessor: 'count', label: 'Tasks' }]}
+                  dataset={tasksByStatus}
+                />
+              </div>
+            </Card>
+          </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Project Progress Trend */}
-          <Card header={<CardHeader titleText="Project Progress Over Time" />} className="h-[400px]">
-            <div style={{ padding: '1rem', height: '340px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={progressTrend}>
-                  <defs>
-                    <linearGradient id="colorProgress" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00AA9B" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#00AA9B" stopOpacity={0.1} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="date" stroke="var(--muted-foreground)" />
-                  <YAxis stroke="var(--muted-foreground)" />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Area
-                    type="monotone"
-                    dataKey="progress"
-                    stroke="#00AA9B"
-                    fill="url(#colorProgress)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
+          {/* Consultant Workload Chart */}
+          <div style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: '400px' }}>
+            <Card 
+              header={
+                <CardHeader 
+                  titleText="Resource Workload Analysis" 
+                  subtitleText="Planned vs Actual Hours" 
+                />
+              }
+            >
+              <div style={{ padding: '1rem', height: '300px' }}>
+                <BarChart
+                  dimensions={[{ accessor: 'name' }]}
+                  measures={[
+                    { accessor: 'planned', label: 'Planned' },
+                    { accessor: 'actual', label: 'Actual' }
+                  ]}
+                  dataset={consultantWorkload}
+                />
+              </div>
+            </Card>
+          </div>
 
-          {/* Tasks by Status */}
-          <Card header={<CardHeader titleText="Tasks by Status" />} className="h-[400px]">
-             <div style={{ padding: '1rem', height: '340px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={tasksByStatus}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="status" stroke="var(--muted-foreground)" />
-                  <YAxis stroke="var(--muted-foreground)" />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                  <Bar dataKey="count" fill="#00AA9B" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
+          {/* Allocation Donut Chart */}
+          <div style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: '400px' }}>
+            <Card 
+              header={
+                <CardHeader 
+                  titleText="Resource Allocation" 
+                  subtitleText="By Project Portfolio" 
+                />
+              }
+            >
+              <div style={{ padding: '1rem', height: '300px' }}>
+                <DonutChart
+                  dimension={{ accessor: 'name' }}
+                  measure={{ accessor: 'value' }}
+                  dataset={allocationData}
+                />
+              </div>
+            </Card>
+          </div>
+        </FlexBox>
 
-          {/* Consultant Workload */}
-          <Card header={<CardHeader titleText="Consultant Workload (Hours)" />} className="h-[400px]">
-            <div style={{ padding: '1rem', height: '340px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={consultantWorkload}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="name" stroke="var(--muted-foreground)" />
-                  <YAxis stroke="var(--muted-foreground)" />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                  <Bar dataKey="planned" fill="#06b6d4" name="Planned" />
-                  <Bar dataKey="actual" fill="#00AA9B" name="Actual" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-
-          {/* Allocation by Project */}
-          <Card header={<CardHeader titleText="Resource Allocation by Project" />} className="h-[400px]">
-             <div style={{ padding: '1rem', height: '340px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={allocationData}
-                    dataKey="allocation"
-                    nameKey="project"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label
-                  >
-                    {allocationData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </div>
-
-        {/* Recent Activities / Alerts */}
-        <Card header={<CardHeader titleText="Recent Alerts & Activities" />}>
+        {/* Critical Alerts */}
+        <Card header={<CardHeader titleText="Critical Alerts & Risk Factors" />}>
           <List>
             <ListItemStandard
               icon="alert"
@@ -233,7 +227,7 @@ export const ManagerDashboard: React.FC = () => {
               additionalText="Blocked"
               additionalTextState="Negative"
             >
-              Critical Task Blocked: Testing & Validation
+              Task Blocked: Testing & Validation
             </ListItemStandard>
             <ListItemStandard
               icon="history"
@@ -243,17 +237,9 @@ export const ManagerDashboard: React.FC = () => {
             >
               Deadline Approaching
             </ListItemStandard>
-            <ListItemStandard
-              icon="sys-enter-2"
-              description="Dashboard UI Design completed ahead of schedule"
-              additionalText="Completed"
-              additionalTextState="Positive"
-            >
-              Task Completed
-            </ListItemStandard>
           </List>
         </Card>
-      </div>
-    </div>
+      </FlexBox>
+    </DynamicPage>
   );
 };

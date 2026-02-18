@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ThemeProvider as UI5ThemeProvider } from '@ui5/webcomponents-react';
+import { setTheme as setUI5Theme } from '@ui5/webcomponents-base/dist/config/Theme.js';
 
 type Theme = 'light' | 'dark';
 
@@ -20,6 +21,9 @@ export const useTheme = () => {
   return context;
 };
 
+const UI5_LIGHT = 'sap_horizon';
+const UI5_DARK = 'sap_horizon_dark';
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     const stored = localStorage.getItem('theme') as Theme | null;
@@ -35,6 +39,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       root.classList.remove('dark');
     }
     localStorage.setItem('theme', theme);
+
+    // Sync UI5 Web Components theme
+    void setUI5Theme(theme === 'dark' ? UI5_DARK : UI5_LIGHT);
   }, [theme]);
 
   const toggleTheme = () => {

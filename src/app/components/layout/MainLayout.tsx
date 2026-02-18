@@ -1,22 +1,33 @@
-// Main layout with sidebar and top bar
-
-import React, { useState } from 'react';
+// Main layout with SAP Fiori ShellBar and SideNavigation
+import React from 'react';
 import { Outlet } from 'react-router';
-import { Sidebar } from './Sidebar';
-import { TopBar } from './TopBar';
+import { FlexBox, FlexBoxDirection } from '@ui5/webcomponents-react';
+import { AppShell } from './AppShell';
+import { AppNavigation } from './AppNavigation';
 
 export const MainLayout: React.FC = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <TopBar onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar collapsed={sidebarCollapsed} />
-        <main className="flex-1 overflow-auto bg-background p-4">
+    <AppShell>
+      <FlexBox 
+        direction={FlexBoxDirection.Row} 
+        style={{ 
+          height: 'calc(100vh - 44px)', 
+          width: '100vw',
+          overflow: 'hidden'
+        }}
+      >
+        <AppNavigation />
+        <FlexBox 
+          direction={FlexBoxDirection.Column} 
+          style={{ 
+            flexGrow: 1, 
+            overflowY: 'auto', 
+            background: 'var(--sapBackgroundColor)',
+          }}
+        >
           <Outlet />
-        </main>
-      </div>
-    </div>
+        </FlexBox>
+      </FlexBox>
+    </AppShell>
   );
 };
