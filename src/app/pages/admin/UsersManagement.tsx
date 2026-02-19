@@ -142,7 +142,7 @@ export const UsersManagement: React.FC = () => {
       role: user.role,
       active: user.active,
       skills: user.skills.join(', '),
-      certifications: user.certifications.join(', '),
+      certifications: user.certifications.map((c) => typeof c === 'string' ? c : c.name).join(', '),
       availabilityPercent: user.availabilityPercent,
     });
     setShowDialog(true);
@@ -187,7 +187,8 @@ export const UsersManagement: React.FC = () => {
       certifications: form.certifications
         .split(',')
         .map((entry) => entry.trim())
-        .filter(Boolean),
+        .filter(Boolean)
+        .map((name, i) => ({ id: `cert_${Date.now()}_${i}`, name, issuingBody: 'N/A', dateObtained: new Date().toISOString().slice(0, 10), status: 'VALID' as const })),
       availabilityPercent: form.availabilityPercent,
       teamId: 't1',
     };

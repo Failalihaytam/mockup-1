@@ -11,6 +11,9 @@ import {
 } from '../../services/odataClient';
 import { Allocation, Deliverable, Project, Task, Ticket, User } from '../../types/entities';
 import { toast } from 'sonner';
+import { Badge } from '../../components/ui/badge';
+import { Textarea } from '../../components/ui/textarea';
+import { Button } from '../../components/ui/button';
 
 import {
   Select,
@@ -28,12 +31,13 @@ import {
   TableRow,
 } from '../../components/ui/table';
 
-type TabKey = 'overview' | 'tasks' | 'team' | 'kpi';
+type TabKey = 'overview' | 'tasks' | 'team' | 'kpi' | 'docs';
 const PROJECT_TABS: { key: TabKey; label: string }[] = [
   { key: 'overview', label: 'Overview' },
   { key: 'tasks', label: 'Tasks' },
   { key: 'team', label: 'Team & Allocation' },
   { key: 'kpi', label: 'KPI Report' },
+  { key: 'docs', label: 'Documentation' },
 ];
 
 export const ProjectDetails: React.FC = () => {
@@ -47,6 +51,8 @@ export const ProjectDetails: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [loading, setLoading] = useState(true);
+  const [docText, setDocText] = useState('');
+  const [docSaving, setDocSaving] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -73,6 +79,7 @@ export const ProjectDetails: React.FC = () => {
       }
 
       setProject(p);
+      setDocText(p.documentation || '');
       setTasks(taskData);
       setAllocations(allocationData.filter((a) => a.projectId === projectId));
       setUsers(userData);
@@ -509,6 +516,142 @@ export const ProjectDetails: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+
+            {/* SLA Delay Breakdown */}
+            {(() => {
+              const lateTasks = tasks.filter(
+                (t) => t.status !== 'DONE' && new Date(t.plannedEnd) < new Date()
+              );
+              const avgDelay = lateTasks.length
+                ? lateTasks.reduce((sum, t) => {
+                    const diff = Math.ceil(
+                      (Date.now() - new Date(t.plannedEnd).getTime()) / (1000 * 60 * 60 * 24)
+                    );
+                    return sum + diff;
+                  }, 0) / lateTasks.length
+                : 0;
+
+              return (
+                <div className="space-y-3">
+                  <div className="bg-card border border-border rounded-lg p-4">
+                    <div className="text-xs text-muted-foreground mb-1">Average SLA Delay</div>
+                    <div className="text-2xl font-semibold text-accent-foreground">
+                      {avgDelay.toFixed(1)} days
+                    </div>
+                  </div>
+                  {lateTasks.length > 0 && (
+                    <div className="rounded-lg border bg-card">
+                      <Table>
+                        <TableHeader className="bg-muted/50">
+                          <TableRow>
+                            <TableHead className="px-4">Late Task</TableHead>
+                            <TableHead className="px-4">Planned End</TableHead>
+                            <TableHead className="px-4">Delay (days)</TableHead>
+                            <TableHead className="px-4">Assignee</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {lateTasks.map((t) => {
+                            const delay = Math.ceil(
+                              (Date.now() - new Date(t.plannedEnd).getTime()) / (1000 * 60 * 60 * 24)
+                            );
+                            return (
+                              <TableRow key={t.id}>
+                                <TableCell className="px-4 py-3 text-sm font-medium">{t.title}</TableCell>
+                                <TableCell className="px-4 py-3 text-sm">{new Date(t.plannedEnd).toLocaleDateString()}</TableCell>
+                                <TableCell className="px-4 py-3 text-sm font-semibold text-destructive">{delay}</TableCell>
+                                <TableCell className="px-4 py-3 text-sm">{users.find((u) => u.id === t.assigneeId)?.name ?? 'Unassigned'}</TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </section>
+        )}
+
+        {activeTab === 'docs' && (
+          <section
+            id="project-panel-docs"
+            role="tabpanel"
+            tabIndex={0}
+            aria-labelledby="project-tab-docs"
+            className="space-y-4"
+          >
+            {/* Project Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-1">Complexity</div>
+                <div className="text-lg font-semibold text-foreground">
+                  <Badge variant="outline">{project.complexity ?? 'N/A'}</Badge>
+                </div>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-1">Budget (Chiffrage)</div>
+                <div className="text-lg font-semibold text-foreground">
+                  ${project.budget?.toLocaleString() ?? 'N/A'}
+                </div>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-1">Time Spent (h)</div>
+                <div className="text-lg font-semibold text-foreground">
+                  {tasks.reduce((sum, t) => sum + t.actualHours, 0).toFixed(1)}
+                </div>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-1">Estimated Hours</div>
+                <div className="text-lg font-semibold text-foreground">
+                  {tasks.reduce((sum, t) => sum + t.estimatedHours, 0).toFixed(1)}
+                </div>
+              </div>
+            </div>
+
+            {/* Tech Keywords */}
+            {project.techKeywords && project.techKeywords.length > 0 && (
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-2">Tech Keywords</div>
+                <div className="flex flex-wrap gap-2">
+                  {project.techKeywords.map((kw) => (
+                    <Badge key={kw} variant="secondary">{kw}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Documentation area */}
+            <div className="bg-card border border-border rounded-lg p-5 space-y-3">
+              <h3 className="text-lg font-semibold text-foreground">Project Documentation</h3>
+              <Textarea
+                value={docText}
+                onChange={(e) => setDocText(e.target.value)}
+                rows={12}
+                placeholder="Write project documentation here (markdown supported)..."
+                className="font-mono text-sm"
+              />
+              <div className="flex justify-end">
+                <Button
+                  disabled={docSaving}
+                  onClick={async () => {
+                    setDocSaving(true);
+                    try {
+                      await ProjectsAPI.update(project.id, { documentation: docText });
+                      setProject((prev) => (prev ? { ...prev, documentation: docText } : prev));
+                      toast.success('Documentation saved');
+                    } catch {
+                      toast.error('Failed to save documentation');
+                    } finally {
+                      setDocSaving(false);
+                    }
+                  }}
+                >
+                  {docSaving ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
             </div>
           </section>
         )}

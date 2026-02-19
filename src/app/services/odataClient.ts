@@ -13,6 +13,8 @@ import {
   Notification,
   ReferenceData,
   Allocation,
+  LeaveRequest,
+  TimeLog,
 } from '../types/entities';
 
 import {
@@ -26,6 +28,8 @@ import {
   mockNotifications,
   mockReferenceData,
   mockAllocations,
+  mockLeaveRequests,
+  mockTimeLogs,
 } from './mockData';
 
 // Configuration
@@ -659,6 +663,150 @@ export const AllocationsAPI = {
     }
     await odataFetch<void>(`/Allocations('${id}')`, {
       method: 'DELETE',
+    });
+  },
+};
+
+// Leave Requests API
+export const LeaveRequestsAPI = {
+  async getAll(): Promise<LeaveRequest[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return [...mockLeaveRequests];
+    }
+    const response = await odataFetch<ODataResponse<LeaveRequest>>('/LeaveRequests');
+    return response.value;
+  },
+
+  async getByConsultant(consultantId: string): Promise<LeaveRequest[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return mockLeaveRequests.filter((lr) => lr.consultantId === consultantId);
+    }
+    const response = await odataFetch<ODataResponse<LeaveRequest>>(
+      `/LeaveRequests?$filter=consultantId eq '${consultantId}'`
+    );
+    return response.value;
+  },
+
+  async create(leaveRequest: Omit<LeaveRequest, 'id' | 'createdAt'>): Promise<LeaveRequest> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const newLeaveRequest: LeaveRequest = {
+        ...leaveRequest,
+        id: `lr${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      };
+      mockLeaveRequests.push(newLeaveRequest);
+      return newLeaveRequest;
+    }
+    return await odataFetch<LeaveRequest>('/LeaveRequests', {
+      method: 'POST',
+      body: JSON.stringify(leaveRequest),
+    });
+  },
+
+  async update(id: string, data: Partial<LeaveRequest>): Promise<LeaveRequest> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const index = mockLeaveRequests.findIndex((lr) => lr.id === id);
+      if (index !== -1) {
+        mockLeaveRequests[index] = { ...mockLeaveRequests[index], ...data };
+        return mockLeaveRequests[index];
+      }
+      throw new Error('Leave request not found');
+    }
+    return await odataFetch<LeaveRequest>(`/LeaveRequests('${id}')`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Time Logs API (StraTIME)
+// ---------------------------------------------------------------------------
+
+export const TimeLogsAPI = {
+  async getAll(): Promise<TimeLog[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return [...mockTimeLogs];
+    }
+    const response = await odataFetch<ODataResponse<TimeLog>>('/TimeLogs');
+    return response.value;
+  },
+
+  async getByConsultant(consultantId: string): Promise<TimeLog[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return mockTimeLogs.filter((tl) => tl.consultantId === consultantId);
+    }
+    const response = await odataFetch<ODataResponse<TimeLog>>(
+      `/TimeLogs?$filter=consultantId eq '${consultantId}'`
+    );
+    return response.value;
+  },
+
+  async getByTicket(ticketId: string): Promise<TimeLog[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return mockTimeLogs.filter((tl) => tl.ticketId === ticketId);
+    }
+    const response = await odataFetch<ODataResponse<TimeLog>>(
+      `/TimeLogs?$filter=ticketId eq '${ticketId}'`
+    );
+    return response.value;
+  },
+
+  async create(timeLog: Omit<TimeLog, 'id'>): Promise<TimeLog> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const newTimeLog: TimeLog = {
+        ...timeLog,
+        id: `tl${Date.now()}`,
+      };
+      mockTimeLogs.push(newTimeLog);
+      return newTimeLog;
+    }
+    return await odataFetch<TimeLog>('/TimeLogs', {
+      method: 'POST',
+      body: JSON.stringify(timeLog),
+    });
+  },
+
+  async update(id: string, data: Partial<TimeLog>): Promise<TimeLog> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const index = mockTimeLogs.findIndex((tl) => tl.id === id);
+      if (index !== -1) {
+        mockTimeLogs[index] = { ...mockTimeLogs[index], ...data };
+        return mockTimeLogs[index];
+      }
+      throw new Error('Time log not found');
+    }
+    return await odataFetch<TimeLog>(`/TimeLogs('${id}')`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async sendToStraTIME(id: string): Promise<TimeLog> {
+    if (USE_MOCK_DATA) {
+      await mockDelay(1500);
+      const index = mockTimeLogs.findIndex((tl) => tl.id === id);
+      if (index !== -1) {
+        mockTimeLogs[index] = {
+          ...mockTimeLogs[index],
+          sentToStraTIME: true,
+          sentAt: new Date().toISOString(),
+        };
+        return mockTimeLogs[index];
+      }
+      throw new Error('Time log not found');
+    }
+    return await odataFetch<TimeLog>(`/TimeLogs('${id}')/sendToStraTIME`, {
+      method: 'POST',
     });
   },
 };

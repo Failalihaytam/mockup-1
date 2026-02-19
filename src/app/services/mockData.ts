@@ -13,6 +13,8 @@ import {
   ReferenceData,
   Allocation,
   KPI,
+  LeaveRequest,
+  TimeLog,
 } from '../types/entities';
 
 // ---------------------------------------------------------------------------
@@ -86,7 +88,10 @@ const _defaultUsers: User[] = [
     role: 'ADMIN',
     active: true,
     skills: ['Administration', 'Security', 'Governance'],
-    certifications: ['SAP Admin', 'ITIL'],
+    certifications: [
+      { id: 'c1', name: 'SAP Admin', issuingBody: 'SAP', dateObtained: '2023-03-15', expiryDate: '2027-03-15', status: 'VALID' },
+      { id: 'c2', name: 'ITIL Foundation', issuingBody: 'Axelos', dateObtained: '2022-06-01', status: 'VALID' },
+    ],
     availabilityPercent: 100,
     teamId: 't1',
   },
@@ -97,7 +102,10 @@ const _defaultUsers: User[] = [
     role: 'MANAGER',
     active: true,
     skills: ['Project Management', 'Team Leadership', 'SAP'],
-    certifications: ['PMP', 'SAP PM'],
+    certifications: [
+      { id: 'c3', name: 'PMP', issuingBody: 'PMI', dateObtained: '2021-09-10', expiryDate: '2024-09-10', status: 'EXPIRED' },
+      { id: 'c4', name: 'SAP PM Consultant', issuingBody: 'SAP', dateObtained: '2023-01-20', expiryDate: '2027-01-20', status: 'VALID' },
+    ],
     availabilityPercent: 90,
     teamId: 't1',
   },
@@ -108,7 +116,10 @@ const _defaultUsers: User[] = [
     role: 'CONSULTANT_TECHNIQUE',
     active: true,
     skills: ['ABAP', 'Fiori', 'CAP', 'Node.js'],
-    certifications: ['SAP Developer', 'AWS Solutions Architect'],
+    certifications: [
+      { id: 'c5', name: 'SAP Developer Associate', issuingBody: 'SAP', dateObtained: '2024-05-15', expiryDate: '2026-05-15', status: 'EXPIRING_SOON' },
+      { id: 'c6', name: 'AWS Solutions Architect', issuingBody: 'AWS', dateObtained: '2024-01-10', expiryDate: '2027-01-10', status: 'VALID' },
+    ],
     availabilityPercent: 75,
     teamId: 't1',
   },
@@ -119,7 +130,10 @@ const _defaultUsers: User[] = [
     role: 'CONSULTANT_FONCTIONNEL',
     active: true,
     skills: ['Business Analysis', 'SAP MM', 'Requirements'],
-    certifications: ['SAP MM Consultant', 'CBAP'],
+    certifications: [
+      { id: 'c7', name: 'SAP MM Consultant', issuingBody: 'SAP', dateObtained: '2023-11-01', expiryDate: '2026-11-01', status: 'VALID' },
+      { id: 'c8', name: 'CBAP', issuingBody: 'IIBA', dateObtained: '2022-08-20', expiryDate: '2025-08-20', status: 'EXPIRED' },
+    ],
     availabilityPercent: 80,
     teamId: 't1',
   },
@@ -130,12 +144,14 @@ const _defaultUsers: User[] = [
     role: 'CONSULTANT_TECHNIQUE',
     active: true,
     skills: ['Java', 'Integration', 'BTP'],
-    certifications: ['SAP Integration', 'Java Certified'],
+    certifications: [
+      { id: 'c9', name: 'SAP Integration Suite', issuingBody: 'SAP', dateObtained: '2025-02-01', expiryDate: '2028-02-01', status: 'VALID' },
+      { id: 'c10', name: 'Java SE Certified', issuingBody: 'Oracle', dateObtained: '2024-06-15', status: 'VALID' },
+    ],
     availabilityPercent: 60,
     teamId: 't1',
   },
 ];
-
 export const mockUsers: User[] = persistedArray('users', _defaultUsers);
 
 // ---------------------------------------------------------------------------
@@ -154,6 +170,9 @@ const _defaultProjects: Project[] = [
     description: 'Migration from ECC to S/4HANA',
     progress: 45,
     budget: 500000,
+    complexity: 'CRITICAL',
+    techKeywords: ['S/4HANA', 'ABAP', 'Data Migration', 'HANA DB'],
+    documentation: '## S/4HANA Migration\n\nThis project covers the full migration from SAP ECC to S/4HANA.\n\n### Scope\n- Data migration of all master data\n- Custom code remediation\n- Fiori app deployment\n\n### Key Decisions\n- Greenfield approach selected\n- Go-live target: June 2026',
   },
   {
     id: 'p2',
@@ -166,6 +185,9 @@ const _defaultProjects: Project[] = [
     description: 'Deploy Fiori Launchpad for all users',
     progress: 65,
     budget: 150000,
+    complexity: 'MEDIUM',
+    techKeywords: ['SAP Fiori', 'UI5', 'Launchpad', 'OData'],
+    documentation: '## Fiori Launchpad\n\nDeploy and configure the SAP Fiori Launchpad for the entire organization.\n\n### Apps\n- MM Purchase Orders\n- SD Sales Orders\n- FI Journal Entries',
   },
   {
     id: 'p3',
@@ -178,6 +200,9 @@ const _defaultProjects: Project[] = [
     description: 'Create custom analytics dashboards',
     progress: 80,
     budget: 80000,
+    complexity: 'LOW',
+    techKeywords: ['SAP Analytics Cloud', 'CDS Views', 'BW/4HANA'],
+    documentation: '## Analytics Dashboard\n\nCustom dashboards for executive reporting.\n\n### Data Sources\n- CDS views on S/4HANA\n- BW/4HANA models',
   },
 ];
 
@@ -392,7 +417,12 @@ const _defaultTickets: Ticket[] = [
     priority: 'HIGH',
     title: 'Clarification needed on data mapping',
     description: 'Need technical input on customer master data mapping rules',
+    dueDate: '2026-02-25',
     createdAt: '2026-02-15T14:20:00Z',
+    history: [
+      { id: 'te1', timestamp: '2026-02-15T14:20:00Z', userId: 'u4', action: 'CREATED', comment: 'Ticket created' },
+      { id: 'te2', timestamp: '2026-02-15T14:25:00Z', userId: 'u4', action: 'ASSIGNED', toValue: 'u3', comment: 'Assigned to Pierre Dubois' },
+    ],
   },
   {
     id: 'tk2',
@@ -403,8 +433,95 @@ const _defaultTickets: Ticket[] = [
     priority: 'MEDIUM',
     title: 'Integration issue with backend',
     description: 'Fiori app not connecting to backend service',
+    dueDate: '2026-02-28',
     createdAt: '2026-02-10T11:00:00Z',
     updatedAt: '2026-02-12T16:30:00Z',
+    history: [
+      { id: 'te3', timestamp: '2026-02-10T11:00:00Z', userId: 'u4', action: 'CREATED', comment: 'Ticket created' },
+      { id: 'te4', timestamp: '2026-02-12T16:30:00Z', userId: 'u2', action: 'STATUS_CHANGE', fromValue: 'OPEN', toValue: 'IN_PROGRESS', comment: 'Investigation started' },
+    ],
+    timerState: { status: 'running', startedAt: '2026-02-12T16:30:00Z', totalElapsedSeconds: 7200 },
+  },
+  {
+    id: 'tk3',
+    projectId: 'p1',
+    createdBy: 'u2',
+    assignedTo: 'u3',
+    status: 'RESOLVED',
+    priority: 'LOW',
+    title: 'Update migration script logging',
+    description: 'Add detailed logging to data migration scripts for audit trail',
+    dueDate: '2026-02-20',
+    createdAt: '2026-02-05T09:00:00Z',
+    updatedAt: '2026-02-18T10:00:00Z',
+    history: [
+      { id: 'te5', timestamp: '2026-02-05T09:00:00Z', userId: 'u2', action: 'CREATED', comment: 'Ticket created by manager' },
+      { id: 'te6', timestamp: '2026-02-06T08:00:00Z', userId: 'u2', action: 'ASSIGNED', toValue: 'u3' },
+      { id: 'te7', timestamp: '2026-02-10T11:00:00Z', userId: 'u3', action: 'STATUS_CHANGE', fromValue: 'OPEN', toValue: 'IN_PROGRESS' },
+      { id: 'te8', timestamp: '2026-02-18T10:00:00Z', userId: 'u3', action: 'STATUS_CHANGE', fromValue: 'IN_PROGRESS', toValue: 'RESOLVED', comment: 'Logging added and tested' },
+    ],
+    timerState: { status: 'stopped', totalElapsedSeconds: 14400 },
+  },
+  {
+    id: 'tk4',
+    projectId: 'p3',
+    createdBy: 'u4',
+    status: 'OPEN',
+    priority: 'HIGH',
+    title: 'Dashboard filters not working',
+    description: 'Date range filter on the analytics dashboard returns empty results',
+    dueDate: '2026-03-01',
+    createdAt: '2026-02-19T08:00:00Z',
+    history: [
+      { id: 'te9', timestamp: '2026-02-19T08:00:00Z', userId: 'u4', action: 'CREATED', comment: 'Ticket created' },
+    ],
+  },
+  {
+    id: 'tk5',
+    projectId: 'p1',
+    createdBy: 'u2',
+    assignedTo: 'u3',
+    status: 'OPEN',
+    priority: 'HIGH',
+    title: 'Implement batch job error handling',
+    description: 'Add retry logic and error notifications to the nightly batch migration job',
+    dueDate: '2026-03-05',
+    createdAt: '2026-02-18T10:00:00Z',
+    history: [
+      { id: 'te10', timestamp: '2026-02-18T10:00:00Z', userId: 'u2', action: 'CREATED', comment: 'Ticket created by manager' },
+      { id: 'te11', timestamp: '2026-02-18T10:05:00Z', userId: 'u2', action: 'ASSIGNED', toValue: 'u3', comment: 'Assigned to Pierre Dubois' },
+    ],
+  },
+  {
+    id: 'tk6',
+    projectId: 'p2',
+    createdBy: 'u2',
+    assignedTo: 'u3',
+    status: 'OPEN',
+    priority: 'MEDIUM',
+    title: 'Configure Fiori notification service',
+    description: 'Set up push notifications for task assignments and deadline reminders in Fiori Launchpad',
+    dueDate: '2026-03-10',
+    createdAt: '2026-02-19T07:30:00Z',
+    history: [
+      { id: 'te12', timestamp: '2026-02-19T07:30:00Z', userId: 'u2', action: 'CREATED', comment: 'Ticket created by manager' },
+      { id: 'te13', timestamp: '2026-02-19T07:35:00Z', userId: 'u2', action: 'ASSIGNED', toValue: 'u3', comment: 'Assigned to Pierre Dubois' },
+    ],
+  },
+  {
+    id: 'tk7',
+    projectId: 'p1',
+    createdBy: 'u3',
+    assignedTo: 'u3',
+    status: 'OPEN',
+    priority: 'CRITICAL',
+    title: 'Fix memory leak in data export module',
+    description: 'The export of large datasets causes the Node process to run out of memory after ~500k rows',
+    dueDate: '2026-02-25',
+    createdAt: '2026-02-19T09:00:00Z',
+    history: [
+      { id: 'te14', timestamp: '2026-02-19T09:00:00Z', userId: 'u3', action: 'CREATED', comment: 'Ticket created' },
+    ],
   },
 ];
 
@@ -511,6 +628,128 @@ const _defaultAllocations: Allocation[] = [
 ];
 
 export const mockAllocations: Allocation[] = persistedArray('allocations', _defaultAllocations);
+
+// ---------------------------------------------------------------------------
+// Mock Leave Requests
+// ---------------------------------------------------------------------------
+
+const _defaultLeaveRequests: LeaveRequest[] = [
+  {
+    id: 'lr1',
+    consultantId: 'u3',
+    startDate: '2026-03-10',
+    endDate: '2026-03-14',
+    reason: 'Family vacation',
+    status: 'APPROVED',
+    managerId: 'u2',
+    createdAt: '2026-02-10T09:00:00Z',
+    reviewedAt: '2026-02-11T14:00:00Z',
+  },
+  {
+    id: 'lr2',
+    consultantId: 'u5',
+    startDate: '2026-03-03',
+    endDate: '2026-03-05',
+    reason: 'Personal leave',
+    status: 'PENDING',
+    managerId: 'u2',
+    createdAt: '2026-02-18T10:00:00Z',
+  },
+  {
+    id: 'lr3',
+    consultantId: 'u3',
+    startDate: '2026-04-20',
+    endDate: '2026-04-24',
+    reason: 'Training conference',
+    status: 'PENDING',
+    managerId: 'u2',
+    createdAt: '2026-02-19T08:30:00Z',
+  },
+  {
+    id: 'lr4',
+    consultantId: 'u5',
+    startDate: '2026-01-20',
+    endDate: '2026-01-22',
+    status: 'REJECTED',
+    managerId: 'u2',
+    createdAt: '2026-01-10T09:00:00Z',
+    reviewedAt: '2026-01-12T11:00:00Z',
+  },
+];
+
+export const mockLeaveRequests: LeaveRequest[] = persistedArray('leaveRequests', _defaultLeaveRequests);
+
+// ---------------------------------------------------------------------------
+// Mock Time Logs (StraTIME integration)
+// ---------------------------------------------------------------------------
+
+const _defaultTimeLogs: TimeLog[] = [
+  {
+    id: 'tl1',
+    consultantId: 'u3',
+    ticketId: 'tk3',
+    projectId: 'p1',
+    date: '2026-02-10',
+    durationMinutes: 120,
+    description: 'Initial analysis and logging framework setup',
+    sentToStraTIME: true,
+    sentAt: '2026-02-10T18:00:00Z',
+  },
+  {
+    id: 'tl2',
+    consultantId: 'u3',
+    ticketId: 'tk3',
+    projectId: 'p1',
+    date: '2026-02-14',
+    durationMinutes: 90,
+    description: 'Implementation of detailed audit trail logging',
+    sentToStraTIME: true,
+    sentAt: '2026-02-14T17:30:00Z',
+  },
+  {
+    id: 'tl3',
+    consultantId: 'u3',
+    ticketId: 'tk3',
+    projectId: 'p1',
+    date: '2026-02-18',
+    durationMinutes: 30,
+    description: 'Final testing and validation',
+    sentToStraTIME: false,
+  },
+  {
+    id: 'tl4',
+    consultantId: 'u5',
+    ticketId: 'tk2',
+    projectId: 'p2',
+    date: '2026-02-12',
+    durationMinutes: 180,
+    description: 'Backend connection investigation & debugging',
+    sentToStraTIME: true,
+    sentAt: '2026-02-12T19:00:00Z',
+  },
+  {
+    id: 'tl5',
+    consultantId: 'u5',
+    ticketId: 'tk2',
+    projectId: 'p2',
+    date: '2026-02-15',
+    durationMinutes: 60,
+    description: 'OData endpoint testing',
+    sentToStraTIME: false,
+  },
+  {
+    id: 'tl6',
+    consultantId: 'u3',
+    ticketId: 'tk1',
+    projectId: 'p1',
+    date: '2026-02-16',
+    durationMinutes: 45,
+    description: 'Data mapping analysis for customer master',
+    sentToStraTIME: false,
+  },
+];
+
+export const mockTimeLogs: TimeLog[] = persistedArray('timeLogs', _defaultTimeLogs);
 
 // ---------------------------------------------------------------------------
 // Mock KPIs (static, not persisted)

@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
-import { EvaluationsAPI } from '../../services/odataClient';
-import { Evaluation } from '../../types/entities';
+import { EvaluationsAPI, UsersAPI } from '../../services/odataClient';
+import { Evaluation, User } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
 import { Label } from '../../components/ui/label';
+import { SkillsRadarChart } from '../../components/charts/SkillsRadarChart';
+import { Badge } from '../../components/ui/badge';
 
 interface DevelopmentAction {
   id: string;
@@ -22,6 +24,7 @@ interface Objective {
 export const MyPerformance: React.FC = () => {
   const { currentUser } = useAuth();
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<DevelopmentAction[]>([
     { id: 'd1', label: 'Complete CAP advanced training', done: false },
@@ -60,8 +63,12 @@ export const MyPerformance: React.FC = () => {
   const loadData = async (userId: string) => {
     setLoading(true);
     try {
-      const data = await EvaluationsAPI.getByUser(userId);
+      const [data, allUsers] = await Promise.all([
+        EvaluationsAPI.getByUser(userId),
+        UsersAPI.getAll(),
+      ]);
       setEvaluations(data);
+      setUserProfile(allUsers.find((u) => u.id === userId) ?? null);
     } finally {
       setLoading(false);
     }
@@ -102,6 +109,17 @@ export const MyPerformance: React.FC = () => {
       count;
     return { score, productivity, quality, autonomy, collaboration, innovation };
   }, [evaluations]);
+
+  const radarData = useMemo(
+    () => [
+      { axis: 'Productivité', value: summary.productivity, fullMark: 5 },
+      { axis: 'Qualité', value: summary.quality, fullMark: 5 },
+      { axis: 'Autonomie', value: summary.autonomy, fullMark: 5 },
+      { axis: 'Collaboration', value: summary.collaboration, fullMark: 5 },
+      { axis: 'Innovation', value: summary.innovation, fullMark: 5 },
+    ],
+    [summary]
+  );
 
   const toggleAction = (id: string) => {
     setPlan((prev) =>
@@ -155,33 +173,41 @@ export const MyPerformance: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-card border border-border rounded-lg p-5">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Qualitative Grid</h3>
-            <div className="space-y-3">
-              {(
-                [
-                  ['productivity', 'Productivity'],
-                  ['quality', 'Quality'],
-                  ['autonomy', 'Autonomy'],
-                  ['collaboration', 'Collaboration'],
-                  ['innovation', 'Innovation'],
-                ] as const
-              ).map(([field, label]) => (
-                <div key={field}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">{label}</span>
-                    <span className="font-medium text-foreground">
-                      {summary[field].toFixed(2)} / 5
-                    </span>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted">
-                    <div
-                      className="h-2 rounded-full bg-primary"
-                      style={{ width: `${(summary[field] / 5) * 100}%` }}
-                    />
+            <h3 className="text-lg font-semibold text-foreground mb-2">Radar de Compétences</h3>
+            <p className="text-xs text-muted-foreground mb-3">Score moyen sur les 5 axes d'évaluation</p>
+            {summary.score > 0 ? (
+              <SkillsRadarChart data={radarData} />
+            ) : (
+              <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+                Aucune évaluation disponible
+              </div>
+            )}
+            {userProfile && (
+              <div className="mt-4 space-y-3 border-t border-border pt-4">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">Compétences</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {userProfile.skills.map((skill) => (
+                      <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+                {userProfile.certifications.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Certifications</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {userProfile.certifications.map((cert) => {
+                        const label = typeof cert === 'string' ? cert : cert.name;
+                        const key = typeof cert === 'string' ? cert : cert.id;
+                        return (
+                          <Badge key={key} variant="outline" className="text-xs border-primary/40 text-primary">{label}</Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="bg-card border border-border rounded-lg p-5">

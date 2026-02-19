@@ -8,6 +8,62 @@ export type ProjectStatus = 'PLANNED' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CA
 export type RiskLevel = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type ValidationStatus = 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED';
 export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_FEEDBACK' | 'RESOLVED' | 'CLOSED';
+export type Complexity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type CertificationStatus = 'VALID' | 'EXPIRING_SOON' | 'EXPIRED';
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type TimerStatus = 'idle' | 'running' | 'paused' | 'stopped';
+
+// ---------------------------------------------------------------------------
+// StraTIME – Timer & Time-log types
+// ---------------------------------------------------------------------------
+
+export interface TimerState {
+  status: TimerStatus;
+  startedAt?: string;
+  pausedAt?: string;
+  totalElapsedSeconds: number;
+}
+
+export interface TimeLog {
+  id: string;
+  consultantId: string;
+  ticketId: string;
+  projectId: string;
+  date: string;
+  durationMinutes: number;
+  description?: string;
+  sentToStraTIME: boolean;
+  sentAt?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Certification (structured, replaces string[] on User)
+// ---------------------------------------------------------------------------
+export interface Certification {
+  id: string;
+  name: string;
+  issuingBody: string;
+  dateObtained: string;
+  expiryDate?: string;
+  status: CertificationStatus;
+}
+
+// ---------------------------------------------------------------------------
+// Ticket history event
+// ---------------------------------------------------------------------------
+export interface TicketEvent {
+  id: string;
+  timestamp: string;
+  userId: string;
+  action: 'CREATED' | 'STATUS_CHANGE' | 'ASSIGNED' | 'COMMENT' | 'PRIORITY_CHANGE';
+  fromValue?: string;
+  toValue?: string;
+  comment?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Core entities
+// ---------------------------------------------------------------------------
 
 export interface User {
   id: string;
@@ -16,7 +72,7 @@ export interface User {
   role: UserRole;
   active: boolean;
   skills: string[];
-  certifications: string[];
+  certifications: Certification[];
   availabilityPercent: number;
   teamId?: string;
   avatarUrl?: string;
@@ -33,6 +89,9 @@ export interface Project {
   description: string;
   progress?: number;
   budget?: number;
+  complexity?: Complexity;
+  techKeywords?: string[];
+  documentation?: string;
 }
 
 export interface Task {
@@ -105,8 +164,12 @@ export interface Ticket {
   priority: Priority;
   title: string;
   description: string;
+  dueDate?: string;
   createdAt: string;
   updatedAt?: string;
+  history: TicketEvent[];
+  timerState?: TimerState;
+  timeLogs?: TimeLog[];
 }
 
 export interface Notification {
@@ -135,6 +198,18 @@ export interface Allocation {
   allocationPercent: number;
   startDate: string;
   endDate: string;
+}
+
+export interface LeaveRequest {
+  id: string;
+  consultantId: string;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  status: LeaveStatus;
+  managerId: string;
+  createdAt: string;
+  reviewedAt?: string;
 }
 
 export interface KPI {

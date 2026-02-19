@@ -10,16 +10,15 @@ import {
   getConsultantWorkload,
   getProjectProgressTrend,
   getTasksByStatus,
-  mockKPI,
 } from '../../services/mockData';
 import {
+  AllocationsAPI,
   EvaluationsAPI,
   TasksAPI,
   UsersAPI,
 } from '../../services/odataClient';
-import { Evaluation, Task, User } from '../../types/entities';
+import { Allocation, Evaluation, Task, User } from '../../types/entities';
 import { TopPerformersWidget } from '../../components/business/TopPerformersWidget';
-import { GaugeChart } from '../../components/charts/GaugeChart';
 
 interface TrendData {
   month: string;
@@ -94,6 +93,7 @@ export const ManagerDashboard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadData = async () => {
@@ -116,15 +116,17 @@ export const ManagerDashboard: React.FC = () => {
         getAllocationByProject().map((entry) => ({ name: entry.project, value: entry.allocation }))
       );
       
-      const [fetchedTasks, fetchedUsers, fetchedEvaluations] = await Promise.all([
+      const [fetchedTasks, fetchedUsers, fetchedEvaluations, fetchedAllocations] = await Promise.all([
         TasksAPI.getAll(),
         UsersAPI.getAll(),
         EvaluationsAPI.getAll(),
+        AllocationsAPI.getAll(),
       ]);
 
       setTasks(fetchedTasks);
       setUsers(fetchedUsers);
       setEvaluations(fetchedEvaluations);
+      setAllocations(fetchedAllocations);
     } catch (error) {
       setLoadError('Unable to load dashboard data. Some metrics may be outdated.');
     }
@@ -134,44 +136,49 @@ export const ManagerDashboard: React.FC = () => {
     void loadData();
   }, []);
 
-  const completionRatio = useMemo(() => {
-    const total = mockKPI.tasksOnTrack + mockKPI.tasksLate;
-    if (!total) return 0;
-    return Math.round((mockKPI.tasksOnTrack / total) * 100);
-  }, []);
+  // ---------------------------------------------------------------------------
+  // TACE — Taux d'Activité Congés Exclus
+  // Measures utilisation rate of tech consultants based on current allocations.
+  // 0% = everyone on bench (available), 100% = everyone fully allocated (busy).
+  // ---------------------------------------------------------------------------
+  const tace = useMemo(() => {
+    const techConsultants = users.filter((u) => u.role === 'CONSULTANT_TECHNIQUE' && u.active);
+    if (techConsultants.length === 0) return 0;
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    const rates = techConsultants.map((consultant) => {
+      const currentAllocations = allocations.filter(
+        (a) => a.userId === consultant.id && a.startDate <= today && a.endDate >= today
+      );
+      const totalAlloc = currentAllocations.reduce((sum, a) => sum + a.allocationPercent, 0);
+      return Math.min(totalAlloc, 100); // cap at 100%
+    });
+
+    return Math.round(rates.reduce((sum, r) => sum + r, 0) / techConsultants.length);
+  }, [users, allocations]);
 
   const productivityMetrics = useMemo(() => {
     const completed = tasks.filter((task) => task.status === 'DONE');
-    const now = new Date();
-    const completedThisMonth = completed.filter((task) => {
-      if (!task.realEnd) return false;
-      const end = new Date(task.realEnd);
-      return end.getFullYear() === now.getFullYear() && end.getMonth() === now.getMonth();
-    }).length;
-
-    const cycleDurations = completed
-      .filter((task) => task.realStart && task.realEnd)
-      .map((task) => {
-        const start = new Date(task.realStart as string).getTime();
-        const end = new Date(task.realEnd as string).getTime();
-        return Math.max(0, end - start) / (1000 * 60 * 60 * 24);
-      });
-
-    const averageCycleTime = cycleDurations.length
-      ? cycleDurations.reduce((sum, days) => sum + days, 0) / cycleDurations.length
-      : 0;
 
     const throughput = tasks.length ? (completed.length / tasks.length) * 100 : 0;
     const criticalIssues = tasks.filter(
       (task) => task.riskLevel === 'CRITICAL' || task.status === 'BLOCKED'
     ).length;
 
+    // SLA: percentage of completed tasks that were delivered on time
+    const onTime = completed.filter((task) => {
+      if (!task.realEnd) return false;
+      return task.realEnd <= task.plannedEnd;
+    }).length;
+    const slaRate = completed.length ? (onTime / completed.length) * 100 : 100;
+
     return {
-      velocity: completedThisMonth,
-      cycleTimeDays: averageCycleTime,
       throughputRate: throughput,
       criticalIssues,
-      qualityCoverage: tasks.length ? Math.round((completed.length / tasks.length) * 100) : 0,
+      slaRate,
+      slaOnTime: onTime,
+      slaTotal: completed.length,
     };
   }, [tasks]);
 
@@ -200,6 +207,24 @@ export const ManagerDashboard: React.FC = () => {
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KPICard
+            title="TACE"
+            value={tace}
+            unit="%"
+            subtitle="Taux d'Activité (Congés Exclus)"
+            icon="performance"
+            state={tace >= 80 ? 'Positive' : tace >= 50 ? 'Warning' : 'Error'}
+            progress={tace}
+          />
+          <KPICard
+            title="SLA Respect"
+            value={Math.round(productivityMetrics.slaRate)}
+            unit="%"
+            subtitle={`${productivityMetrics.slaOnTime}/${productivityMetrics.slaTotal} livrées à temps`}
+            icon="accept"
+            state={productivityMetrics.slaRate >= 90 ? 'Positive' : productivityMetrics.slaRate >= 70 ? 'Warning' : 'Error'}
+            progress={productivityMetrics.slaRate}
+          />
+          <KPICard
             title="Throughput"
             value={Math.round(productivityMetrics.throughputRate)}
             unit="%"
@@ -207,21 +232,6 @@ export const ManagerDashboard: React.FC = () => {
             icon="trend-up"
             state={productivityMetrics.throughputRate >= 70 ? 'Positive' : 'Warning'}
             progress={productivityMetrics.throughputRate}
-          />
-          <KPICard
-            title="Velocity"
-            value={productivityMetrics.velocity}
-            subtitle="Tasks closed this month"
-            icon="task"
-            state={productivityMetrics.velocity >= 8 ? 'Positive' : 'Neutral'}
-          />
-          <KPICard
-            title="Cycle Time"
-            value={productivityMetrics.cycleTimeDays.toFixed(1)}
-            unit="days"
-            subtitle="Average completion duration"
-            icon="timesheet"
-            state={productivityMetrics.cycleTimeDays <= 5 ? 'Positive' : 'Warning'}
           />
           <KPICard
             title="Risk Hotspots"
@@ -234,40 +244,6 @@ export const ManagerDashboard: React.FC = () => {
 
         <div className="grid items-start gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
-              <div className="relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-2xl bg-sidebar-foreground p-5 text-background shadow-lg sm:p-6">
-                <div className="relative z-10">
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-sidebar-border/80">
-                    Total Portfolio Health
-                  </p>
-                  <h3 className="mb-4 text-3xl font-bold">{mockKPI.projectProgress}% Complete</h3>
-                  <div className="flex gap-4">
-                    <div>
-                      <p className="text-xs text-sidebar-border/60">Tasks On Track</p>
-                      <p className="text-xl font-semibold text-primary">{completionRatio}%</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-sidebar-border/60">Critical Risks</p>
-                      <p className="text-xl font-semibold text-destructive">{mockKPI.criticalTasks}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="absolute -bottom-10 -right-10 h-48 w-48 rounded-full bg-primary/20 blur-2xl" />
-              </div>
-
-              <Card className="border-border/80 bg-card">
-                <CardContent className="flex items-center justify-center p-4 sm:p-6">
-                  <GaugeChart
-                    value={mockKPI.averageProductivity * 20}
-                    label="Team Productivity"
-                    sublabel="Based on avg score"
-                    color="var(--color-primary)"
-                    size={180}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
             <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
               <Suspense fallback={<ChartCardFallback />}>
                 <ProjectProgressTrendChart data={progressTrend} />

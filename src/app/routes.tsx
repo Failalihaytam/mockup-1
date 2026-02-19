@@ -21,8 +21,7 @@ const RisksAndCriticalTasks = lazy(() => import('./pages/manager/RisksAndCritica
 const TeamEvaluations = lazy(() => import('./pages/manager/TeamEvaluations').then(m => ({ default: m.TeamEvaluations })));
 
 const TechDashboard = lazy(() => import('./pages/consultant-tech/TechDashboard').then(m => ({ default: m.TechDashboard })));
-const MyTasks = lazy(() => import('./pages/consultant-tech/MyTasks').then(m => ({ default: m.MyTasks })));
-const TimesheetPage = lazy(() => import('./pages/consultant-tech/Timesheet').then(m => ({ default: m.TimesheetPage })));
+const TechTickets = lazy(() => import('./pages/consultant-tech/TechTickets').then(m => ({ default: m.TechTickets })));
 const MyProjects = lazy(() => import('./pages/consultant-tech/MyProjects').then(m => ({ default: m.MyProjects })));
 const MyPerformance = lazy(() => import('./pages/consultant-tech/MyPerformance').then(m => ({ default: m.MyPerformance })));
 
@@ -30,6 +29,15 @@ const FuncDashboard = lazy(() => import('./pages/consultant-func/FuncDashboard')
 const Deliverables = lazy(() => import('./pages/consultant-func/Deliverables').then(m => ({ default: m.Deliverables })));
 const FuncProjects = lazy(() => import('./pages/consultant-func/Projects').then(m => ({ default: m.FuncProjects })));
 const FuncTickets = lazy(() => import('./pages/consultant-func/Tickets').then(m => ({ default: m.FuncTickets })));
+
+const ManagerTickets = lazy(() => import('./pages/manager/ManagerTickets').then(m => ({ default: m.ManagerTickets })));
+const CertifiedConsultants = lazy(() => import('./pages/manager/CertifiedConsultants').then(m => ({ default: m.CertifiedConsultants })));
+const GestionConges = lazy(() => import('./pages/manager/GestionConges').then(m => ({ default: m.GestionConges })));
+const ImputationsEquipe = lazy(() => import('./pages/manager/ImputationsEquipe').then(m => ({ default: m.ImputationsEquipe })));
+
+const MyCertifications = lazy(() => import('./pages/consultant-tech/MyCertifications').then(m => ({ default: m.MyCertifications })));
+const MesConges = lazy(() => import('./pages/consultant-tech/MesConges').then(m => ({ default: m.MesConges })));
+const MesImputations = lazy(() => import('./pages/consultant-tech/MesImputations').then(m => ({ default: m.MesImputations })));
 
 const ProfilePage = lazy(() => import('./pages/shared/Profile').then(m => ({ default: m.ProfilePage })));
 const SettingsPage = lazy(() => import('./pages/shared/Settings').then(m => ({ default: m.SettingsPage })));
@@ -208,6 +216,22 @@ export const router = createBrowserRouter([
             path: 'evaluations',
             element: <SuspensePage><TeamEvaluations /></SuspensePage>,
           },
+          {
+            path: 'tickets',
+            element: <SuspensePage><ManagerTickets /></SuspensePage>,
+          },
+          {
+            path: 'certifications',
+            element: <SuspensePage><CertifiedConsultants /></SuspensePage>,
+          },
+          {
+            path: 'leave',
+            element: <SuspensePage><GestionConges /></SuspensePage>,
+          },
+          {
+            path: 'imputations',
+            element: <SuspensePage><ImputationsEquipe /></SuspensePage>,
+          },
         ],
       },
 
@@ -229,16 +253,24 @@ export const router = createBrowserRouter([
             element: <SuspensePage><MyProjects /></SuspensePage>,
           },
           {
-            path: 'tasks',
-            element: <SuspensePage><MyTasks /></SuspensePage>,
-          },
-          {
-            path: 'timesheet',
-            element: <SuspensePage><TimesheetPage /></SuspensePage>,
+            path: 'tickets',
+            element: <SuspensePage><TechTickets /></SuspensePage>,
           },
           {
             path: 'performance',
             element: <SuspensePage><MyPerformance /></SuspensePage>,
+          },
+          {
+            path: 'certifications',
+            element: <SuspensePage><MyCertifications /></SuspensePage>,
+          },
+          {
+            path: 'leave',
+            element: <SuspensePage><MesConges /></SuspensePage>,
+          },
+          {
+            path: 'imputations',
+            element: <SuspensePage><MesImputations /></SuspensePage>,
           },
         ],
       },
