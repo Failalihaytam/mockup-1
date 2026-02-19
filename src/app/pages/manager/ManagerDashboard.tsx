@@ -1,8 +1,10 @@
 import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { AlertTriangle } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
-import { AnalyticalKPICard } from '../../components/common/AnalyticalKPICard';
+import { KPICard } from '../../components/common/KPICard';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
 import {
   getAllocationByProject,
   getConsultantWorkload,
@@ -10,8 +12,14 @@ import {
   getTasksByStatus,
   mockKPI,
 } from '../../services/mockData';
-import { TasksAPI } from '../../services/odataClient';
-import { Task } from '../../types/entities';
+import {
+  EvaluationsAPI,
+  TasksAPI,
+  UsersAPI,
+} from '../../services/odataClient';
+import { Evaluation, Task, User } from '../../types/entities';
+import { TopPerformersWidget } from '../../components/business/TopPerformersWidget';
+import { GaugeChart } from '../../components/charts/GaugeChart';
 
 interface TrendData {
   month: string;
@@ -72,20 +80,25 @@ const ChartCardFallback: React.FC = () => (
       <CardTitle className="text-lg">Loading chart...</CardTitle>
     </CardHeader>
     <CardContent>
-      <div className="h-[280px] rounded-md bg-surface-2" />
+      <div className="h-[220px] rounded-md bg-surface-2 sm:h-[280px]" />
     </CardContent>
   </Card>
 );
 
 export const ManagerDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [progressTrend, setProgressTrend] = useState<TrendData[]>([]);
   const [tasksByStatus, setTasksByStatus] = useState<StatusData[]>([]);
   const [consultantWorkload, setConsultantWorkload] = useState<WorkloadData[]>([]);
   const [allocationData, setAllocationData] = useState<AllocationData[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
+  const loadData = async () => {
+    try {
+      setLoadError(null);
       setProgressTrend(
         getProjectProgressTrend().map((entry) => ({ month: entry.date, progress: entry.progress }))
       );
@@ -102,9 +115,22 @@ export const ManagerDashboard: React.FC = () => {
       setAllocationData(
         getAllocationByProject().map((entry) => ({ name: entry.project, value: entry.allocation }))
       );
-      setTasks(await TasksAPI.getAll());
-    };
+      
+      const [fetchedTasks, fetchedUsers, fetchedEvaluations] = await Promise.all([
+        TasksAPI.getAll(),
+        UsersAPI.getAll(),
+        EvaluationsAPI.getAll(),
+      ]);
 
+      setTasks(fetchedTasks);
+      setUsers(fetchedUsers);
+      setEvaluations(fetchedEvaluations);
+    } catch (error) {
+      setLoadError('Unable to load dashboard data. Some metrics may be outdated.');
+    }
+  };
+
+  useEffect(() => {
     void loadData();
   }, []);
 
@@ -160,135 +186,159 @@ export const ManagerDashboard: React.FC = () => {
         ]}
       />
 
-      <div className="space-y-6 p-6 lg:p-8">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <AnalyticalKPICard
-            title="Portfolio Progress"
-            subtitle="Current quarter"
-            value={mockKPI.projectProgress}
+      <div className="space-y-4 p-4 sm:space-y-6 sm:p-6 lg:p-8">
+        {loadError && (
+          <Card className="border-destructive/40 bg-destructive/5">
+            <CardContent className="flex flex-col items-start justify-between gap-3 p-4 sm:flex-row sm:items-center">
+              <p className="text-sm text-destructive">{loadError}</p>
+              <Button type="button" variant="outline" onClick={() => void loadData()}>
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <KPICard
+            title="Throughput"
+            value={Math.round(productivityMetrics.throughputRate)}
             unit="%"
-            trend="Up"
-            state="Positive"
-            target={85}
+            subtitle="Completed tasks ratio"
             icon="trend-up"
+            state={productivityMetrics.throughputRate >= 70 ? 'Positive' : 'Warning'}
+            progress={productivityMetrics.throughputRate}
           />
-          <AnalyticalKPICard
-            title="Task Reliability"
-            subtitle="On-track ratio"
-            value={completionRatio}
-            unit="%"
-            state="Good"
-            target={100}
+          <KPICard
+            title="Velocity"
+            value={productivityMetrics.velocity}
+            subtitle="Tasks closed this month"
             icon="task"
+            state={productivityMetrics.velocity >= 8 ? 'Positive' : 'Neutral'}
           />
-          <AnalyticalKPICard
-            title="Critical Tasks"
-            subtitle="Requires immediate action"
-            value={mockKPI.criticalTasks}
-            state="Error"
-            trend="Up"
-            deviation="Escalation advised"
+          <KPICard
+            title="Cycle Time"
+            value={productivityMetrics.cycleTimeDays.toFixed(1)}
+            unit="days"
+            subtitle="Average completion duration"
+            icon="timesheet"
+            state={productivityMetrics.cycleTimeDays <= 5 ? 'Positive' : 'Warning'}
+          />
+          <KPICard
+            title="Risk Hotspots"
+            value={productivityMetrics.criticalIssues}
+            subtitle="Critical or blocked tasks"
             icon="warning"
+            state={productivityMetrics.criticalIssues > 0 ? 'Error' : 'Positive'}
           />
-          <AnalyticalKPICard
-            title="Team Productivity"
-            subtitle="Average consultant score"
-            value={mockKPI.averageProductivity.toFixed(1)}
-            unit="/5"
-            state="Positive"
-            target={5}
-            icon="performance"
-          />
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <Suspense fallback={<ChartCardFallback />}>
-            <ProjectProgressTrendChart data={progressTrend} />
-          </Suspense>
+        <div className="grid items-start gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
+              <div className="relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-2xl bg-sidebar-foreground p-5 text-background shadow-lg sm:p-6">
+                <div className="relative z-10">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-sidebar-border/80">
+                    Total Portfolio Health
+                  </p>
+                  <h3 className="mb-4 text-3xl font-bold">{mockKPI.projectProgress}% Complete</h3>
+                  <div className="flex gap-4">
+                    <div>
+                      <p className="text-xs text-sidebar-border/60">Tasks On Track</p>
+                      <p className="text-xl font-semibold text-primary">{completionRatio}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-sidebar-border/60">Critical Risks</p>
+                      <p className="text-xl font-semibold text-destructive">{mockKPI.criticalTasks}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute -bottom-10 -right-10 h-48 w-48 rounded-full bg-primary/20 blur-2xl" />
+              </div>
 
-          <Suspense fallback={<ChartCardFallback />}>
-            <TaskDistributionChart data={tasksByStatus} palette={piePalette} />
-          </Suspense>
-
-          <Suspense fallback={<ChartCardFallback />}>
-            <WorkloadComparisonChart data={consultantWorkload} />
-          </Suspense>
-
-          <Suspense fallback={<ChartCardFallback />}>
-            <AllocationPortfolioChart data={allocationData} palette={piePalette} />
-          </Suspense>
-        </div>
-
-        <Card className="border-border/80 bg-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-              Critical Alerts
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
-              <p className="font-semibold text-destructive">Task Blocked: Testing & Validation</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Waiting for test environment access. Mitigation owner pending confirmation.
-              </p>
+              <Card className="border-border/80 bg-card">
+                <CardContent className="flex items-center justify-center p-4 sm:p-6">
+                  <GaugeChart
+                    value={mockKPI.averageProductivity * 20}
+                    label="Team Productivity"
+                    sublabel="Based on avg score"
+                    color="var(--color-primary)"
+                    size={180}
+                  />
+                </CardContent>
+              </Card>
             </div>
-            <div className="rounded-lg border border-border/80 bg-surface-2 p-4">
-              <p className="font-semibold text-foreground">Deadline Risk: Fiori App Configuration</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Delivery due in 3 days with unresolved dependencies from integration squad.
-              </p>
+
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
+              <Suspense fallback={<ChartCardFallback />}>
+                <ProjectProgressTrendChart data={progressTrend} />
+              </Suspense>
+
+              <Suspense fallback={<ChartCardFallback />}>
+                <TaskDistributionChart data={tasksByStatus} palette={piePalette} />
+              </Suspense>
             </div>
-          </CardContent>
-        </Card>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <Card className="border-border/80 bg-card">
-            <CardHeader>
-              <CardTitle className="text-lg">Productivity Metrics (Mock)</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-border/70 bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">Velocity</p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">{productivityMetrics.velocity}</p>
-                <p className="mt-1 text-xs text-muted-foreground">Completed tasks this month</p>
-              </div>
-              <div className="rounded-lg border border-border/70 bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">Cycle Time</p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">
-                  {productivityMetrics.cycleTimeDays.toFixed(1)}d
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">Average real start to real end</p>
-              </div>
-              <div className="rounded-lg border border-border/70 bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">Throughput</p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">
-                  {productivityMetrics.throughputRate.toFixed(0)}%
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">Completed over total tasks</p>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
+              <Suspense fallback={<ChartCardFallback />}>
+                <WorkloadComparisonChart data={consultantWorkload} />
+              </Suspense>
 
-          <Card className="border-border/80 bg-card">
-            <CardHeader>
-              <CardTitle className="text-lg">Code Quality Snapshot (Mock Integration)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between rounded-lg border border-border/70 bg-surface-2 px-4 py-3 text-sm">
-                <span className="text-muted-foreground">Static analysis connector</span>
-                <span className="font-semibold text-foreground">Configured (mock)</span>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-border/70 bg-surface-2 px-4 py-3 text-sm">
-                <span className="text-muted-foreground">Open critical findings</span>
-                <span className="font-semibold text-destructive">{productivityMetrics.criticalIssues}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-border/70 bg-surface-2 px-4 py-3 text-sm">
-                <span className="text-muted-foreground">Quality gate coverage</span>
-                <span className="font-semibold text-foreground">{productivityMetrics.qualityCoverage}%</span>
-              </div>
-            </CardContent>
-          </Card>
+              <Suspense fallback={<ChartCardFallback />}>
+                <AllocationPortfolioChart data={allocationData} palette={piePalette} />
+              </Suspense>
+            </div>
+          </div>
+
+          <aside className="space-y-4 sm:space-y-6 xl:sticky xl:top-20">
+            <TopPerformersWidget users={users} evaluations={evaluations} />
+
+            <Card className="border-border/80 bg-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                  Critical Alerts
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                  <p className="font-semibold text-xs text-destructive uppercase tracking-wide">Testing Blocked</p>
+                  <p className="mt-1 text-sm text-foreground">
+                    Waiting for test environment access.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-accent bg-accent/40 p-3">
+                  <p className="font-semibold text-xs text-accent-foreground uppercase tracking-wide">
+                    Deadline Risk
+                  </p>
+                  <p className="mt-1 text-sm text-foreground">
+                    Fiori App Configuration due in 3 days.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-primary">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 sm:space-y-3">
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  onClick={() => navigate('/manager/allocations')}
+                >
+                  Allocate Resources
+                </Button>
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  onClick={() => navigate('/manager/evaluations')}
+                >
+                  New Evaluation
+                </Button>
+              </CardContent>
+            </Card>
+          </aside>
         </div>
       </div>
     </div>

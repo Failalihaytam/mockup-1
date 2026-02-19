@@ -11,6 +11,7 @@ import {
   ListTodo,
   Siren,
   TrendingUp,
+  TrendingDown,
   Users,
   ArrowDownRight,
   ArrowUpRight,
@@ -21,16 +22,18 @@ import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
 import { cn } from '../ui/utils';
 
-interface KPICardProps {
+export type KPITone = 'positive' | 'negative' | 'warning' | 'neutral';
+
+export interface KPICardProps {
   title: string;
   value: string | number;
   subtitle?: string;
   unit?: string;
   icon?: string;
-  color?: string;
+  color?: string; // Legacy support
   progress?: number;
   trend?: 'Up' | 'Down' | 'None';
-  state?: string;
+  state?: string; // e.g., 'Positive', 'Error', 'Good'
   target?: string | number;
   deviation?: string;
 }
@@ -40,6 +43,7 @@ const iconMap: Record<string, LucideIcon> = {
   task: ListTodo,
   'project-definition-triangle-2': FolderKanban,
   alert: AlertTriangle,
+  warning: AlertTriangle,
   timesheet: Clock3,
   'trend-up': TrendingUp,
   document: FileText,
@@ -51,12 +55,13 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 const resolveTone = (
-  color?: string,
-  state?: string
+  state?: string,
+  color?: string
 ): {
   chip: string;
   value: string;
   border: string;
+  progress: string;
 } => {
   const normalized = (state ?? color ?? '').toLowerCase();
 
@@ -65,6 +70,7 @@ const resolveTone = (
       chip: 'bg-primary/12 text-primary',
       value: 'text-primary',
       border: 'border-primary/35',
+      progress: 'var(--color-primary)',
     };
   }
 
@@ -73,6 +79,7 @@ const resolveTone = (
       chip: 'bg-destructive/12 text-destructive',
       value: 'text-destructive',
       border: 'border-destructive/35',
+      progress: 'var(--color-destructive)',
     };
   }
 
@@ -86,6 +93,7 @@ const resolveTone = (
       chip: 'bg-accent text-accent-foreground',
       value: 'text-accent-foreground',
       border: 'border-accent',
+      progress: 'var(--color-chart-5)',
     };
   }
 
@@ -93,6 +101,7 @@ const resolveTone = (
     chip: 'bg-primary/10 text-primary',
     value: 'text-primary',
     border: 'border-primary/30',
+    progress: 'var(--color-primary)',
   };
 };
 
@@ -110,7 +119,17 @@ export const KPICard: React.FC<KPICardProps> = ({
   deviation,
 }) => {
   const Icon = icon ? iconMap[icon] : undefined;
-  const tone = resolveTone(color, state);
+  const tone = resolveTone(state, color);
+
+  const numericValue = typeof value === 'number' ? value : Number(value);
+  const numericTarget = typeof target === 'number' ? target : Number(target);
+  
+  // Calculate progress if target is provided but progress isn't explicitly passed
+  const calculatedProgress = progress !== undefined 
+    ? progress 
+    : (Number.isFinite(numericValue) && Number.isFinite(numericTarget) && numericTarget > 0)
+      ? (numericValue / numericTarget) * 100
+      : undefined;
 
   return (
     <Card className={cn('overflow-hidden border bg-card shadow-none transition-colors hover:border-primary/40', tone.border)}>
@@ -147,12 +166,25 @@ export const KPICard: React.FC<KPICardProps> = ({
 
         {(deviation || target !== undefined) && (
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            {deviation && <Badge variant="secondary">{deviation}</Badge>}
+            {deviation && <Badge variant="secondary" className="font-normal">{deviation}</Badge>}
             {target !== undefined && <span>Target: {target}</span>}
           </div>
         )}
 
-        {progress !== undefined && <Progress value={Math.max(0, Math.min(100, progress))} />}
+        {calculatedProgress !== undefined && (
+          <div className="space-y-1.5">
+            {target !== undefined && (
+              <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
+                <span>Progress to Target</span>
+                <span>{Math.round(calculatedProgress)}%</span>
+              </div>
+            )}
+            <Progress 
+              value={Math.max(0, Math.min(100, calculatedProgress))} 
+              className="h-1.5"
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

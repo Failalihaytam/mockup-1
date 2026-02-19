@@ -15,6 +15,13 @@ import {
 } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 import { Textarea } from '../../components/ui/textarea';
 import { useAuth } from '../../context/AuthContext';
 import { DeliverablesAPI, NotificationsAPI, ProjectsAPI } from '../../services/odataClient';
@@ -181,21 +188,21 @@ export const Deliverables: React.FC = () => {
             <form onSubmit={createSpecification} className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="deliverable-project">Project</Label>
-                <select
-                  id="deliverable-project"
+                <Select
                   value={uploadForm.projectId}
-                  onChange={(event) =>
-                    setUploadForm((prev) => ({ ...prev, projectId: event.target.value }))
-                  }
-                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                  onValueChange={(value) => setUploadForm((prev) => ({ ...prev, projectId: value }))}
                 >
-                  <option value="">Select project</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="deliverable-project">
+                    <SelectValue placeholder="Select project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">

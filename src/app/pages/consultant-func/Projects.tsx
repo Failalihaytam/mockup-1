@@ -75,7 +75,11 @@ export const FuncProjects: React.FC = () => {
     if (!currentUser || !tech) return;
     const usersParam = encodeURIComponent(`${currentUser.email},${tech.email}`);
     const message = encodeURIComponent('Need clarification on business requirements for current project.');
-    window.open(`https://teams.microsoft.com/l/chat/0/0?users=${usersParam}&message=${message}`, '_blank');
+    window.open(
+      `https://teams.microsoft.com/l/chat/0/0?users=${usersParam}&message=${message}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
   };
 
   const submitFeedback = async (project: Project, manager?: User) => {

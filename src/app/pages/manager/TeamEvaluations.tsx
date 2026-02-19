@@ -11,7 +11,25 @@ import { useAuth } from '../../context/AuthContext';
 import { Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
+import { Card } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import { Textarea } from '../../components/ui/textarea';
 
 interface EvaluationForm {
   userId: string;
@@ -161,50 +179,53 @@ export const TeamEvaluations: React.FC = () => {
               <Label htmlFor="evaluation-consultant" className="mb-1 block text-sm text-muted-foreground">
                 Consultant
               </Label>
-              <select
-                id="evaluation-consultant"
+              <Select
                 value={form.userId}
-                onChange={(e) => setForm((prev) => ({ ...prev, userId: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
+                onValueChange={(val) => setForm((prev) => ({ ...prev, userId: val }))}
               >
-                <option value="">Select consultant</option>
-                {consultants.map((consultant) => (
-                  <option key={consultant.id} value={consultant.id}>
-                    {consultant.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="evaluation-consultant">
+                  <SelectValue placeholder="Select consultant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {consultants.map((consultant) => (
+                    <SelectItem key={consultant.id} value={consultant.id}>
+                      {consultant.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <Label htmlFor="evaluation-project" className="mb-1 block text-sm text-muted-foreground">
                 Project
               </Label>
-              <select
-                id="evaluation-project"
+              <Select
                 value={form.projectId}
-                onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
+                onValueChange={(val) => setForm((prev) => ({ ...prev, projectId: val }))}
               >
-                <option value="">Select project</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="evaluation-project">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <Label htmlFor="evaluation-period" className="mb-1 block text-sm text-muted-foreground">
                 Period (month)
               </Label>
-              <input
+              <Input
                 id="evaluation-period"
                 type="month"
                 value={form.period}
                 onChange={(e) => setForm((prev) => ({ ...prev, period: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
               />
             </div>
 
@@ -243,12 +264,11 @@ export const TeamEvaluations: React.FC = () => {
               <Label htmlFor="evaluation-feedback" className="mb-1 block text-sm text-muted-foreground">
                 Feedback
               </Label>
-              <textarea
+              <Textarea
                 id="evaluation-feedback"
                 value={form.feedback}
                 onChange={(e) => setForm((prev) => ({ ...prev, feedback: e.target.value }))}
                 rows={4}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
                 placeholder="Qualitative assessment and improvement actions..."
               />
             </div>
@@ -269,61 +289,57 @@ export const TeamEvaluations: React.FC = () => {
           </form>
         </div>
 
-        <div className="bg-card border border-border rounded-lg xl:col-span-2 overflow-x-auto">
-          <div className="px-4 py-3 border-b border-border">
+        <Card className="overflow-hidden border bg-card/92 xl:col-span-2">
+          <div className="border-b px-4 py-3">
             <h3 className="text-lg font-semibold text-foreground">Evaluation History</h3>
           </div>
-          <table className="w-full">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                  Consultant
-                </th>
-                <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                  Project
-                </th>
-                <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                  Period
-                </th>
-                <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                  Score
-                </th>
-                <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                  Feedback
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
+          <Table>
+            <TableHeader className="bg-muted/50">
+              <TableRow>
+                <TableHead className="px-4">Consultant</TableHead>
+                <TableHead className="px-4">Project</TableHead>
+                <TableHead className="px-4">Period</TableHead>
+                <TableHead className="px-4">Score</TableHead>
+                <TableHead className="px-4">Feedback</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                     Loading evaluations...
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
+              ) : evaluations.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    No evaluations found.
+                  </TableCell>
+                </TableRow>
               ) : (
                 evaluations.map((evaluation) => (
-                  <tr key={evaluation.id} className="hover:bg-accent/40 align-top">
-                    <td className="px-4 py-3 text-sm text-foreground">
+                  <TableRow key={evaluation.id} className="hover:bg-accent/40 align-top">
+                    <TableCell className="px-4 py-3 font-medium">
                       {consultants.find((user) => user.id === evaluation.userId)?.name ??
                         evaluation.userId}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-muted-foreground">
                       {projects.find((project) => project.id === evaluation.projectId)?.name ??
                         evaluation.projectId}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-foreground">{evaluation.period}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-foreground">
+                    </TableCell>
+                    <TableCell className="px-4 py-3">{evaluation.period}</TableCell>
+                    <TableCell className="px-4 py-3 font-semibold">
                       {evaluation.score.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-sm text-muted-foreground max-w-xs truncate">
                       {evaluation.feedback}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       </div>
     </div>
   );

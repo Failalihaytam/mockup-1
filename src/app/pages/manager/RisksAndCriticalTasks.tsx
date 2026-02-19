@@ -6,6 +6,15 @@ import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Label } from '../../components/ui/label';
 import { Input } from '../../components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import { Switch } from '../../components/ui/switch';
+import { Textarea } from '../../components/ui/textarea';
 
 export const RisksAndCriticalTasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -197,22 +206,23 @@ export const RisksAndCriticalTasks: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-between">
-          <Label htmlFor="show-critical-risks" className="inline-flex items-center gap-2 text-sm text-foreground">
-            <input
+          <div className="inline-flex items-center gap-3">
+            <Label htmlFor="show-critical-risks" className="text-sm text-foreground">
+              Show only critical or risky tasks
+            </Label>
+            <Switch
               id="show-critical-risks"
-              type="checkbox"
               checked={showOnlyCritical}
-              onChange={(e) => setShowOnlyCritical(e.target.checked)}
+              onCheckedChange={(checked) => setShowOnlyCritical(Boolean(checked))}
             />
-            Show only critical or risky tasks
-          </Label>
+          </div>
           <div className="text-sm text-muted-foreground">
             {rows.length} tasks displayed
           </div>
         </div>
 
         <div className="bg-card border border-border rounded-lg overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[1120px]">
             <thead className="bg-muted">
               <tr>
                 <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
@@ -272,60 +282,76 @@ export const RisksAndCriticalTasks: React.FC = () => {
                       {projects.find((project) => project.id === task.projectId)?.name ?? '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                      <select
-                        value={task.assigneeId ?? ''}
-                        onChange={(event) => void setAssignee(task, event.target.value)}
-                        className="min-w-[190px] rounded border border-border bg-card px-2 py-1 text-sm text-foreground"
+                      <Select
+                        value={task.assigneeId ?? 'UNASSIGNED'}
+                        onValueChange={(value) =>
+                          void setAssignee(task, value === 'UNASSIGNED' ? '' : value)
+                        }
                       >
-                        <option value="">Unassigned</option>
-                        {consultantAssignees.map((user) => (
-                          <option key={user.id} value={user.id}>
-                            {user.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger aria-label={`Assignee for ${task.title}`} className="min-w-[190px]">
+                          <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
+                          {consultantAssignees.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {user.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="px-4 py-3">
-                      <select
+                      <Select
                         value={task.status}
-                        onChange={(event) => void setStatus(task, event.target.value as TaskStatus)}
-                        className="px-2 py-1 border border-border rounded bg-card text-sm text-foreground"
+                        onValueChange={(value) => void setStatus(task, value as TaskStatus)}
                       >
-                        {statusOptions.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger aria-label={`Status for ${task.title}`} className="min-w-[160px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="px-4 py-3">
-                      <select
+                      <Select
                         value={task.riskLevel}
-                        onChange={(event) => void setRisk(task, event.target.value as Task['riskLevel'])}
-                        className="px-2 py-1 border border-border rounded bg-card text-sm text-foreground"
+                        onValueChange={(value) => void setRisk(task, value as Task['riskLevel'])}
                       >
-                        <option value="NONE">NONE</option>
-                        <option value="LOW">LOW</option>
-                        <option value="MEDIUM">MEDIUM</option>
-                        <option value="HIGH">HIGH</option>
-                        <option value="CRITICAL">CRITICAL</option>
-                      </select>
+                        <SelectTrigger aria-label={`Risk level for ${task.title}`} className="min-w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NONE">NONE</SelectItem>
+                          <SelectItem value="LOW">LOW</SelectItem>
+                          <SelectItem value="MEDIUM">MEDIUM</SelectItem>
+                          <SelectItem value="HIGH">HIGH</SelectItem>
+                          <SelectItem value="CRITICAL">CRITICAL</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="px-4 py-3">
                       <Input
                         type="date"
+                        aria-label={`Deadline for ${task.title}`}
                         defaultValue={task.plannedEnd}
                         className="min-w-[170px]"
                         onBlur={(event) => void setDeadline(task, event.target.value)}
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <textarea
+                      <Textarea
+                        aria-label={`Mitigation notes for ${task.title}`}
                         defaultValue={task.comments ?? ''}
                         onBlur={(event) => void setMitigation(task, event.target.value)}
                         placeholder="Mitigation action / blocker details"
                         rows={2}
-                        className="w-full min-w-[240px] px-2 py-1 border border-border rounded bg-card text-sm text-foreground"
+                        className="w-full min-w-[240px]"
                       />
                     </td>
                   </tr>

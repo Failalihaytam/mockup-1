@@ -1,4 +1,4 @@
-// React Router configuration with role-based routing
+﻿// React Router configuration with role-based routing
 
 import { lazy, Suspense, type ReactElement } from 'react';
 import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router';
@@ -36,7 +36,7 @@ const SettingsPage = lazy(() => import('./pages/shared/Settings').then(m => ({ d
 
 const PageLoader = () => (
   <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
-    Loading…
+    Loading...
   </div>
 );
 

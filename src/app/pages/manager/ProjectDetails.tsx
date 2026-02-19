@@ -12,7 +12,29 @@ import {
 import { Allocation, Deliverable, Project, Task, Ticket, User } from '../../types/entities';
 import { toast } from 'sonner';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+
 type TabKey = 'overview' | 'tasks' | 'team' | 'kpi';
+const PROJECT_TABS: { key: TabKey; label: string }[] = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'tasks', label: 'Tasks' },
+  { key: 'team', label: 'Team & Allocation' },
+  { key: 'kpi', label: 'KPI Report' },
+];
 
 export const ProjectDetails: React.FC = () => {
   const { id } = useParams();
@@ -134,6 +156,34 @@ export const ProjectDetails: React.FC = () => {
     }
   };
 
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, tabKey: TabKey) => {
+    const currentIndex = PROJECT_TABS.findIndex((tab) => tab.key === tabKey);
+    if (currentIndex === -1) return;
+
+    const moveFocusTo = (nextIndex: number) => {
+      const nextTab = PROJECT_TABS[nextIndex];
+      setActiveTab(nextTab.key);
+      queueMicrotask(() => {
+        const target = document.getElementById(`project-tab-${nextTab.key}`);
+        target?.focus();
+      });
+    };
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      moveFocusTo((currentIndex + 1) % PROJECT_TABS.length);
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      moveFocusTo((currentIndex - 1 + PROJECT_TABS.length) % PROJECT_TABS.length);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      moveFocusTo(0);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      moveFocusTo(PROJECT_TABS.length - 1);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -159,33 +209,45 @@ export const ProjectDetails: React.FC = () => {
       />
 
       <div className="p-6 space-y-6">
-        <div className="flex flex-wrap gap-2">
-          {[
-            { key: 'overview', label: 'Overview' },
-            { key: 'tasks', label: 'Tasks' },
-            { key: 'team', label: 'Team & Allocation' },
-            { key: 'kpi', label: 'KPI Report' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as TabKey)}
-              className={`px-4 py-2 rounded border text-sm ${
-                activeTab === tab.key
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-card border-border text-foreground hover:bg-accent'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="overflow-x-auto">
+          <div role="tablist" aria-label="Project detail sections" className="flex min-w-max gap-2">
+            {PROJECT_TABS.map((tab) => {
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  id={`project-tab-${tab.key}`}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`project-panel-${tab.key}`}
+                  tabIndex={isActive ? 0 : -1}
+                  onKeyDown={(event) => handleTabKeyDown(event, tab.key)}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`rounded border px-4 py-2 text-sm whitespace-nowrap ${
+                    isActive
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-card text-foreground hover:bg-accent'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <section
+            id="project-panel-overview"
+            role="tabpanel"
+            tabIndex={0}
+            aria-labelledby="project-tab-overview"
+            className="grid grid-cols-1 gap-6 lg:grid-cols-3"
+          >
             <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5 space-y-4">
               <h3 className="text-lg font-semibold text-foreground">Project Snapshot</h3>
               <p className="text-sm text-muted-foreground">{project.description}</p>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="p-3 rounded border border-border">
                   <div className="text-xs text-muted-foreground">Manager</div>
                   <div className="font-medium text-foreground">{manager?.name ?? 'Unknown'}</div>
@@ -249,127 +311,152 @@ export const ProjectDetails: React.FC = () => {
                 <span className="font-medium text-accent-foreground">{kpis.blocked}</span>
               </div>
             </div>
-          </div>
+          </section>
         )}
 
         {activeTab === 'tasks' && (
-          <div className="bg-card border border-border rounded-lg overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">Task</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">Status</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">Risk</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">Progress</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">Assignee</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">Deadline</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
+          <section
+            id="project-panel-tasks"
+            role="tabpanel"
+            tabIndex={0}
+            aria-labelledby="project-tab-tasks"
+            className="rounded-lg border bg-card"
+          >
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="px-4">Task</TableHead>
+                  <TableHead className="px-4">Status</TableHead>
+                  <TableHead className="px-4">Risk</TableHead>
+                  <TableHead className="px-4">Progress</TableHead>
+                  <TableHead className="px-4">Assignee</TableHead>
+                  <TableHead className="px-4">Deadline</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {tasks.map((task) => (
-                  <tr key={task.id} className="hover:bg-accent/40">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{task.title}</div>
+                  <TableRow key={task.id}>
+                    <TableCell className="px-4 py-3">
+                      <div className="font-medium">{task.title}</div>
                       <div className="text-xs text-muted-foreground line-clamp-1">
                         {task.description}
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <Select
                         value={task.status}
-                        onChange={(e) =>
+                        onValueChange={(val) =>
                           void updateTask(task.id, {
-                            status: e.target.value as Task['status'],
+                            status: val as Task['status'],
                           })
                         }
-                        className="px-2 py-1 rounded border border-border bg-card text-sm"
                       >
-                        <option value="TO_DO">TO_DO</option>
-                        <option value="IN_PROGRESS">IN_PROGRESS</option>
-                        <option value="BLOCKED">BLOCKED</option>
-                        <option value="DONE">DONE</option>
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
+                        <SelectTrigger className="h-8 w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="TO_DO">To Do</SelectItem>
+                          <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                          <SelectItem value="BLOCKED">Blocked</SelectItem>
+                          <SelectItem value="DONE">Done</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <Select
                         value={task.riskLevel}
-                        onChange={(e) =>
+                        onValueChange={(val) =>
                           void updateTask(task.id, {
-                            riskLevel: e.target.value as Task['riskLevel'],
+                            riskLevel: val as Task['riskLevel'],
                           })
                         }
-                        className="px-2 py-1 rounded border border-border bg-card text-sm"
                       >
-                        <option value="NONE">NONE</option>
-                        <option value="LOW">LOW</option>
-                        <option value="MEDIUM">MEDIUM</option>
-                        <option value="HIGH">HIGH</option>
-                        <option value="CRITICAL">CRITICAL</option>
-                      </select>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-foreground">{task.progressPercent}%</td>
-                    <td className="px-4 py-3 text-sm text-foreground">
+                        <SelectTrigger className="h-8 w-[110px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NONE">None</SelectItem>
+                          <SelectItem value="LOW">Low</SelectItem>
+                          <SelectItem value="MEDIUM">Medium</SelectItem>
+                          <SelectItem value="HIGH">High</SelectItem>
+                          <SelectItem value="CRITICAL">Critical</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-sm">{task.progressPercent}%</TableCell>
+                    <TableCell className="px-4 py-3 text-sm">
                       {users.find((u) => u.id === task.assigneeId)?.name ?? 'Unassigned'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-foreground">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-sm">
                       {new Date(task.plannedEnd).toLocaleDateString()}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+                {tasks.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                      No tasks found for this project.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </section>
         )}
 
         {activeTab === 'team' && (
-          <div className="bg-card border border-border rounded-lg overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Consultant
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Role
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Allocation
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Availability
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
+          <section
+            id="project-panel-team"
+            role="tabpanel"
+            tabIndex={0}
+            aria-labelledby="project-tab-team"
+            className="rounded-lg border bg-card"
+          >
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="px-4">Consultant</TableHead>
+                  <TableHead className="px-4">Role</TableHead>
+                  <TableHead className="px-4">Allocation</TableHead>
+                  <TableHead className="px-4">Availability</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {allocations.map((allocation) => {
                   const user = users.find((u) => u.id === allocation.userId);
                   return (
-                    <tr key={allocation.id} className="hover:bg-accent/40">
-                      <td className="px-4 py-3 text-sm text-foreground">{user?.name ?? '-'}</td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">{user?.role ?? '-'}</td>
-                      <td className="px-4 py-3 text-sm text-foreground">
-                        {allocation.allocationPercent}%
-                      </td>
-                      <td className="px-4 py-3 text-sm text-foreground">
+                    <TableRow key={allocation.id}>
+                      <TableCell className="px-4 py-3 text-sm">{user?.name ?? '-'}</TableCell>
+                      <TableCell className="px-4 py-3 text-sm text-muted-foreground">
+                        {user?.role ?? '-'}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-sm">{allocation.allocationPercent}%</TableCell>
+                      <TableCell className="px-4 py-3 text-sm">
                         {user?.availabilityPercent ?? '-'}%
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-                {!allocations.length && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                {allocations.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                       No allocations found for this project.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </section>
         )}
 
         {activeTab === 'kpi' && (
-          <div className="space-y-4">
+          <section
+            id="project-panel-kpi"
+            role="tabpanel"
+            tabIndex={0}
+            aria-labelledby="project-tab-kpi"
+            className="space-y-4"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-card border border-border rounded-lg p-4">
                 <div className="text-xs text-muted-foreground mb-1">Tasks On Track</div>
@@ -399,37 +486,31 @@ export const ProjectDetails: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-lg overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted border-b border-border">
-                  <tr>
-                    <th className="px-3 py-2 text-left text-xs uppercase text-muted-foreground">
-                      KPI
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs uppercase text-muted-foreground">
-                      Formula
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs uppercase text-muted-foreground">
-                      Source
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs uppercase text-muted-foreground">
-                      Refresh
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
+            <div className="rounded-lg border bg-card">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="px-4">KPI</TableHead>
+                    <TableHead className="px-4">Formula</TableHead>
+                    <TableHead className="px-4">Source</TableHead>
+                    <TableHead className="px-4">Refresh</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {kpiRules.map((rule) => (
-                    <tr key={rule.name} className="hover:bg-accent/40">
-                      <td className="px-3 py-2 text-sm text-foreground">{rule.name}</td>
-                      <td className="px-3 py-2 text-sm text-muted-foreground">{rule.formula}</td>
-                      <td className="px-3 py-2 text-sm text-foreground">{rule.source}</td>
-                      <td className="px-3 py-2 text-sm text-foreground">On page load</td>
-                    </tr>
+                    <TableRow key={rule.name}>
+                      <TableCell className="px-4 py-3 text-sm">{rule.name}</TableCell>
+                      <TableCell className="px-4 py-3 text-sm text-muted-foreground">
+                        {rule.formula}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-sm">{rule.source}</TableCell>
+                      <TableCell className="px-4 py-3 text-sm">On page load</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
-          </div>
+          </section>
         )}
       </div>
     </div>

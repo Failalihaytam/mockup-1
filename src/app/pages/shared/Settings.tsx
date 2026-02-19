@@ -6,6 +6,13 @@ import { useTheme } from '../../context/ThemeContext';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Label } from '../../components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 import { Switch } from '../../components/ui/switch';
 
 interface LocalSettings {
@@ -69,12 +76,16 @@ export const SettingsPage: React.FC = () => {
           </CardHeader>
           <CardContent className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-2 p-4">
             <div>
-              <p className="font-semibold text-foreground">Theme</p>
+              <p id="settings-theme-label" className="font-semibold text-foreground">
+                Theme
+              </p>
               <p className="text-sm text-muted-foreground">
                 Current mode: {theme === 'dark' ? 'Dark' : 'Light'}
               </p>
             </div>
             <Switch
+              id="settings-theme-toggle"
+              aria-labelledby="settings-theme-label"
               checked={theme === 'dark'}
               onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
             />
@@ -92,10 +103,14 @@ export const SettingsPage: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-2 p-4">
               <div>
-                <p className="font-semibold text-foreground">Email notifications</p>
+                <p id="settings-email-label" className="font-semibold text-foreground">
+                  Email notifications
+                </p>
                 <p className="text-sm text-muted-foreground">Receive direct project alerts by email.</p>
               </div>
               <Switch
+                id="settings-email-toggle"
+                aria-labelledby="settings-email-label"
                 checked={settings.emailNotifications}
                 onCheckedChange={(checked) =>
                   setSettings((prev) => ({ ...prev, emailNotifications: Boolean(checked) }))
@@ -105,10 +120,14 @@ export const SettingsPage: React.FC = () => {
 
             <div className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-2 p-4">
               <div>
-                <p className="font-semibold text-foreground">Desktop notifications</p>
+                <p id="settings-desktop-label" className="font-semibold text-foreground">
+                  Desktop notifications
+                </p>
                 <p className="text-sm text-muted-foreground">Get real-time updates while active in the app.</p>
               </div>
               <Switch
+                id="settings-desktop-toggle"
+                aria-labelledby="settings-desktop-label"
                 checked={settings.desktopNotifications}
                 onCheckedChange={(checked) =>
                   setSettings((prev) => ({ ...prev, desktopNotifications: Boolean(checked) }))
@@ -118,10 +137,14 @@ export const SettingsPage: React.FC = () => {
 
             <div className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-2 p-4">
               <div>
-                <p className="font-semibold text-foreground">Weekly KPI digest</p>
+                <p id="settings-weekly-label" className="font-semibold text-foreground">
+                  Weekly KPI digest
+                </p>
                 <p className="text-sm text-muted-foreground">Summary of performance indicators each week.</p>
               </div>
               <Switch
+                id="settings-weekly-toggle"
+                aria-labelledby="settings-weekly-label"
                 checked={settings.weeklyDigest}
                 onCheckedChange={(checked) =>
                   setSettings((prev) => ({ ...prev, weeklyDigest: Boolean(checked) }))
@@ -143,17 +166,18 @@ export const SettingsPage: React.FC = () => {
             <Label htmlFor="settings-locale" className="mb-1 block text-sm text-muted-foreground">
               Display language
             </Label>
-            <select
-              id="settings-locale"
+            <Select
               value={settings.locale}
-              onChange={(event) =>
-                setSettings((prev) => ({ ...prev, locale: event.target.value }))
-              }
-              className="h-9 w-full max-w-xs rounded-md border border-input bg-input-background px-3 text-sm"
+              onValueChange={(value) => setSettings((prev) => ({ ...prev, locale: value }))}
             >
-              <option value="en-US">English (US)</option>
-              <option value="fr-FR">French (FR)</option>
-            </select>
+              <SelectTrigger id="settings-locale" className="w-full max-w-xs">
+                <SelectValue placeholder="Select locale" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en-US">English (US)</SelectItem>
+                <SelectItem value="fr-FR">French (FR)</SelectItem>
+              </SelectContent>
+            </Select>
           </CardContent>
         </Card>
 

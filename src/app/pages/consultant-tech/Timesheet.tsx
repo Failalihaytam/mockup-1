@@ -8,7 +8,15 @@ import { Timesheet, Project, Task } from '../../types/entities';
 import { Plus, Calendar, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 import {
   getISOWeekInputValue,
   getMondayOfWeek,
@@ -210,12 +218,12 @@ export const TimesheetPage: React.FC = () => {
                 <Label htmlFor="timesheet-week" className="mb-1 block text-sm font-medium text-muted-foreground">
                   Week
                 </Label>
-                <input
+                <Input
                   id="timesheet-week"
                   type="week"
                   value={getISOWeekInputValue(selectedWeek)}
                   onChange={(e) => setSelectedWeek(parseISOWeekInputValue(e.target.value))}
-                  className="px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-card text-foreground"
+                  className="w-auto px-3 py-2"
                 />
                 <div className="text-xs text-muted-foreground mt-1">
                   {toLocalDateKey(weekDates[0])} to {toLocalDateKey(weekDates[weekDates.length - 1])}
@@ -231,7 +239,7 @@ export const TimesheetPage: React.FC = () => {
 
         <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[1040px]">
               <thead className="bg-muted border-b border-border">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
@@ -255,62 +263,77 @@ export const TimesheetPage: React.FC = () => {
                 {entries.map((entry, index) => (
                   <tr key={`${entry.id ?? 'new'}-${index}`} className="hover:bg-accent">
                     <td className="px-6 py-4">
-                      <input
+                      <Input
+                        aria-label={`Entry ${index + 1} date`}
                         type="date"
                         value={entry.date}
                         onChange={(e) => updateEntry(index, 'date', e.target.value)}
-                        className="px-3 py-2 border border-border rounded focus:ring-2 focus:ring-primary bg-card text-foreground"
+                        className="w-auto px-3 py-2"
                       />
                     </td>
                     <td className="px-6 py-4">
-                      <select
-                        value={entry.projectId}
-                        onChange={(e) => updateEntry(index, 'projectId', e.target.value)}
-                        className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-primary bg-card text-foreground"
+                      <Select
+                        value={entry.projectId || 'UNSELECTED'}
+                        onValueChange={(value) =>
+                          updateEntry(index, 'projectId', value === 'UNSELECTED' ? '' : value)
+                        }
                       >
-                        <option value="">Select Project</option>
-                        {projects.map((project) => (
-                          <option key={project.id} value={project.id}>
-                            {project.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger aria-label={`Entry ${index + 1} project`}>
+                          <SelectValue placeholder="Select Project" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="UNSELECTED">Select Project</SelectItem>
+                          {projects.map((project) => (
+                            <SelectItem key={project.id} value={project.id}>
+                              {project.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="px-6 py-4">
-                      <select
-                        value={entry.taskId}
-                        onChange={(e) => updateEntry(index, 'taskId', e.target.value)}
-                        className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-primary bg-card text-foreground"
+                      <Select
+                        value={entry.taskId || 'UNSELECTED'}
+                        onValueChange={(value) =>
+                          updateEntry(index, 'taskId', value === 'UNSELECTED' ? '' : value)
+                        }
                         disabled={!entry.projectId}
                       >
-                        <option value="">Select Task (Optional)</option>
-                        {tasks
-                          .filter((task) => task.projectId === entry.projectId)
-                          .map((task) => (
-                            <option key={task.id} value={task.id}>
-                              {task.title}
-                            </option>
-                          ))}
-                      </select>
+                        <SelectTrigger aria-label={`Entry ${index + 1} task`}>
+                          <SelectValue placeholder="Select Task (Optional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="UNSELECTED">Select Task (Optional)</SelectItem>
+                          {tasks
+                            .filter((task) => task.projectId === entry.projectId)
+                            .map((task) => (
+                              <SelectItem key={task.id} value={task.id}>
+                                {task.title}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="px-6 py-4">
-                      <input
+                      <Input
+                        aria-label={`Entry ${index + 1} hours`}
                         type="number"
                         min="0"
                         max="24"
                         step="0.5"
                         value={entry.hours}
                         onChange={(e) => updateEntry(index, 'hours', Number(e.target.value || 0))}
-                        className="w-20 px-3 py-2 border border-border rounded focus:ring-2 focus:ring-primary bg-card text-foreground"
+                        className="w-20 px-3 py-2"
                       />
                     </td>
                     <td className="px-6 py-4">
-                      <input
+                      <Input
+                        aria-label={`Entry ${index + 1} comment`}
                         type="text"
                         value={entry.comment}
                         onChange={(e) => updateEntry(index, 'comment', e.target.value)}
                         placeholder="Optional comment"
-                        className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-primary bg-card text-foreground"
+                        className="w-full px-3 py-2"
                       />
                     </td>
                   </tr>

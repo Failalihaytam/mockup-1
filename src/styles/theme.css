@@ -18,8 +18,8 @@
   --secondary-foreground: #1a1a1a;
   --muted: #f1f3f3;
   --muted-foreground: #666d6d;
-  --accent: #e6f6f3;
-  --accent-foreground: #0e5f56;
+  --accent: #d8efe9;
+  --accent-foreground: #0d5850;
 
   --destructive: #d13b4f;
   --destructive-foreground: #ffffff;
@@ -36,14 +36,14 @@
   --chart-4: #1a1a1a;
   --chart-5: #848b8b;
 
-  --radius: 0.6rem;
+  --radius: 1rem;
 
   --sidebar: #ffffff;
   --sidebar-foreground: #1a1a1a;
   --sidebar-primary: #00aa9b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(0, 170, 155, 0.1);
-  --sidebar-accent-foreground: #0e5f56;
+  --sidebar-accent: rgba(0, 170, 155, 0.14);
+  --sidebar-accent-foreground: #0d5850;
   --sidebar-border: #dde2e2;
   --sidebar-ring: #00aa9b;
 
@@ -69,8 +69,8 @@
   --secondary-foreground: #f0f0f0;
   --muted: #222222;
   --muted-foreground: #a0a7a7;
-  --accent: #163531;
-  --accent-foreground: #8dd9d1;
+  --accent: #112f2b;
+  --accent-foreground: #88d4cc;
 
   --destructive: #ef5a70;
   --destructive-foreground: #ffffff;
@@ -91,8 +91,8 @@
   --sidebar-foreground: #f5f5f5;
   --sidebar-primary: #00aa9b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(0, 170, 155, 0.18);
-  --sidebar-accent-foreground: #b8efea;
+  --sidebar-accent: rgba(0, 170, 155, 0.24);
+  --sidebar-accent-foreground: #b1e9e3;
   --sidebar-border: rgba(255, 255, 255, 0.14);
   --sidebar-ring: #00aa9b;
 

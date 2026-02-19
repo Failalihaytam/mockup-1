@@ -30,7 +30,7 @@ export const ProjectProgressTrendChart: React.FC<ProjectProgressTrendChartProps>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[280px]">
+        <div className="h-[220px] sm:h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="2 2" stroke="var(--color-border)" />

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '../../components/common/PageHeader';
@@ -16,6 +16,21 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
 import {
   AllocationsAPI,
   NotificationsAPI,
@@ -53,6 +68,7 @@ export const ResourceAllocation: React.FC = () => {
   const [projectFilter, setProjectFilter] = useState<string>('ALL');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allocationPendingDelete, setAllocationPendingDelete] = useState<Allocation | null>(null);
+  const [allocationDrafts, setAllocationDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     void loadData();
@@ -69,6 +85,7 @@ export const ResourceAllocation: React.FC = () => {
       setUsers(userData.filter((user) => user.role !== 'ADMIN'));
       setProjects(projectData);
       setAllocations(allocationData);
+      setAllocationDrafts({});
     } finally {
       setLoading(false);
     }
@@ -203,36 +220,40 @@ export const ResourceAllocation: React.FC = () => {
             <form onSubmit={createAllocation} className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="allocation-user">Consultant</Label>
-                <select
-                  id="allocation-user"
+                <Select
                   value={form.userId}
-                  onChange={(event) => setForm((prev) => ({ ...prev, userId: event.target.value }))}
-                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                  onValueChange={(val) => setForm((prev) => ({ ...prev, userId: val }))}
                 >
-                  <option value="">Select user</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} ({user.role})
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="allocation-user">
+                    <SelectValue placeholder="Select user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name} ({user.role})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="allocation-project">Project</Label>
-                <select
-                  id="allocation-project"
+                <Select
                   value={form.projectId}
-                  onChange={(event) => setForm((prev) => ({ ...prev, projectId: event.target.value }))}
-                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                  onValueChange={(val) => setForm((prev) => ({ ...prev, projectId: val }))}
                 >
-                  <option value="">Select project</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="allocation-project">
+                    <SelectValue placeholder="Select project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">
@@ -286,116 +307,123 @@ export const ResourceAllocation: React.FC = () => {
                 <Label htmlFor="allocation-project-filter" className="sr-only">
                   Filter by project
                 </Label>
-                <select
-                  id="allocation-project-filter"
+                <Select
                   value={projectFilter}
-                  onChange={(event) => setProjectFilter(event.target.value)}
-                  className="h-9 rounded-md border border-input bg-input-background px-3 text-sm"
+                  onValueChange={(val) => setProjectFilter(val)}
                 >
-                  <option value="ALL">All Projects</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="allocation-project-filter" className="w-[180px]">
+                    <SelectValue placeholder="All Projects" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Projects</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[840px]">
-                <thead className="bg-muted/65">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Consultant
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Project
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Allocation
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Total/User
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Period
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                        Loading allocations...
-                      </td>
-                    </tr>
-                  ) : filteredAllocations.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                        No allocations found.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredAllocations.map((allocation) => {
-                      const user = resolveUser(allocation.userId);
-                      const project = resolveProject(allocation.projectId);
-                      const total = userTotalAllocation.get(allocation.userId) ?? 0;
+            <Table>
+              <TableHeader className="bg-muted/65">
+                <TableRow>
+                  <TableHead className="px-4">Consultant</TableHead>
+                  <TableHead className="px-4">Project</TableHead>
+                  <TableHead className="px-4">Allocation</TableHead>
+                  <TableHead className="px-4">Total/User</TableHead>
+                  <TableHead className="px-4">Period</TableHead>
+                  <TableHead className="px-4 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                      Loading allocations...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredAllocations.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                      No allocations found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredAllocations.map((allocation) => {
+                    const user = resolveUser(allocation.userId);
+                    const project = resolveProject(allocation.projectId);
+                    const total = userTotalAllocation.get(allocation.userId) ?? 0;
 
-                      return (
-                        <tr key={allocation.id} className="hover:bg-accent/40">
-                          <td className="px-4 py-3 text-sm text-foreground">{user?.name ?? '-'}</td>
-                          <td className="px-4 py-3 text-sm text-foreground">{project?.name ?? '-'}</td>
-                          <td className="px-4 py-3 text-sm text-foreground">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={100}
-                              defaultValue={allocation.allocationPercent}
-                              className="h-8 w-20"
-                              onBlur={(event) =>
-                                void updatePercent(allocation, Number(event.target.value || 0))
+                    return (
+                      <TableRow key={allocation.id} className="hover:bg-accent/40">
+                        <TableCell className="px-4 py-3 font-medium">{user?.name ?? '-'}</TableCell>
+                        <TableCell className="px-4 py-3">{project?.name ?? '-'}</TableCell>
+                        <TableCell className="px-4 py-3">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={
+                              allocationDrafts[allocation.id] ??
+                              String(allocation.allocationPercent)
+                            }
+                            className="h-8 w-20"
+                            onChange={(event) =>
+                              setAllocationDrafts((prev) => ({
+                                ...prev,
+                                [allocation.id]: event.target.value,
+                              }))
+                            }
+                            onBlur={() => {
+                              const raw = allocationDrafts[allocation.id];
+                              const next = Number(
+                                raw !== undefined ? raw : allocation.allocationPercent
+                              );
+                              setAllocationDrafts((prev) => {
+                                const copy = { ...prev };
+                                delete copy[allocation.id];
+                                return copy;
+                              });
+                              if (Number.isFinite(next)) {
+                                void updatePercent(allocation, next);
                               }
-                              onKeyDown={(event) => {
-                                if (event.key === 'Enter') {
-                                  (event.target as HTMLInputElement).blur();
-                                }
-                              }}
-                            />
-                          </td>
-                          <td
-                            className={`px-4 py-3 text-sm font-medium ${
-                              total > 100 ? 'text-destructive' : 'text-foreground'
-                            }`}
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') {
+                                (event.target as HTMLInputElement).blur();
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell
+                          className={`px-4 py-3 font-medium ${
+                            total > 100 ? 'text-destructive' : 'text-foreground'
+                          }`}
+                        >
+                          {total}%
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-muted-foreground">
+                          {allocation.startDate} to {allocation.endDate}
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-right">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setAllocationPendingDelete(allocation)}
                           >
-                            {total}%
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
-                            {allocation.startDate} to {allocation.endDate}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex justify-end">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setAllocationPendingDelete(allocation)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                Remove
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span className="sr-only">Remove</span>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>

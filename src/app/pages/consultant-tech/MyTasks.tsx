@@ -7,6 +7,13 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -163,7 +170,8 @@ export const MyTasks: React.FC = () => {
     );
     window.open(
       `https://teams.microsoft.com/l/chat/0/0?users=${usersParam}&message=${message}`,
-      '_blank'
+      '_blank',
+      'noopener,noreferrer'
     );
   };
 
@@ -242,17 +250,27 @@ export const MyTasks: React.FC = () => {
                         </Button>
 
                         {status !== 'DONE' && (
-                          <select
+                          <Select
                             value={task.status}
-                            onChange={(event) => void updateTaskStatus(task, event.target.value as TaskStatus)}
-                            className="h-8 flex-1 rounded-md border border-input bg-input-background px-2 text-xs"
+                            onValueChange={(value) =>
+                              void updateTaskStatus(task, value as TaskStatus)
+                            }
                           >
-                            {getAllowedStatuses(task.status).map((allowedStatus) => (
-                              <option key={allowedStatus} value={allowedStatus}>
-                                Move to {TASK_STATUSES.find((entry) => entry.status === allowedStatus)?.label}
-                              </option>
-                            ))}
-                          </select>
+                            <SelectTrigger
+                              aria-label={`Update status for ${task.title}`}
+                              className="h-8 flex-1 text-xs"
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getAllowedStatuses(task.status).map((allowedStatus) => (
+                                <SelectItem key={allowedStatus} value={allowedStatus}>
+                                  Move to{' '}
+                                  {TASK_STATUSES.find((entry) => entry.status === allowedStatus)?.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         )}
                       </div>
                     </article>
@@ -301,20 +319,21 @@ export const MyTasks: React.FC = () => {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="task-status">Status</Label>
-                  <select
-                    id="task-status"
+                  <Select
                     value={selectedTask.status}
-                    onChange={(event) =>
-                      void updateTaskStatus(selectedTask, event.target.value as TaskStatus)
-                    }
-                    className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                    onValueChange={(value) => void updateTaskStatus(selectedTask, value as TaskStatus)}
                   >
-                    {getAllowedStatuses(selectedTask.status).map((status) => (
-                      <option key={status} value={status}>
-                        {TASK_STATUSES.find((entry) => entry.status === status)?.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger id="task-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAllowedStatuses(selectedTask.status).map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {TASK_STATUSES.find((entry) => entry.status === status)?.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -360,7 +379,13 @@ export const MyTasks: React.FC = () => {
                   />
                 </div>
 
-                <Button type="button" variant="secondary" onClick={openTeamsDiscussion} className="w-full">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={openTeamsDiscussion}
+                  className="w-full"
+                  disabled={!functionalContact}
+                >
                   <ExternalLink className="h-4 w-4" />
                   Open Teams Discussion (Functional Consultant)
                 </Button>

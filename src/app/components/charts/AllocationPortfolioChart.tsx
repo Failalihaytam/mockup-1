@@ -26,7 +26,7 @@ export const AllocationPortfolioChart: React.FC<AllocationPortfolioChartProps> =
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[280px]">
+        <div className="h-[220px] sm:h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Tooltip

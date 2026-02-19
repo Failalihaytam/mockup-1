@@ -10,14 +10,13 @@ import {
   Settings,
   Sun,
   User,
-  Users,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getDefaultRouteForRole, useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { NotificationsAPI, UsersAPI } from '../../services/odataClient';
-import { Notification, User as UserEntity } from '../../types/entities';
+import { NotificationsAPI } from '../../services/odataClient';
+import { Notification } from '../../types/entities';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -27,9 +26,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Input } from '../ui/input';
@@ -47,12 +43,11 @@ export const TopBar: React.FC<TopBarProps> = ({
   onMenuToggle,
   onToggleCollapse,
 }) => {
-  const { currentUser, logout, switchUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [allUsers, setAllUsers] = useState<UserEntity[]>([]);
   const displayName = currentUser?.name ?? 'Guest';
 
   const initials = useMemo(() => {
@@ -68,14 +63,10 @@ export const TopBar: React.FC<TopBarProps> = ({
 
     const load = async () => {
       try {
-        const [notificationData, users] = await Promise.all([
-          NotificationsAPI.getByUser(currentUser.id),
-          UsersAPI.getAll(),
-        ]);
+        const notificationData = await NotificationsAPI.getByUser(currentUser.id);
         setNotifications(notificationData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
-        setAllUsers(users);
       } catch (error) {
-        toast.error('Failed to load header data');
+        toast.error('Failed to load notifications');
       }
     };
 
@@ -97,19 +88,6 @@ export const TopBar: React.FC<TopBarProps> = ({
       );
     } catch (error) {
       toast.error('Failed to update notification');
-    }
-  };
-
-  const handleSwitchUser = async (userId: string) => {
-    try {
-      const selectedUser = allUsers.find((user) => user.id === userId);
-      await switchUser(userId);
-
-      if (selectedUser) {
-        navigate(getDefaultRouteForRole(selectedUser.role), { replace: true });
-      }
-    } catch (error) {
-      toast.error('Unable to switch user');
     }
   };
 
@@ -150,6 +128,8 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className="relative ml-auto hidden w-full max-w-sm lg:block">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            id="topbar-search"
+            aria-label="Search projects, users, and tickets"
             className="border-border/70 bg-surface-2 pl-9 focus-visible:ring-2"
             placeholder="Search projects, users, tickets..."
           />
@@ -226,24 +206,6 @@ export const TopBar: React.FC<TopBarProps> = ({
               <Settings className="h-4 w-4" />
               Settings
             </DropdownMenuItem>
-            {allUsers.length > 1 && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <Users className="h-4 w-4" />
-                    Switch User
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-56">
-                    {allUsers.map((user) => (
-                      <DropdownMenuItem key={user.id} onSelect={() => void handleSwitchUser(user.id)}>
-                        <span className="truncate">{user.name}</span>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              </>
-            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onSelect={(e) => {

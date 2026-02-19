@@ -13,6 +13,21 @@ import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
 import { Textarea } from '../../components/ui/textarea';
 
 interface TicketForm {
@@ -151,56 +166,66 @@ export const FuncTickets: React.FC = () => {
           <form onSubmit={submitTicket} className="space-y-3">
             <div>
               <Label htmlFor="ticket-project" className="mb-1 block text-sm text-muted-foreground">Project</Label>
-              <select
-                id="ticket-project"
+              <Select
                 value={form.projectId}
-                onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
+                onValueChange={(val) => setForm((prev) => ({ ...prev, projectId: val }))}
               >
-                <option value="">Select project</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="ticket-project">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <Label htmlFor="ticket-assignee" className="mb-1 block text-sm text-muted-foreground">Assign to</Label>
-              <select
-                id="ticket-assignee"
-                value={form.assignedTo}
-                onChange={(e) => setForm((prev) => ({ ...prev, assignedTo: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
+              <Select
+                value={form.assignedTo || 'UNASSIGNED'}
+                onValueChange={(val) =>
+                  setForm((prev) => ({ ...prev, assignedTo: val === 'UNASSIGNED' ? '' : val }))
+                }
               >
-                <option value="">Unassigned</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="ticket-assignee">
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <Label htmlFor="ticket-priority" className="mb-1 block text-sm text-muted-foreground">Priority</Label>
-              <select
-                id="ticket-priority"
+              <Select
                 value={form.priority}
-                onChange={(e) =>
+                onValueChange={(val) =>
                   setForm((prev) => ({
                     ...prev,
-                    priority: e.target.value as Ticket['priority'],
+                    priority: val as Ticket['priority'],
                   }))
                 }
-                className="w-full px-3 py-2 border border-border rounded bg-card text-foreground"
               >
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="HIGH">HIGH</option>
-                <option value="CRITICAL">CRITICAL</option>
-              </select>
+                <SelectTrigger id="ticket-priority">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LOW">Low</SelectItem>
+                  <SelectItem value="MEDIUM">Medium</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
+                  <SelectItem value="CRITICAL">Critical</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -263,93 +288,90 @@ export const FuncTickets: React.FC = () => {
             </div>
             <div className="space-y-1">
               <Label htmlFor="ticket-status-filter" className="sr-only">Filter by status</Label>
-            <select
-              id="ticket-status-filter"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as Ticket['status'] | 'ALL')}
-              className="px-3 py-2 border border-border rounded bg-card text-foreground"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="OPEN">OPEN</option>
-              <option value="IN_PROGRESS">IN_PROGRESS</option>
-              <option value="WAITING_FEEDBACK">WAITING_FEEDBACK</option>
-              <option value="RESOLVED">RESOLVED</option>
-              <option value="CLOSED">CLOSED</option>
-            </select>
+              <Select
+                value={statusFilter}
+                onValueChange={(val) => setStatusFilter(val as Ticket['status'] | 'ALL')}
+              >
+                <SelectTrigger id="ticket-status-filter" className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Statuses</SelectItem>
+                  <SelectItem value="OPEN">Open</SelectItem>
+                  <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                  <SelectItem value="WAITING_FEEDBACK">Waiting Feedback</SelectItem>
+                  <SelectItem value="RESOLVED">Resolved</SelectItem>
+                  <SelectItem value="CLOSED">Closed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-lg overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Title
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Project
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Priority
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Assigned To
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
+          <div className="rounded-lg border bg-card">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="px-4">Title</TableHead>
+                  <TableHead className="px-4">Project</TableHead>
+                  <TableHead className="px-4">Priority</TableHead>
+                  <TableHead className="px-4">Assigned To</TableHead>
+                  <TableHead className="px-4">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                       Loading tickets...
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : filteredTickets.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                       No tickets match your filters.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filteredTickets.map((ticket) => (
-                    <tr key={ticket.id} className="hover:bg-accent/40">
-                      <td className="px-4 py-3 text-sm text-foreground">
+                    <TableRow key={ticket.id} className="hover:bg-accent/40">
+                      <TableCell className="px-4 py-3">
                         <div className="font-medium">{ticket.title}</div>
                         <div className="text-xs text-muted-foreground line-clamp-1">
                           {ticket.description}
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-muted-foreground">
                         {projects.find((project) => project.id === ticket.projectId)?.name ??
                           ticket.projectId}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-foreground">{ticket.priority}</td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 font-medium">{ticket.priority}</TableCell>
+                      <TableCell className="px-4 py-3 text-muted-foreground">
                         {users.find((user) => user.id === ticket.assignedTo)?.name ?? 'Unassigned'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        <Select
                           value={ticket.status}
-                          onChange={(e) =>
-                            void updateStatus(ticket, e.target.value as Ticket['status'])
+                          onValueChange={(val) =>
+                            void updateStatus(ticket, val as Ticket['status'])
                           }
-                          className="px-2 py-1 border border-border rounded bg-card text-sm text-foreground"
                         >
-                          <option value="OPEN">OPEN</option>
-                          <option value="IN_PROGRESS">IN_PROGRESS</option>
-                          <option value="WAITING_FEEDBACK">WAITING_FEEDBACK</option>
-                          <option value="RESOLVED">RESOLVED</option>
-                          <option value="CLOSED">CLOSED</option>
-                        </select>
-                      </td>
-                    </tr>
+                          <SelectTrigger className="h-8 w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="OPEN">Open</SelectItem>
+                            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                            <SelectItem value="WAITING_FEEDBACK">Waiting Feedback</SelectItem>
+                            <SelectItem value="RESOLVED">Resolved</SelectItem>
+                            <SelectItem value="CLOSED">Closed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       </div>

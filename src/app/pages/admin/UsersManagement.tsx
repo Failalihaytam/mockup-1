@@ -25,6 +25,22 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Progress } from '../../components/ui/progress';
+import { Switch } from '../../components/ui/switch';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -261,158 +277,136 @@ export const UsersManagement: React.FC = () => {
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="users-role-filter" className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                Role
-              </Label>
-              <select
-                id="users-role-filter"
+            <div className="space-y-1.5">
+              <Label htmlFor="users-role-filter">Role</Label>
+              <Select
                 value={filterRole}
-                onChange={(event) => setFilterRole(event.target.value as UserRole | 'ALL')}
-                className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                onValueChange={(val) => setFilterRole(val as UserRole | 'ALL')}
               >
-                <option value="ALL">All Roles</option>
-                <option value="ADMIN">Administrator</option>
-                <option value="MANAGER">Manager</option>
-                <option value="CONSULTANT_TECHNIQUE">Technical Consultant</option>
-                <option value="CONSULTANT_FONCTIONNEL">Functional Consultant</option>
-              </select>
+                <SelectTrigger id="users-role-filter">
+                  <SelectValue placeholder="All Roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Roles</SelectItem>
+                  <SelectItem value="ADMIN">Administrator</SelectItem>
+                  <SelectItem value="MANAGER">Manager</SelectItem>
+                  <SelectItem value="CONSULTANT_TECHNIQUE">Technical Consultant</SelectItem>
+                  <SelectItem value="CONSULTANT_FONCTIONNEL">Functional Consultant</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
 
         <Card className="overflow-hidden bg-card/92">
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px]">
-                <thead className="bg-muted/65">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                      User
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                      Role
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                      Skills
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                      Availability
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                        Loading users...
-                      </td>
-                    </tr>
-                  ) : filteredUsers.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                        No users found
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <tr key={user.id} className="transition-colors hover:bg-accent/35">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/12 text-sm font-semibold text-primary">
-                              {user.name.charAt(0)}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="truncate font-medium text-foreground">{user.name}</p>
-                              <p className="truncate text-sm text-muted-foreground">{user.email}</p>
-                            </div>
+            <Table>
+              <TableHeader className="bg-muted/65">
+                <TableRow>
+                  <TableHead className="px-6">User</TableHead>
+                  <TableHead className="px-6">Role</TableHead>
+                  <TableHead className="px-6">Skills</TableHead>
+                  <TableHead className="px-6">Availability</TableHead>
+                  <TableHead className="px-6">Status</TableHead>
+                  <TableHead className="px-6 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      Loading users...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-32 text-center">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <Users className="h-8 w-8 text-muted-foreground/50" />
+                        <p className="text-muted-foreground">No users match your filters.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/12 text-sm font-semibold text-primary">
+                            {user.name.charAt(0)}
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge className={getRoleBadgeTone(user.role)}>{getRoleLabel(user.role)}</Badge>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-1">
-                            {user.skills.slice(0, 3).map((skill, index) => (
-                              <Badge key={`${user.id}-${index}`} variant="secondary">
-                                {skill}
-                              </Badge>
-                            ))}
-                            {user.skills.length > 3 && (
-                              <Badge variant="secondary">+{user.skills.length - 3}</Badge>
-                            )}
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-foreground">{user.name}</p>
+                            <p className="truncate text-sm text-muted-foreground">{user.email}</p>
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="w-40 space-y-1">
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>Rate</span>
-                              <span>{user.availabilityPercent}%</span>
-                            </div>
-                            <Progress value={user.availabilityPercent} />
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <Badge className={getRoleBadgeTone(user.role)}>{getRoleLabel(user.role)}</Badge>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {user.skills.slice(0, 2).map((skill, index) => (
+                            <Badge key={`${user.id}-${index}`} variant="secondary">
+                              {skill}
+                            </Badge>
+                          ))}
+                          {user.skills.length > 2 && (
+                            <Badge variant="secondary">+{user.skills.length - 2}</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <div className="w-40 space-y-1">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>Rate</span>
+                            <span>{user.availabilityPercent}%</span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <button
-                            type="button"
-                            onClick={() => void toggleUserStatus(user.id, user.active)}
-                            aria-pressed={user.active}
-                            className={cn(
-                              'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors',
-                              user.active
-                                ? 'bg-primary/12 text-primary hover:bg-primary/18'
-                                : 'bg-muted text-muted-foreground hover:bg-secondary'
-                            )}
+                          <Progress value={user.availabilityPercent} />
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <button
+                          type="button"
+                          onClick={() => void toggleUserStatus(user.id, user.active)}
+                          className={cn(
+                            'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors',
+                            user.active
+                              ? 'bg-primary/12 text-primary hover:bg-primary/18'
+                              : 'bg-muted text-muted-foreground hover:bg-secondary'
+                          )}
+                        >
+                          {user.active ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                          {user.active ? 'Active' : 'Inactive'}
+                        </button>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(user)}
+                            title={`Edit ${user.name}`}
+                            aria-label={`Edit ${user.name}`}
                           >
-                            {user.active ? (
-                              <>
-                                <CheckCircle className="h-3.5 w-3.5" />
-                                Active
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="h-3.5 w-3.5" />
-                                Inactive
-                              </>
-                            )}
-                          </button>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEdit(user)}
-                              aria-label={`Edit ${user.name}`}
-                              title={`Edit ${user.name}`}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => requestDeleteUser(user)}
-                              aria-label={`Delete ${user.name}`}
-                              title={`Delete ${user.name}`}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => requestDeleteUser(user)}
+                            title={`Delete ${user.name}`}
+                            aria-label={`Delete ${user.name}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
@@ -461,19 +455,20 @@ export const UsersManagement: React.FC = () => {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="user-role">Role</Label>
-                <select
-                  id="user-role"
+                <Select
                   value={form.role}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, role: event.target.value as UserRole }))
-                  }
-                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                  onValueChange={(val) => setForm((prev) => ({ ...prev, role: val as UserRole }))}
                 >
-                  <option value="ADMIN">Administrator</option>
-                  <option value="MANAGER">Manager</option>
-                  <option value="CONSULTANT_TECHNIQUE">Technical Consultant</option>
-                  <option value="CONSULTANT_FONCTIONNEL">Functional Consultant</option>
-                </select>
+                  <SelectTrigger id="user-role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ADMIN">Administrator</SelectItem>
+                    <SelectItem value="MANAGER">Manager</SelectItem>
+                    <SelectItem value="CONSULTANT_TECHNIQUE">Technical Consultant</SelectItem>
+                    <SelectItem value="CONSULTANT_FONCTIONNEL">Functional Consultant</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="user-availability">Availability %</Label>
@@ -515,14 +510,15 @@ export const UsersManagement: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                id="user-active"
-                type="checkbox"
-                checked={form.active}
-                onChange={(event) => setForm((prev) => ({ ...prev, active: event.target.checked }))}
-              />
+            <div className="flex items-center justify-between rounded-md border border-border/70 bg-surface-2 p-3">
               <Label htmlFor="user-active">Active account</Label>
+              <Switch
+                id="user-active"
+                checked={form.active}
+                onCheckedChange={(checked) =>
+                  setForm((prev) => ({ ...prev, active: Boolean(checked) }))
+                }
+              />
             </div>
 
             <DialogFooter>

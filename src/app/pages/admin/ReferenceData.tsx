@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, Save, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '../../components/common/PageHeader';
 import {
@@ -17,8 +17,25 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Switch } from '../../components/ui/switch';
 import { ReferenceDataAPI } from '../../services/odataClient';
 import { ReferenceData } from '../../types/entities';
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 
 type ReferenceType = ReferenceData['type'] | 'ALL';
 
@@ -183,22 +200,25 @@ export const ReferenceDataManagement: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="reference-type">Type</Label>
-                <select
-                  id="reference-type"
+                <Select
                   value={form.type}
-                  onChange={(event) =>
+                  onValueChange={(val) =>
                     setForm((prev) => ({
                       ...prev,
-                      type: event.target.value as ReferenceData['type'],
+                      type: val as ReferenceData['type'],
                     }))
                   }
-                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
                 >
-                  <option value="TASK_STATUS">Task Status</option>
-                  <option value="PRIORITY">Priority</option>
-                  <option value="PROJECT_TYPE">Project Type</option>
-                  <option value="SKILL">Skill</option>
-                </select>
+                  <SelectTrigger id="reference-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="TASK_STATUS">Task Status</SelectItem>
+                    <SelectItem value="PRIORITY">Priority</SelectItem>
+                    <SelectItem value="PROJECT_TYPE">Project Type</SelectItem>
+                    <SelectItem value="SKILL">Skill</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">
@@ -234,14 +254,15 @@ export const ReferenceDataManagement: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  id="reference-active"
-                  type="checkbox"
-                  checked={form.active}
-                  onChange={(event) => setForm((prev) => ({ ...prev, active: event.target.checked }))}
-                />
+              <div className="flex items-center justify-between rounded-md border border-border/70 bg-surface-2 p-3">
                 <Label htmlFor="reference-active">Active</Label>
+                <Switch
+                  id="reference-active"
+                  checked={form.active}
+                  onCheckedChange={(checked) =>
+                    setForm((prev) => ({ ...prev, active: Boolean(checked) }))
+                  }
+                />
               </div>
 
               <div className="flex items-center gap-2 pt-2">
@@ -278,100 +299,92 @@ export const ReferenceDataManagement: React.FC = () => {
                 <Label htmlFor="reference-type-filter" className="sr-only">
                   Filter by type
                 </Label>
-                <select
-                  id="reference-type-filter"
+                <Select
                   value={typeFilter}
-                  onChange={(event) => setTypeFilter(event.target.value as ReferenceType)}
-                  className="h-9 rounded-md border border-input bg-input-background px-3 text-sm md:w-[220px]"
+                  onValueChange={(val) => setTypeFilter(val as ReferenceType)}
                 >
-                  <option value="ALL">All Types</option>
-                  <option value="TASK_STATUS">Task Status</option>
-                  <option value="PRIORITY">Priority</option>
-                  <option value="PROJECT_TYPE">Project Type</option>
-                  <option value="SKILL">Skill</option>
-                </select>
+                  <SelectTrigger id="reference-type-filter" className="w-full md:w-[220px]">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Types</SelectItem>
+                    <SelectItem value="TASK_STATUS">Task Status</SelectItem>
+                    <SelectItem value="PRIORITY">Priority</SelectItem>
+                    <SelectItem value="PROJECT_TYPE">Project Type</SelectItem>
+                    <SelectItem value="SKILL">Skill</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px]">
-                <thead className="bg-muted/65">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Code
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Label
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Order
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                        Loading reference data...
-                      </td>
-                    </tr>
-                  ) : filteredItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                        No reference entries found
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredItems.map((item) => (
-                      <tr key={item.id} className="hover:bg-accent/40">
-                        <td className="px-4 py-3 text-sm text-foreground">{item.type}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-foreground">{item.code}</td>
-                        <td className="px-4 py-3 text-sm text-foreground">{item.label}</td>
-                        <td className="px-4 py-3 text-sm text-foreground">{item.order ?? '-'}</td>
-                        <td className="px-4 py-3">
-                          <button
-                            type="button"
-                            onClick={() => void toggleActive(item)}
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                              item.active
-                                ? 'bg-primary/12 text-primary hover:bg-primary/18'
-                                : 'bg-muted text-muted-foreground hover:bg-secondary'
-                            }`}
+            <Table>
+              <TableHeader className="bg-muted/65">
+                <TableRow>
+                  <TableHead className="px-4">Type</TableHead>
+                  <TableHead className="px-4">Code</TableHead>
+                  <TableHead className="px-4">Label</TableHead>
+                  <TableHead className="px-4">Order</TableHead>
+                  <TableHead className="px-4">Status</TableHead>
+                  <TableHead className="px-4 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                      Loading reference data...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                      No reference entries found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredItems.map((item) => (
+                    <TableRow key={item.id} className="hover:bg-accent/40">
+                      <TableCell className="px-4 py-3 text-sm">{item.type}</TableCell>
+                      <TableCell className="px-4 py-3 text-sm font-mono">{item.code}</TableCell>
+                      <TableCell className="px-4 py-3 text-sm">{item.label}</TableCell>
+                      <TableCell className="px-4 py-3 text-sm">{item.order ?? '-'}</TableCell>
+                      <TableCell className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            id={`reference-active-${item.id}`}
+                            checked={item.active}
+                            aria-label={`Toggle active status for ${item.label}`}
+                            onCheckedChange={() => void toggleActive(item)}
+                          />
+                          <Badge variant="secondary">{item.active ? 'Active' : 'Inactive'}</Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => startEdit(item)}
+                            aria-label={`Edit ${item.label}`}
                           >
-                            {item.active ? 'Active' : 'Inactive'}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button type="button" variant="outline" size="sm" onClick={() => startEdit(item)}>
-                              Edit
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setItemPendingDelete(item)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Delete
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Edit {item.label}</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setItemPendingDelete(item)}
+                            aria-label={`Delete ${item.label}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>

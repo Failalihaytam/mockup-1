@@ -101,7 +101,7 @@ export const TeamPerformance: React.FC = () => {
         </div>
 
         <div className="bg-card border border-border rounded-lg overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[980px]">
             <thead className="bg-muted">
               <tr>
                 <th className="px-4 py-3 text-left text-xs uppercase text-muted-foreground">

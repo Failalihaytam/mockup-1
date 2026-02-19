@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, NavLink } from 'react-router';
 import {
   BarChart3,
   ClipboardList,
@@ -15,12 +15,15 @@ import {
   Wrench,
   ChevronLeft,
   ChevronRight,
-  X,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '../ui/utils';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types/entities';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet';
+
+const APP_NAME = 'Performance Hub';
+const BRAND_NAME = 'Inetum';
 
 interface NavItem {
   label: string;
@@ -180,7 +183,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
 }) => {
   const { currentUser } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
 
   if (!currentUser) return null;
@@ -195,14 +197,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return acc;
   }, {});
 
-  const isActive = (path: string) =>
-    location.pathname === path || location.pathname.startsWith(`${path}/`);
-
-  const renderSidebar = (mobile = false) => {
+  const renderSidebarContent = (mobile = false) => {
     const compact = !mobile && collapsed;
 
     return (
-      <div className="flex h-full flex-col border-r border-sidebar-border bg-sidebar">
+      <div className="flex h-full flex-col bg-sidebar">
         <div
           className={cn(
             'flex h-16 items-center border-b border-sidebar-border px-4',
@@ -216,18 +215,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {!compact && (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                  Inetum
+                  {BRAND_NAME}
                 </p>
-                <p className="text-sm font-semibold text-sidebar-foreground">Performance Hub</p>
+                <p className="text-sm font-semibold text-sidebar-foreground">{APP_NAME}</p>
               </div>
             )}
           </div>
 
-          {mobile ? (
-            <Button variant="ghost" size="icon" onClick={onCloseMobile} aria-label="Close navigation">
-              <X className="h-4 w-4" />
-            </Button>
-          ) : (
+          {!mobile && (
             <Button
               variant="ghost"
               size="icon"
@@ -249,32 +244,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
               <div className="space-y-1.5">
                 {sectionItems.map((item) => {
-                  const active = isActive(item.path);
                   const Icon = item.icon;
 
                   return (
-                    <button
+                    <NavLink
                       key={item.path}
-                      type="button"
+                      to={item.path}
                       title={compact ? item.label : undefined}
-                      aria-label={item.label}
-                      onClick={() => {
-                        navigate(item.path);
-                        if (mobile) {
-                          onCloseMobile();
-                        }
-                      }}
-                      className={cn(
-                        'group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
-                        active
-                          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                          : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground',
-                        compact && 'justify-center'
-                      )}
+                      onClick={() => mobile && onCloseMobile()}
+                      className={({ isActive }) =>
+                        cn(
+                          'group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+                          isActive
+                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                            : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground',
+                          compact && 'justify-center'
+                        )
+                      }
                     >
-                      <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-primary' : 'text-sidebar-foreground/70')} />
-                      {!compact && <span className="truncate font-medium">{item.label}</span>}
-                    </button>
+                      {({ isActive }) => (
+                        <>
+                          <Icon
+                            className={cn(
+                              'h-4 w-4 shrink-0',
+                              isActive ? 'text-primary' : 'text-sidebar-foreground/70'
+                            )}
+                          />
+                          {!compact && <span className="truncate font-medium">{item.label}</span>}
+                        </>
+                      )}
+                    </NavLink>
                   );
                 })}
               </div>
@@ -306,26 +305,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      <aside className={cn('hidden shrink-0 transition-[width] duration-300 md:block', collapsed ? 'w-[92px]' : 'w-[280px]')}>
-        {renderSidebar(false)}
+      <aside
+        className={cn(
+          'hidden shrink-0 border-r border-sidebar-border transition-[width] duration-300 md:block',
+          collapsed ? 'w-[92px]' : 'w-[280px]'
+        )}
+      >
+        {renderSidebarContent(false)}
       </aside>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <button
-            type="button"
-            aria-label="Close navigation"
-            className="absolute inset-0 bg-black/45"
-            onClick={onCloseMobile}
-          />
-          <aside
-            id="app-mobile-navigation"
-            className="relative h-full w-[86%] max-w-[320px] animate-slide-in-left"
-          >
-            {renderSidebar(true)}
-          </aside>
-        </div>
-      )}
+      <Sheet open={mobileOpen} onOpenChange={(open) => !open && onCloseMobile()}>
+        <SheetContent side="left" className="p-0 w-[280px]">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Navigation Menu</SheetTitle>
+          </SheetHeader>
+          {renderSidebarContent(true)}
+        </SheetContent>
+      </Sheet>
     </>
   );
 };

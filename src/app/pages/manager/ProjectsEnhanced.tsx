@@ -31,6 +31,13 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Progress } from '../../components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 
 const STATUS_OPTIONS: ProjectStatus[] = ['PLANNED', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
 const PRIORITY_OPTIONS: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
@@ -266,38 +273,44 @@ export const ProjectsEnhanced: React.FC = () => {
               <Label htmlFor="projects-status-filter" className="sr-only">
                 Filter by status
               </Label>
-              <select
-                id="projects-status-filter"
+              <Select
                 value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value as ProjectStatus | 'ALL')}
-                className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                onValueChange={(value) => setStatusFilter(value as ProjectStatus | 'ALL')}
               >
-                <option value="ALL">All statuses</option>
-                {STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="projects-status-filter">
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All statuses</SelectItem>
+                  {STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="projects-priority-filter" className="sr-only">
                 Filter by priority
               </Label>
-              <select
-                id="projects-priority-filter"
+              <Select
                 value={priorityFilter}
-                onChange={(event) => setPriorityFilter(event.target.value as Priority | 'ALL')}
-                className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
+                onValueChange={(value) => setPriorityFilter(value as Priority | 'ALL')}
               >
-                <option value="ALL">All priorities</option>
-                {PRIORITY_OPTIONS.map((priority) => (
-                  <option key={priority} value={priority}>
-                    {priority}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="projects-priority-filter">
+                  <SelectValue placeholder="All priorities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All priorities</SelectItem>
+                  {PRIORITY_OPTIONS.map((priority) => (
+                    <SelectItem key={priority} value={priority}>
+                      {priority}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <Button variant="secondary" onClick={resetFilters}>
@@ -460,38 +473,44 @@ export const ProjectsEnhanced: React.FC = () => {
 
               <div className="space-y-1.5">
                 <Label htmlFor="project-status">Status</Label>
-                <select
-                  id="project-status"
+                <Select
                   value={form.status}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, status: event.target.value as ProjectStatus }))
+                  onValueChange={(value) =>
+                    setForm((prev) => ({ ...prev, status: value as ProjectStatus }))
                   }
-                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
                 >
-                  {STATUS_OPTIONS.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="project-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="project-priority">Priority</Label>
-                <select
-                  id="project-priority"
+                <Select
                   value={form.priority}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, priority: event.target.value as Priority }))
+                  onValueChange={(value) =>
+                    setForm((prev) => ({ ...prev, priority: value as Priority }))
                   }
-                  className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm"
                 >
-                  {PRIORITY_OPTIONS.map((priority) => (
-                    <option key={priority} value={priority}>
-                      {priority}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="project-priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITY_OPTIONS.map((priority) => (
+                      <SelectItem key={priority} value={priority}>
+                        {priority}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">
