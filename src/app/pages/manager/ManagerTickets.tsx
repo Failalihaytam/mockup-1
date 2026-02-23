@@ -2,13 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
 import {
   NotificationsAPI,
+  ObjetsAPI,
   ProjectsAPI,
   TicketsAPI,
   UsersAPI,
 } from '../../services/odataClient';
-import { Project, Ticket, TicketEvent, TicketStatus, User } from '../../types/entities';
+import { DevType, Objet, Project, Ticket, TicketEvent, TicketStatus, User } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarDays, KanbanSquare, List, Plus } from 'lucide-react';
+import { CalendarDays, FolderOpen, KanbanSquare, List, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -43,10 +44,14 @@ import {
 
 type ViewMode = 'list' | 'calendar' | 'kanban';
 
+const DEV_TYPES: DevType[] = ['Formulaire', 'Report', 'Enhancement', 'Programme'];
+
 interface TicketForm {
   projectId: string;
+  objetId: string;
   assignedTo: string;
   priority: Ticket['priority'];
+  devType: DevType;
   title: string;
   description: string;
   dueDate: string;
@@ -54,8 +59,10 @@ interface TicketForm {
 
 const EMPTY_FORM: TicketForm = {
   projectId: '',
+  objetId: '',
   assignedTo: '',
   priority: 'MEDIUM',
+  devType: 'Enhancement',
   title: '',
   description: '',
   dueDate: '',
@@ -78,6 +85,13 @@ const priorityColor: Record<string, string> = {
   CRITICAL: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 };
 
+const devTypeColor: Record<DevType, string> = {
+  Formulaire: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  Report: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
+  Enhancement: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  Programme: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+};
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -87,10 +101,15 @@ export const ManagerTickets: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [objets, setObjets] = useState<Objet[]>([]);
   const [form, setForm] = useState<TicketForm>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Ticket['status'] | 'ALL'>('ALL');
+  const [devTypeFilter, setDevTypeFilter] = useState<DevType | 'ALL'>('ALL');
+  const [showNewObjet, setShowNewObjet] = useState(false);
+  const [newObjetName, setNewObjetName] = useState('');
+  const [newObjetDesc, setNewObjetDesc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -107,13 +126,15 @@ export const ManagerTickets: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [projectData, userData, ticketData] = await Promise.all([
+      const [projectData, userData, ticketData, objetData] = await Promise.all([
         ProjectsAPI.getAll(),
         UsersAPI.getAll(),
         TicketsAPI.getAll(),
+        ObjetsAPI.getAll(),
       ]);
       setProjects(projectData);
       setUsers(userData);
+      setObjets(objetData);
       setTickets(ticketData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
     } finally {
       setLoading(false);
@@ -122,10 +143,17 @@ export const ManagerTickets: React.FC = () => {
 
   const userName = (id?: string) => users.find((u) => u.id === id)?.name ?? '-';
   const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? id;
+  const objetName = (id?: string) => objets.find((o) => o.id === id)?.name ?? '';
+
+  const formObjets = useMemo(
+    () => (form.projectId ? objets.filter((o) => o.projectId === form.projectId) : []),
+    [objets, form.projectId],
+  );
 
   const filteredTickets = useMemo(() => {
     return tickets.filter((t) => {
       if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
+      if (devTypeFilter !== 'ALL' && t.devType !== devTypeFilter) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         return (
@@ -136,7 +164,7 @@ export const ManagerTickets: React.FC = () => {
       }
       return true;
     });
-  }, [tickets, statusFilter, searchQuery, projects]);
+  }, [tickets, statusFilter, devTypeFilter, searchQuery, projects]);
 
   // ---------------------------------------------------------------------------
   // Actions
@@ -153,9 +181,11 @@ export const ManagerTickets: React.FC = () => {
       setIsSubmitting(true);
       const created = await TicketsAPI.create({
         projectId: form.projectId,
+        objetId: form.objetId || undefined,
         createdBy: currentUser.id,
         assignedTo: form.assignedTo || undefined,
         priority: form.priority,
+        devType: form.devType,
         status: 'OPEN',
         title: form.title.trim(),
         description: form.description.trim(),
@@ -301,6 +331,17 @@ export const ManagerTickets: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+          <Select value={devTypeFilter} onValueChange={(v) => setDevTypeFilter(v as typeof devTypeFilter)}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Dev Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Types</SelectItem>
+              {DEV_TYPES.map((dt) => (
+                <SelectItem key={dt} value={dt}>{dt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <div className="flex gap-1 rounded-lg border border-border p-0.5">
             {([['list', List], ['calendar', CalendarDays], ['kanban', KanbanSquare]] as const).map(
@@ -334,8 +375,10 @@ export const ManagerTickets: React.FC = () => {
                 <TableRow>
                   <TableHead className="px-4">Title</TableHead>
                   <TableHead className="px-4">Project</TableHead>
+                  <TableHead className="px-4">Objet</TableHead>
                   <TableHead className="px-4">Status</TableHead>
                   <TableHead className="px-4">Priority</TableHead>
+                  <TableHead className="px-4">Type</TableHead>
                   <TableHead className="px-4">Due</TableHead>
                   <TableHead className="px-4">Assigned</TableHead>
                   <TableHead className="px-4">Actions</TableHead>
@@ -346,11 +389,15 @@ export const ManagerTickets: React.FC = () => {
                   <TableRow key={ticket.id} className="cursor-pointer hover:bg-accent/40" onClick={() => setSelectedTicket(ticket)}>
                     <TableCell className="px-4 py-3 font-medium">{ticket.title}</TableCell>
                     <TableCell className="px-4 py-3 text-sm text-muted-foreground">{projectName(ticket.projectId)}</TableCell>
+                    <TableCell className="px-4 py-3 text-xs text-muted-foreground">{objetName(ticket.objetId) || '—'}</TableCell>
                     <TableCell className="px-4 py-3">
                       <Badge className={statusColor[ticket.status]}>{ticket.status.replace('_', ' ')}</Badge>
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <Badge className={priorityColor[ticket.priority]}>{ticket.priority}</Badge>
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      {ticket.devType && <Badge className={devTypeColor[ticket.devType] + ' text-[10px]'}>{ticket.devType}</Badge>}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm">{ticket.dueDate ? new Date(ticket.dueDate).toLocaleDateString() : '-'}</TableCell>
                     <TableCell className="px-4 py-3 text-sm">{userName(ticket.assignedTo)}</TableCell>
@@ -363,7 +410,7 @@ export const ManagerTickets: React.FC = () => {
                 ))}
                 {filteredTickets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">No tickets found.</TableCell>
+                    <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">No tickets found.</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -448,7 +495,10 @@ export const ManagerTickets: React.FC = () => {
                         <p className="text-sm font-medium text-foreground">{ticket.title}</p>
                         <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{ticket.description}</p>
                         <div className="mt-2 flex items-center justify-between">
-                          <Badge className={priorityColor[ticket.priority] + ' text-[10px]'}>{ticket.priority}</Badge>
+                          <div className="flex items-center gap-1">
+                            <Badge className={priorityColor[ticket.priority] + ' text-[10px]'}>{ticket.priority}</Badge>
+                            {ticket.devType && <Badge className={devTypeColor[ticket.devType] + ' text-[10px]'}>{ticket.devType}</Badge>}
+                          </div>
                           <span className="text-[10px] text-muted-foreground">{userName(ticket.assignedTo)}</span>
                         </div>
                       </div>
@@ -470,7 +520,7 @@ export const ManagerTickets: React.FC = () => {
           <form onSubmit={(e) => void submitTicket(e)} className="space-y-4">
             <div>
               <Label>Project *</Label>
-              <Select value={form.projectId} onValueChange={(v) => setForm({ ...form, projectId: v })}>
+              <Select value={form.projectId} onValueChange={(v) => setForm({ ...form, projectId: v, objetId: '' })}>
                 <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
                 <SelectContent>
                   {projects.map((p) => (
@@ -479,6 +529,47 @@ export const ManagerTickets: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            {/* Objet selector */}
+            {form.projectId && (
+              <div>
+                <Label className="flex items-center gap-1">
+                  <FolderOpen className="h-3.5 w-3.5" /> Objet
+                </Label>
+                {!showNewObjet ? (
+                  <div className="flex gap-2">
+                    <Select value={form.objetId} onValueChange={(v) => setForm({ ...form, objetId: v })}>
+                      <SelectTrigger className="flex-1"><SelectValue placeholder="Select objet (optional)" /></SelectTrigger>
+                      <SelectContent>
+                        {formObjets.map((o) => (
+                          <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setShowNewObjet(true)}>
+                      <Plus className="h-3 w-3 mr-0.5" /> Créer
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2 rounded-lg border p-3 bg-muted/30">
+                    <Input placeholder="Nom de l'objet *" value={newObjetName} onChange={(e) => setNewObjetName(e.target.value)} />
+                    <Input placeholder="Description (optionnel)" value={newObjetDesc} onChange={(e) => setNewObjetDesc(e.target.value)} />
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setShowNewObjet(false)}>Annuler</Button>
+                      <Button type="button" size="sm" onClick={async () => {
+                        if (!form.projectId || !newObjetName.trim()) { toast.error('Project and name required'); return; }
+                        try {
+                          const created = await ObjetsAPI.create({ projectId: form.projectId, name: newObjetName.trim(), description: newObjetDesc.trim() || undefined });
+                          setObjets((prev) => [...prev, created]);
+                          setForm((prev) => ({ ...prev, objetId: created.id }));
+                          setShowNewObjet(false); setNewObjetName(''); setNewObjetDesc('');
+                          toast.success('Objet créé');
+                        } catch { toast.error('Erreur'); }
+                      }}>Créer l'objet</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               <Label>Title *</Label>
               <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
@@ -486,6 +577,24 @@ export const ManagerTickets: React.FC = () => {
             <div>
               <Label>Description</Label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
+            </div>
+            {/* Dev Type segmented control */}
+            <div>
+              <Label>Development Type</Label>
+              <div className="flex gap-1 mt-1 rounded-lg border border-border p-0.5">
+                {DEV_TYPES.map((dt) => (
+                  <Button
+                    key={dt}
+                    type="button"
+                    size="sm"
+                    variant={form.devType === dt ? 'default' : 'ghost'}
+                    className={form.devType === dt ? '' : 'text-muted-foreground'}
+                    onClick={() => setForm({ ...form, devType: dt })}
+                  >
+                    {dt}
+                  </Button>
+                ))}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -536,10 +645,12 @@ export const ManagerTickets: React.FC = () => {
                 <div className="flex flex-wrap gap-2">
                   <Badge className={statusColor[selectedTicket.status]}>{selectedTicket.status.replace('_', ' ')}</Badge>
                   <Badge className={priorityColor[selectedTicket.priority]}>{selectedTicket.priority}</Badge>
+                  {selectedTicket.devType && <Badge className={devTypeColor[selectedTicket.devType]}>{selectedTicket.devType}</Badge>}
                 </div>
                 <div className="text-sm text-muted-foreground">{selectedTicket.description}</div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div><span className="text-muted-foreground">Project:</span> {projectName(selectedTicket.projectId)}</div>
+                  <div><span className="text-muted-foreground">Objet:</span> {objetName(selectedTicket.objetId) || '—'}</div>
                   <div><span className="text-muted-foreground">Created by:</span> {userName(selectedTicket.createdBy)}</div>
                   <div><span className="text-muted-foreground">Assigned to:</span> {userName(selectedTicket.assignedTo)}</div>
                   <div><span className="text-muted-foreground">Due:</span> {selectedTicket.dueDate ?? '-'}</div>

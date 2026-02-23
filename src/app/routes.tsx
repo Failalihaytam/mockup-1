@@ -35,6 +35,9 @@ const CertifiedConsultants = lazy(() => import('./pages/manager/CertifiedConsult
 const GestionConges = lazy(() => import('./pages/manager/GestionConges').then(m => ({ default: m.GestionConges })));
 const ImputationsEquipe = lazy(() => import('./pages/manager/ImputationsEquipe').then(m => ({ default: m.ImputationsEquipe })));
 
+const ObjetDetail = lazy(() => import('./pages/shared/ObjetDetail').then(m => ({ default: m.ObjetDetail })));
+const ObjetsListPage = lazy(() => import('./pages/shared/ObjetsListPage').then(m => ({ default: m.ObjetsListPage })));
+
 const MyCertifications = lazy(() => import('./pages/consultant-tech/MyCertifications').then(m => ({ default: m.MyCertifications })));
 const MesConges = lazy(() => import('./pages/consultant-tech/MesConges').then(m => ({ default: m.MesConges })));
 const MesImputations = lazy(() => import('./pages/consultant-tech/MesImputations').then(m => ({ default: m.MesImputations })));
@@ -232,6 +235,14 @@ export const router = createBrowserRouter([
             path: 'imputations',
             element: <SuspensePage><ImputationsEquipe /></SuspensePage>,
           },
+          {
+            path: 'objets',
+            element: <SuspensePage><ObjetsListPage basePath="/manager" /></SuspensePage>,
+          },
+          {
+            path: 'objets/:id',
+            element: <SuspensePage><ObjetDetail /></SuspensePage>,
+          },
         ],
       },
 
@@ -272,6 +283,14 @@ export const router = createBrowserRouter([
             path: 'imputations',
             element: <SuspensePage><MesImputations /></SuspensePage>,
           },
+          {
+            path: 'objets',
+            element: <SuspensePage><ObjetsListPage basePath="/consultant-tech" /></SuspensePage>,
+          },
+          {
+            path: 'objets/:id',
+            element: <SuspensePage><ObjetDetail /></SuspensePage>,
+          },
         ],
       },
 
@@ -299,6 +318,14 @@ export const router = createBrowserRouter([
           {
             path: 'tickets',
             element: <SuspensePage><FuncTickets /></SuspensePage>,
+          },
+          {
+            path: 'objets',
+            element: <SuspensePage><ObjetsListPage basePath="/consultant-func" /></SuspensePage>,
+          },
+          {
+            path: 'objets/:id',
+            element: <SuspensePage><ObjetDetail /></SuspensePage>,
           },
         ],
       },

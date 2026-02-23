@@ -14,7 +14,9 @@ import {
   ReferenceData,
   Allocation,
   LeaveRequest,
-  TimeLog,
+  WorkSession,
+  Objet,
+  SFD,
 } from '../types/entities';
 
 import {
@@ -29,7 +31,9 @@ import {
   mockReferenceData,
   mockAllocations,
   mockLeaveRequests,
-  mockTimeLogs,
+  mockWorkSessions,
+  mockObjets,
+  mockSFDs,
 } from './mockData';
 
 // Configuration
@@ -724,89 +728,243 @@ export const LeaveRequestsAPI = {
 };
 
 // ---------------------------------------------------------------------------
-// Time Logs API (StraTIME)
+// Work Sessions API (replaces Time Logs)
 // ---------------------------------------------------------------------------
 
-export const TimeLogsAPI = {
-  async getAll(): Promise<TimeLog[]> {
+export const WorkSessionsAPI = {
+  async getAll(): Promise<WorkSession[]> {
     if (USE_MOCK_DATA) {
       await mockDelay();
-      return [...mockTimeLogs];
+      return [...mockWorkSessions];
     }
-    const response = await odataFetch<ODataResponse<TimeLog>>('/TimeLogs');
+    const response = await odataFetch<ODataResponse<WorkSession>>('/WorkSessions');
     return response.value;
   },
 
-  async getByConsultant(consultantId: string): Promise<TimeLog[]> {
+  async getByConsultant(consultantId: string): Promise<WorkSession[]> {
     if (USE_MOCK_DATA) {
       await mockDelay();
-      return mockTimeLogs.filter((tl) => tl.consultantId === consultantId);
+      return mockWorkSessions.filter((ws) => ws.consultantId === consultantId);
     }
-    const response = await odataFetch<ODataResponse<TimeLog>>(
-      `/TimeLogs?$filter=consultantId eq '${consultantId}'`
+    const response = await odataFetch<ODataResponse<WorkSession>>(
+      `/WorkSessions?$filter=consultantId eq '${consultantId}'`
     );
     return response.value;
   },
 
-  async getByTicket(ticketId: string): Promise<TimeLog[]> {
+  async getByTicket(ticketId: string): Promise<WorkSession[]> {
     if (USE_MOCK_DATA) {
       await mockDelay();
-      return mockTimeLogs.filter((tl) => tl.ticketId === ticketId);
+      return mockWorkSessions.filter((ws) => ws.ticketId === ticketId);
     }
-    const response = await odataFetch<ODataResponse<TimeLog>>(
-      `/TimeLogs?$filter=ticketId eq '${ticketId}'`
+    const response = await odataFetch<ODataResponse<WorkSession>>(
+      `/WorkSessions?$filter=ticketId eq '${ticketId}'`
     );
     return response.value;
   },
 
-  async create(timeLog: Omit<TimeLog, 'id'>): Promise<TimeLog> {
+  async create(session: Omit<WorkSession, 'id'>): Promise<WorkSession> {
     if (USE_MOCK_DATA) {
       await mockDelay();
-      const newTimeLog: TimeLog = {
-        ...timeLog,
-        id: `tl${Date.now()}`,
+      const newSession: WorkSession = {
+        ...session,
+        id: `ws${Date.now()}`,
       };
-      mockTimeLogs.push(newTimeLog);
-      return newTimeLog;
+      mockWorkSessions.push(newSession);
+      return newSession;
     }
-    return await odataFetch<TimeLog>('/TimeLogs', {
+    return await odataFetch<WorkSession>('/WorkSessions', {
       method: 'POST',
-      body: JSON.stringify(timeLog),
+      body: JSON.stringify(session),
     });
   },
 
-  async update(id: string, data: Partial<TimeLog>): Promise<TimeLog> {
+  async update(id: string, data: Partial<WorkSession>): Promise<WorkSession> {
     if (USE_MOCK_DATA) {
       await mockDelay();
-      const index = mockTimeLogs.findIndex((tl) => tl.id === id);
+      const index = mockWorkSessions.findIndex((ws) => ws.id === id);
       if (index !== -1) {
-        mockTimeLogs[index] = { ...mockTimeLogs[index], ...data };
-        return mockTimeLogs[index];
+        mockWorkSessions[index] = { ...mockWorkSessions[index], ...data };
+        return mockWorkSessions[index];
       }
-      throw new Error('Time log not found');
+      throw new Error('Work session not found');
     }
-    return await odataFetch<TimeLog>(`/TimeLogs('${id}')`, {
+    return await odataFetch<WorkSession>(`/WorkSessions('${id}')`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   },
 
-  async sendToStraTIME(id: string): Promise<TimeLog> {
+  async sendToStraTIME(id: string): Promise<WorkSession> {
     if (USE_MOCK_DATA) {
       await mockDelay(1500);
-      const index = mockTimeLogs.findIndex((tl) => tl.id === id);
+      const index = mockWorkSessions.findIndex((ws) => ws.id === id);
       if (index !== -1) {
-        mockTimeLogs[index] = {
-          ...mockTimeLogs[index],
+        mockWorkSessions[index] = {
+          ...mockWorkSessions[index],
           sentToStraTIME: true,
           sentAt: new Date().toISOString(),
         };
-        return mockTimeLogs[index];
+        return mockWorkSessions[index];
       }
-      throw new Error('Time log not found');
+      throw new Error('Work session not found');
     }
-    return await odataFetch<TimeLog>(`/TimeLogs('${id}')/sendToStraTIME`, {
+    return await odataFetch<WorkSession>(`/WorkSessions('${id}')/sendToStraTIME`, {
       method: 'POST',
+    });
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Objets API
+// ---------------------------------------------------------------------------
+
+export const ObjetsAPI = {
+  async getAll(): Promise<Objet[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return [...mockObjets];
+    }
+    const response = await odataFetch<ODataResponse<Objet>>('/Objets');
+    return response.value;
+  },
+
+  async getByProject(projectId: string): Promise<Objet[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return mockObjets.filter((o) => o.projectId === projectId);
+    }
+    const response = await odataFetch<ODataResponse<Objet>>(
+      `/Objets?$filter=projectId eq '${projectId}'`
+    );
+    return response.value;
+  },
+
+  async getById(id: string): Promise<Objet | null> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return mockObjets.find((o) => o.id === id) || null;
+    }
+    return await odataFetch<Objet>(`/Objets('${id}')`);
+  },
+
+  async create(objet: Omit<Objet, 'id' | 'createdAt'>): Promise<Objet> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const newObjet: Objet = {
+        ...objet,
+        id: `obj${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      };
+      mockObjets.push(newObjet);
+      return newObjet;
+    }
+    return await odataFetch<Objet>('/Objets', {
+      method: 'POST',
+      body: JSON.stringify(objet),
+    });
+  },
+
+  async update(id: string, data: Partial<Objet>): Promise<Objet> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const index = mockObjets.findIndex((o) => o.id === id);
+      if (index !== -1) {
+        mockObjets[index] = { ...mockObjets[index], ...data };
+        return mockObjets[index];
+      }
+      throw new Error('Objet not found');
+    }
+    return await odataFetch<Objet>(`/Objets('${id}')`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string): Promise<void> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const index = mockObjets.findIndex((o) => o.id === id);
+      if (index !== -1) {
+        mockObjets.splice(index, 1);
+      }
+      return;
+    }
+    await odataFetch<void>(`/Objets('${id}')`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// ---------------------------------------------------------------------------
+// SFDs API
+// ---------------------------------------------------------------------------
+
+export const SFDsAPI = {
+  async getAll(): Promise<SFD[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return [...mockSFDs];
+    }
+    const response = await odataFetch<ODataResponse<SFD>>('/SFDs');
+    return response.value;
+  },
+
+  async getByObjet(objetId: string): Promise<SFD[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return mockSFDs.filter((s) => s.objetId === objetId);
+    }
+    const response = await odataFetch<ODataResponse<SFD>>(
+      `/SFDs?$filter=objetId eq '${objetId}'`
+    );
+    return response.value;
+  },
+
+  async create(sfd: Omit<SFD, 'id' | 'createdAt'>): Promise<SFD> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const newSFD: SFD = {
+        ...sfd,
+        id: `sfd${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      };
+      mockSFDs.push(newSFD);
+      return newSFD;
+    }
+    return await odataFetch<SFD>('/SFDs', {
+      method: 'POST',
+      body: JSON.stringify(sfd),
+    });
+  },
+
+  async update(id: string, data: Partial<SFD>): Promise<SFD> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const index = mockSFDs.findIndex((s) => s.id === id);
+      if (index !== -1) {
+        mockSFDs[index] = { ...mockSFDs[index], ...data, updatedAt: new Date().toISOString() };
+        return mockSFDs[index];
+      }
+      throw new Error('SFD not found');
+    }
+    return await odataFetch<SFD>(`/SFDs('${id}')`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string): Promise<void> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const index = mockSFDs.findIndex((s) => s.id === id);
+      if (index !== -1) {
+        mockSFDs.splice(index, 1);
+      }
+      return;
+    }
+    await odataFetch<void>(`/SFDs('${id}')`, {
+      method: 'DELETE',
     });
   },
 };

@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { Bot, Check, ChevronDown, ChevronUp, Loader2, Plus, Sparkles, Trash2, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '../../components/common/PageHeader';
 import {
@@ -13,9 +13,11 @@ import {
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
 import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Progress } from '../../components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -33,12 +35,17 @@ import {
 } from '../../components/ui/table';
 import {
   AllocationsAPI,
+  EvaluationsAPI,
   NotificationsAPI,
+  ObjetsAPI,
   ProjectsAPI,
+  TicketsAPI,
   UsersAPI,
+  WorkSessionsAPI,
 } from '../../services/odataClient';
-import { Allocation, Project, User } from '../../types/entities';
+import { Allocation, Evaluation, Objet, Project, Ticket, User, WorkSession } from '../../types/entities';
 import { todayLocalDateKey } from '../../utils/date';
+import { computeRecommendations, TicketRecommendation } from '../../utils/aiDispatcher';
 
 interface NewAllocationForm {
   userId: string;
@@ -70,6 +77,16 @@ export const ResourceAllocation: React.FC = () => {
   const [allocationPendingDelete, setAllocationPendingDelete] = useState<Allocation | null>(null);
   const [allocationDrafts, setAllocationDrafts] = useState<Record<string, string>>({});
 
+  // AI Dispatcher state
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [sessions, setSessions] = useState<WorkSession[]>([]);
+  const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [objets, setObjets] = useState<Objet[]>([]);
+  const [showAI, setShowAI] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiRecommendations, setAiRecommendations] = useState<TicketRecommendation[]>([]);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     void loadData();
   }, []);
@@ -77,14 +94,22 @@ export const ResourceAllocation: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [userData, projectData, allocationData] = await Promise.all([
+      const [userData, projectData, allocationData, ticketData, sessionData, evalData, objetData] = await Promise.all([
         UsersAPI.getAll(),
         ProjectsAPI.getAll(),
         AllocationsAPI.getAll(),
+        TicketsAPI.getAll(),
+        WorkSessionsAPI.getAll(),
+        EvaluationsAPI.getAll(),
+        ObjetsAPI.getAll(),
       ]);
       setUsers(userData.filter((user) => user.role !== 'ADMIN'));
       setProjects(projectData);
       setAllocations(allocationData);
+      setTickets(ticketData);
+      setSessions(sessionData);
+      setEvaluations(evalData);
+      setObjets(objetData);
       setAllocationDrafts({});
     } finally {
       setLoading(false);
@@ -202,6 +227,82 @@ export const ResourceAllocation: React.FC = () => {
   const resolveUser = (userId: string) => users.find((user) => user.id === userId);
   const resolveProject = (projectId: string) => projects.find((project) => project.id === projectId);
 
+  // ---------------------------------------------------------------------------
+  // AI Dispatcher – Deterministic scoring engine
+  // ---------------------------------------------------------------------------
+
+  const runAIDispatcher = useCallback(() => {
+    setAiLoading(true);
+    setAiRecommendations([]);
+    // Simulate "thinking" delay for UX
+    setTimeout(() => {
+      const results = computeRecommendations({
+        tickets,
+        users,
+        projects,
+        objets,
+        workSessions: sessions,
+        evaluations,
+      });
+      setAiRecommendations(results);
+      setAiLoading(false);
+      if (results.length === 0) {
+        toast.info('Aucun ticket non assigné trouvé.');
+      } else {
+        toast.success(`${results.length} recommandation${results.length > 1 ? 's' : ''} générée${results.length > 1 ? 's' : ''}.`);
+      }
+    }, 1500);
+  }, [tickets, users, projects, objets, sessions, evaluations]);
+
+  const applyRecommendation = async (ticketId: string, userId: string) => {
+    try {
+      const updated = await TicketsAPI.update(ticketId, { assignedTo: userId });
+      setTickets((prev) => prev.map((t) => (t.id === ticketId ? updated : t)));
+      setAiRecommendations((prev) => prev.filter((r) => r.ticket.id !== ticketId));
+
+      const user = users.find((u) => u.id === userId);
+      const ticket = tickets.find((t) => t.id === ticketId);
+      await NotificationsAPI.create({
+        userId,
+        type: 'TICKET_ASSIGNED',
+        title: 'Nouveau ticket assigné',
+        message: `Le ticket «${ticket?.title ?? ticketId}» vous a été assigné par l'AI Dispatcher.`,
+        read: false,
+      });
+      toast.success(`Ticket assigné à ${user?.name ?? userId}`);
+    } catch {
+      toast.error('Échec de l\'assignation');
+    }
+  };
+
+  const toggleCardExpand = (ticketId: string) => {
+    setExpandedCards((prev) => {
+      const next = new Set(prev);
+      if (next.has(ticketId)) next.delete(ticketId);
+      else next.add(ticketId);
+      return next;
+    });
+  };
+
+  const confidenceColor = (score: number) => {
+    if (score >= 70) return 'bg-emerald-500';
+    if (score >= 45) return 'bg-amber-500';
+    return 'bg-red-500';
+  };
+
+  const confidenceBadgeVariant = (score: number): 'default' | 'secondary' | 'destructive' => {
+    if (score >= 70) return 'default';
+    if (score >= 45) return 'secondary';
+    return 'destructive';
+  };
+
+  const priorityColor: Record<string, string> = {
+    CRITICAL: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    HIGH: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+    MEDIUM: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+    LOW: 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300',
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
@@ -212,6 +313,196 @@ export const ResourceAllocation: React.FC = () => {
           { label: 'Resource Allocation' },
         ]}
       />
+
+      {/* AI Dispatcher Panel */}
+      <div className="px-6 pt-6 lg:px-8">
+        <Card className="overflow-hidden border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardContent className="p-0">
+            <button
+              className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-accent/30 transition"
+              onClick={() => setShowAI(!showAI)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                  <Bot className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    AI Dispatcher <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Recommandations intelligentes d'assignation de tickets basées sur les compétences, la charge et les évaluations
+                  </p>
+                </div>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                {showAI ? 'Masquer' : 'Afficher'}
+              </Badge>
+            </button>
+
+            {showAI && (
+              <div className="border-t px-5 py-4 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={runAIDispatcher}
+                    disabled={aiLoading}
+                    className="bg-primary"
+                  >
+                    {aiLoading ? (
+                      <span className="flex items-center gap-1.5"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Analyse en cours...</span>
+                    ) : (
+                      <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Lancer l'analyse IA</span>
+                    )}
+                  </Button>
+                  {aiRecommendations.length > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {aiRecommendations.length} recommandation{aiRecommendations.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+
+                {/* Recommendation cards */}
+                {aiRecommendations.length > 0 && (
+                  <div className="space-y-3">
+                    {aiRecommendations.map((rec) => {
+                      const expanded = expandedCards.has(rec.ticket.id);
+                      return (
+                        <Card key={rec.ticket.id} className="border border-border/60">
+                          <CardContent className="p-4 space-y-3">
+                            {/* Ticket header */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <Badge className={`${priorityColor[rec.ticket.priority]} text-[10px] font-semibold`}>
+                                    {rec.ticket.priority}
+                                  </Badge>
+                                  {rec.ticket.devType && (
+                                    <Badge variant="outline" className="text-[10px]">{rec.ticket.devType}</Badge>
+                                  )}
+                                  <span className="text-[10px] text-muted-foreground">{rec.projectName}</span>
+                                  {rec.objetName && (
+                                    <span className="text-[10px] text-muted-foreground">/ {rec.objetName}</span>
+                                  )}
+                                </div>
+                                <h4 className="text-sm font-medium text-foreground truncate">{rec.ticket.title}</h4>
+                              </div>
+                            </div>
+
+                            {/* Best match */}
+                            <div className="rounded-lg border bg-accent/20 p-3 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <UserCheck className="h-4 w-4 text-primary" />
+                                  <span className="text-sm font-semibold">{rec.bestMatch.userName}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={confidenceBadgeVariant(rec.bestMatch.confidenceScore)} className="text-xs">
+                                    {rec.bestMatch.confidenceScore}%
+                                  </Badge>
+                                  <Button
+                                    size="sm"
+                                    className="h-7 text-xs"
+                                    onClick={() => void applyRecommendation(rec.ticket.id, rec.bestMatch.userId)}
+                                  >
+                                    <Check className="h-3 w-3 mr-1" /> Assigner
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Confidence bar */}
+                              <div className="flex items-center gap-2">
+                                <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${confidenceColor(rec.bestMatch.confidenceScore)}`}
+                                    style={{ width: `${rec.bestMatch.confidenceScore}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Reasoning */}
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                {rec.bestMatch.reasoning}
+                              </p>
+
+                              {/* Criterion breakdown */}
+                              <div className="grid grid-cols-5 gap-2 text-[10px]">
+                                <div>
+                                  <p className="text-muted-foreground">DevType</p>
+                                  <Progress value={rec.bestMatch.detail.devTypeExp * 100} className="h-1 mt-0.5" />
+                                  <p className="font-medium">{Math.round(rec.bestMatch.detail.devTypeExp * 100)}%</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Skills</p>
+                                  <Progress value={rec.bestMatch.detail.skillMatch * 100} className="h-1 mt-0.5" />
+                                  <p className="font-medium">{Math.round(rec.bestMatch.detail.skillMatch * 100)}%</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Dispo</p>
+                                  <Progress value={rec.bestMatch.detail.availability * 100} className="h-1 mt-0.5" />
+                                  <p className="font-medium">{Math.round(rec.bestMatch.detail.availability * 100)}%</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Charge</p>
+                                  <Progress value={rec.bestMatch.detail.workload * 100} className="h-1 mt-0.5" />
+                                  <p className="font-medium">{Math.round(rec.bestMatch.detail.workload * 100)}%</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Éval</p>
+                                  <Progress value={rec.bestMatch.detail.evaluation * 100} className="h-1 mt-0.5" />
+                                  <p className="font-medium">{Math.round(rec.bestMatch.detail.evaluation * 100)}%</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Alternatives toggle */}
+                            {rec.alternatives.length > 0 && (
+                              <div>
+                                <button
+                                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition"
+                                  onClick={() => toggleCardExpand(rec.ticket.id)}
+                                >
+                                  {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                  {expanded ? 'Masquer' : 'Voir'} les alternatives ({rec.alternatives.length})
+                                </button>
+
+                                {expanded && (
+                                  <div className="mt-2 space-y-2">
+                                    {rec.alternatives.map((alt) => (
+                                      <div key={alt.userId} className="rounded-lg border bg-card p-3 flex items-center justify-between gap-3">
+                                        <div className="min-w-0">
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-sm font-medium">{alt.userName}</span>
+                                            <Badge variant={confidenceBadgeVariant(alt.confidenceScore)} className="text-[10px]">
+                                              {alt.confidenceScore}%
+                                            </Badge>
+                                          </div>
+                                          <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{alt.reasoning}</p>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-7 text-xs shrink-0"
+                                          onClick={() => void applyRecommendation(rec.ticket.id, alt.userId)}
+                                        >
+                                          Assigner
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 p-6 xl:grid-cols-3 lg:p-8">
         <Card className="h-fit bg-card/92">

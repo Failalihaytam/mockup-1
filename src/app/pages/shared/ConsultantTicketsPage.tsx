@@ -1,14 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
 import {
+  ObjetsAPI,
   ProjectsAPI,
   TicketsAPI,
-  TimeLogsAPI,
   UsersAPI,
+  WorkSessionsAPI,
 } from '../../services/odataClient';
-import { Project, Ticket, TicketEvent, TicketStatus, TimeLog, TimerState, User } from '../../types/entities';
+import { DevType, Objet, Project, Ticket, TicketEvent, TicketStatus, WorkSession, User } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarDays, CheckCircle2, Clock, KanbanSquare, List, Pause, Play, Plus, Send, Square } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock, FolderOpen, KanbanSquare, List, Plus, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -43,10 +44,14 @@ import {
 
 type ViewMode = 'list' | 'calendar' | 'kanban';
 
+const DEV_TYPES: DevType[] = ['Formulaire', 'Report', 'Enhancement', 'Programme'];
+
 interface TicketForm {
   projectId: string;
+  objetId: string;
   assignedTo: string;
   priority: Ticket['priority'];
+  devType: DevType;
   title: string;
   description: string;
   dueDate: string;
@@ -54,8 +59,10 @@ interface TicketForm {
 
 const EMPTY_FORM: TicketForm = {
   projectId: '',
+  objetId: '',
   assignedTo: '',
   priority: 'MEDIUM',
+  devType: 'Enhancement',
   title: '',
   description: '',
   dueDate: '',
@@ -78,31 +85,16 @@ const priorityColor: Record<string, string> = {
   CRITICAL: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 };
 
-// ---------------------------------------------------------------------------
-// Timer helpers
-// ---------------------------------------------------------------------------
-
-const formatDuration = (totalSeconds: number): string => {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+const devTypeColor: Record<DevType, string> = {
+  Formulaire: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  Report: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
+  Enhancement: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  Programme: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
 };
 
-const formatDurationShort = (totalSeconds: number): string => {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  if (h > 0) return `${h}h${String(m).padStart(2, '0')}`;
-  return `${m}min`;
-};
-
-const getTimerSeconds = (timer?: TimerState): number => {
-  if (!timer) return 0;
-  if (timer.status === 'running' && timer.startedAt) {
-    const elapsed = Math.floor((Date.now() - new Date(timer.startedAt).getTime()) / 1000);
-    return timer.totalElapsedSeconds + elapsed;
-  }
-  return timer.totalElapsedSeconds;
+const formatHours = (h: number): string => {
+  if (h >= 1) return `${h}h`;
+  return `${Math.round(h * 60)}min`;
 };
 
 // ---------------------------------------------------------------------------
@@ -110,13 +102,9 @@ const getTimerSeconds = (timer?: TimerState): number => {
 // ---------------------------------------------------------------------------
 
 interface ConsultantTicketsPageProps {
-  /** Page title */
   title: string;
-  /** Page subtitle */
   subtitle: string;
-  /** Home breadcrumb path */
   homePath: string;
-  /** Filter tickets to only those belonging to the current user */
   filterFn: (tickets: Ticket[], userId: string) => Ticket[];
 }
 
@@ -134,10 +122,12 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [objets, setObjets] = useState<Objet[]>([]);
   const [form, setForm] = useState<TicketForm>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Ticket['status'] | 'ALL'>('ALL');
+  const [devTypeFilter, setDevTypeFilter] = useState<DevType | 'ALL'>('ALL');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -147,62 +137,48 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  // Timer tick – re-renders every second when any ticket timer is running
-  const [, setTimerTick] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Inline objet creation
+  const [showNewObjet, setShowNewObjet] = useState(false);
+  const [newObjetName, setNewObjetName] = useState('');
+  const [newObjetDesc, setNewObjetDesc] = useState('');
 
-  // StraTIME imputation modal state
-  const [showImputation, setShowImputation] = useState(false);
-  const [imputationTicket, setImputationTicket] = useState<Ticket | null>(null);
-  const [imputationDesc, setImputationDesc] = useState('');
-  const [imputationDuration, setImputationDuration] = useState('');
-  const [imputationDate, setImputationDate] = useState('');
+  // Work session logging (in detail dialog)
+  const [sessionsMap, setSessionsMap] = useState<Record<string, WorkSession[]>>({});
+  const [ticketSessions, setTicketSessions] = useState<WorkSession[]>([]);
+  const [showLogSession, setShowLogSession] = useState(false);
+  const [sessionTicket, setSessionTicket] = useState<Ticket | null>(null);
+  const [sessionHours, setSessionHours] = useState('');
+  const [sessionDate, setSessionDate] = useState('');
+  const [sessionDesc, setSessionDesc] = useState('');
   const [isSendingStraTIME, setIsSendingStraTIME] = useState(false);
-  const [ticketTimeLogs, setTicketTimeLogs] = useState<TimeLog[]>([]);
-
-  // Time logs for badges – keyed by ticketId
-  const [timeLogsMap, setTimeLogsMap] = useState<Record<string, TimeLog[]>>({});
 
   useEffect(() => {
     if (!currentUser) return;
     void loadData();
   }, [currentUser]);
 
-  // Timer interval – tick every second when any ticket has a running timer
-  useEffect(() => {
-    const hasRunning = tickets.some((t) => t.timerState?.status === 'running');
-    if (hasRunning) {
-      timerRef.current = setInterval(() => setTimerTick((n) => n + 1), 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [tickets]);
-
   const loadData = async () => {
     setLoading(true);
     try {
-      const [projectData, userData, ticketData, timeLogData] = await Promise.all([
+      const [projectData, userData, ticketData, sessionData, objetData] = await Promise.all([
         ProjectsAPI.getAll(),
         UsersAPI.getAll(),
         TicketsAPI.getAll(),
-        TimeLogsAPI.getAll(),
+        WorkSessionsAPI.getAll(),
+        ObjetsAPI.getAll(),
       ]);
       setProjects(projectData);
       setUsers(userData);
+      setObjets(objetData);
       const filtered = filterFn(ticketData, currentUser!.id);
       setTickets(filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
-      // Build time-logs map per ticket
-      const logsMap: Record<string, TimeLog[]> = {};
-      timeLogData.forEach((tl) => {
-        if (!logsMap[tl.ticketId]) logsMap[tl.ticketId] = [];
-        logsMap[tl.ticketId].push(tl);
+      const sMap: Record<string, WorkSession[]> = {};
+      sessionData.forEach((ws) => {
+        if (!sMap[ws.ticketId]) sMap[ws.ticketId] = [];
+        sMap[ws.ticketId].push(ws);
       });
-      setTimeLogsMap(logsMap);
+      setSessionsMap(sMap);
     } finally {
       setLoading(false);
     }
@@ -210,10 +186,18 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
 
   const userName = (id?: string) => users.find((u) => u.id === id)?.name ?? '-';
   const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? id;
+  const objetName = (id?: string) => objets.find((o) => o.id === id)?.name ?? '';
+
+  // Filtered list of objets for the selected project in the form
+  const formObjets = useMemo(
+    () => (form.projectId ? objets.filter((o) => o.projectId === form.projectId) : []),
+    [objets, form.projectId],
+  );
 
   const filteredTickets = useMemo(() => {
     return tickets.filter((t) => {
       if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
+      if (devTypeFilter !== 'ALL' && t.devType !== devTypeFilter) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         return (
@@ -224,7 +208,18 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
       }
       return true;
     });
-  }, [tickets, statusFilter, searchQuery, projects]);
+  }, [tickets, statusFilter, devTypeFilter, searchQuery, projects]);
+
+  // Check if a ticket has all sessions sent to StraTIME
+  const isFullyImputed = (ticketId: string): boolean => {
+    const sessions = sessionsMap[ticketId];
+    return !!sessions && sessions.length > 0 && sessions.every((s) => s.sentToStraTIME);
+  };
+
+  // Total hours for a ticket
+  const totalHours = (ticketId: string): number => {
+    return (sessionsMap[ticketId] || []).reduce((s, ws) => s + ws.hours, 0);
+  };
 
   // ---------------------------------------------------------------------------
   // Actions
@@ -241,9 +236,11 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
       setIsSubmitting(true);
       const created = await TicketsAPI.create({
         projectId: form.projectId,
+        objetId: form.objetId || undefined,
         createdBy: currentUser.id,
         assignedTo: form.assignedTo || undefined,
         priority: form.priority,
+        devType: form.devType,
         status: 'OPEN',
         title: form.title.trim(),
         description: form.description.trim(),
@@ -279,50 +276,10 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
       fromValue: ticket.status,
       toValue: newStatus,
     };
-
-    // Auto-manage timer on status transitions
-    let timerUpdate: Partial<Ticket> = {};
-    const currentTimer = ticket.timerState ?? { status: 'idle' as const, totalElapsedSeconds: 0 };
-
-    if (newStatus === 'IN_PROGRESS' && currentTimer.status !== 'running') {
-      // Auto-start timer
-      timerUpdate = {
-        timerState: {
-          status: 'running',
-          startedAt: new Date().toISOString(),
-          totalElapsedSeconds: currentTimer.totalElapsedSeconds,
-        },
-      };
-    } else if ((newStatus === 'CLOSED' || newStatus === 'RESOLVED') && currentTimer.status === 'running') {
-      // Auto-stop timer
-      const extra = currentTimer.startedAt
-        ? Math.floor((Date.now() - new Date(currentTimer.startedAt).getTime()) / 1000)
-        : 0;
-      timerUpdate = {
-        timerState: {
-          status: 'stopped',
-          totalElapsedSeconds: currentTimer.totalElapsedSeconds + extra,
-        },
-      };
-    } else if (newStatus === 'WAITING_FEEDBACK' && currentTimer.status === 'running') {
-      // Auto-pause on waiting feedback
-      const extra = currentTimer.startedAt
-        ? Math.floor((Date.now() - new Date(currentTimer.startedAt).getTime()) / 1000)
-        : 0;
-      timerUpdate = {
-        timerState: {
-          status: 'paused',
-          pausedAt: new Date().toISOString(),
-          totalElapsedSeconds: currentTimer.totalElapsedSeconds + extra,
-        },
-      };
-    }
-
     try {
       const updated = await TicketsAPI.update(ticket.id, {
         status: newStatus,
         history: [...(ticket.history || []), event],
-        ...timerUpdate,
       });
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? updated : t)));
       if (selectedTicket?.id === ticket.id) setSelectedTicket(updated);
@@ -332,111 +289,79 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Timer controls
-  // ---------------------------------------------------------------------------
-
-  const toggleTimer = useCallback(async (ticket: Ticket) => {
-    const current = ticket.timerState ?? { status: 'idle' as const, totalElapsedSeconds: 0 };
-    let newTimer: TimerState;
-
-    if (current.status === 'running') {
-      // Pause
-      const extra = current.startedAt
-        ? Math.floor((Date.now() - new Date(current.startedAt).getTime()) / 1000)
-        : 0;
-      newTimer = { status: 'paused', pausedAt: new Date().toISOString(), totalElapsedSeconds: current.totalElapsedSeconds + extra };
-    } else {
-      // Start / Resume
-      newTimer = { status: 'running', startedAt: new Date().toISOString(), totalElapsedSeconds: current.totalElapsedSeconds };
+  // Inline objet creation
+  const createObjet = async () => {
+    if (!form.projectId || !newObjetName.trim()) {
+      toast.error('Project and objet name are required');
+      return;
     }
-
     try {
-      const updated = await TicketsAPI.update(ticket.id, { timerState: newTimer });
-      setTickets((prev) => prev.map((t) => (t.id === ticket.id ? updated : t)));
-      if (selectedTicket?.id === ticket.id) setSelectedTicket(updated);
+      const created = await ObjetsAPI.create({
+        projectId: form.projectId,
+        name: newObjetName.trim(),
+        description: newObjetDesc.trim() || undefined,
+      });
+      setObjets((prev) => [...prev, created]);
+      setForm((prev) => ({ ...prev, objetId: created.id }));
+      setShowNewObjet(false);
+      setNewObjetName('');
+      setNewObjetDesc('');
+      toast.success('Objet créé');
     } catch {
-      toast.error('Timer update failed');
+      toast.error("Erreur lors de la création de l'objet");
     }
-  }, [selectedTicket]);
-
-  const stopTimer = useCallback(async (ticket: Ticket) => {
-    const current = ticket.timerState ?? { status: 'idle' as const, totalElapsedSeconds: 0 };
-    const extra = current.status === 'running' && current.startedAt
-      ? Math.floor((Date.now() - new Date(current.startedAt).getTime()) / 1000)
-      : 0;
-    const newTimer: TimerState = { status: 'stopped', totalElapsedSeconds: current.totalElapsedSeconds + extra };
-
-    try {
-      const updated = await TicketsAPI.update(ticket.id, { timerState: newTimer });
-      setTickets((prev) => prev.map((t) => (t.id === ticket.id ? updated : t)));
-      if (selectedTicket?.id === ticket.id) setSelectedTicket(updated);
-    } catch {
-      toast.error('Timer stop failed');
-    }
-  }, [selectedTicket]);
+  };
 
   // ---------------------------------------------------------------------------
-  // StraTIME Imputation
+  // Work Session logging
   // ---------------------------------------------------------------------------
 
-  const openImputation = useCallback(async (ticket: Ticket) => {
-    const secs = getTimerSeconds(ticket.timerState);
-    const mins = Math.max(1, Math.round(secs / 60));
-    setImputationTicket(ticket);
-    setImputationDuration(String(mins));
-    setImputationDate(new Date().toISOString().slice(0, 10));
-    setImputationDesc(`Travail sur: ${ticket.title}`);
-    setShowImputation(true);
-
-    // Load ticket-specific time logs for the modal
+  const openLogSession = useCallback(async (ticket: Ticket) => {
+    setSessionTicket(ticket);
+    setSessionHours('1');
+    setSessionDate(new Date().toISOString().slice(0, 10));
+    setSessionDesc(`Travail sur: ${ticket.title}`);
+    setShowLogSession(true);
     try {
-      const logs = await TimeLogsAPI.getByTicket(ticket.id);
-      setTicketTimeLogs(logs);
+      const sessions = await WorkSessionsAPI.getByTicket(ticket.id);
+      setTicketSessions(sessions);
     } catch {
-      setTicketTimeLogs([]);
+      setTicketSessions([]);
     }
   }, []);
 
-  const submitImputation = async () => {
-    if (!imputationTicket || !currentUser) return;
-    const duration = parseInt(imputationDuration, 10);
-    if (!duration || duration <= 0) {
-      toast.error('Duration must be positive');
+  const submitSession = async () => {
+    if (!sessionTicket || !currentUser) return;
+    const hours = parseFloat(sessionHours);
+    if (!hours || hours <= 0) {
+      toast.error('Les heures doivent être positives');
       return;
     }
     try {
       setIsSendingStraTIME(true);
-      const newLog = await TimeLogsAPI.create({
+      const newSession = await WorkSessionsAPI.create({
         consultantId: currentUser.id,
-        ticketId: imputationTicket.id,
-        projectId: imputationTicket.projectId,
-        date: imputationDate,
-        durationMinutes: duration,
-        description: imputationDesc.trim(),
+        ticketId: sessionTicket.id,
+        projectId: sessionTicket.projectId,
+        date: sessionDate,
+        hours,
+        description: sessionDesc.trim(),
         sentToStraTIME: false,
       });
-      // Immediately send to StraTIME (simulated)
-      const sent = await TimeLogsAPI.sendToStraTIME(newLog.id);
-      // Update local maps
-      setTimeLogsMap((prev) => ({
+      // Immediately send to StraTIME
+      const sent = await WorkSessionsAPI.sendToStraTIME(newSession.id);
+      setSessionsMap((prev) => ({
         ...prev,
-        [imputationTicket.id]: [...(prev[imputationTicket.id] || []), sent],
+        [sessionTicket.id]: [...(prev[sessionTicket.id] || []), sent],
       }));
-      setTicketTimeLogs((prev) => [...prev, sent]);
+      setTicketSessions((prev) => [...prev, sent]);
       toast.success('Imputation envoyée à StraTIME');
-      setShowImputation(false);
+      setShowLogSession(false);
     } catch {
       toast.error("Erreur d'envoi vers StraTIME");
     } finally {
       setIsSendingStraTIME(false);
     }
-  };
-
-  // Check if ticket has all time logs sent to StraTIME
-  const isFullyImputed = (ticketId: string): boolean => {
-    const logs = timeLogsMap[ticketId];
-    return !!logs && logs.length > 0 && logs.every((l) => l.sentToStraTIME);
   };
 
   // ---------------------------------------------------------------------------
@@ -449,7 +374,6 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
     const lastDay = new Date(y, m, 0);
     const startOffset = (firstDay.getDay() + 6) % 7;
     const days: { date: string; day: number; isCurrentMonth: boolean }[] = [];
-
     for (let i = -startOffset; i <= lastDay.getDate() + (6 - ((lastDay.getDay() + 6) % 7)); i++) {
       const d = new Date(y, m - 1, i + 1);
       days.push({
@@ -483,7 +407,7 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
   };
 
   // ---------------------------------------------------------------------------
-  // Kanban drag/drop (native HTML5)
+  // Kanban drag/drop
   // ---------------------------------------------------------------------------
 
   const onDragStart = (e: React.DragEvent, ticketId: string) => {
@@ -536,6 +460,17 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
               ))}
             </SelectContent>
           </Select>
+          <Select value={devTypeFilter} onValueChange={(v) => setDevTypeFilter(v as typeof devTypeFilter)}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Dev Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Types</SelectItem>
+              {DEV_TYPES.map((dt) => (
+                <SelectItem key={dt} value={dt}>{dt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <div className="flex gap-1 rounded-lg border border-border p-0.5">
             {([['list', List], ['calendar', CalendarDays], ['kanban', KanbanSquare]] as const).map(
@@ -568,9 +503,11 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
                 <TableRow>
                   <TableHead className="px-4">Title</TableHead>
                   <TableHead className="px-4">Project</TableHead>
+                  <TableHead className="px-4">Objet</TableHead>
                   <TableHead className="px-4">Status</TableHead>
                   <TableHead className="px-4">Priority</TableHead>
-                  <TableHead className="px-4">Timer</TableHead>
+                  <TableHead className="px-4">Type</TableHead>
+                  <TableHead className="px-4">Hours</TableHead>
                   <TableHead className="px-4">Due</TableHead>
                   <TableHead className="px-4">Assigned</TableHead>
                   <TableHead className="px-4">Actions</TableHead>
@@ -578,8 +515,7 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
               </TableHeader>
               <TableBody>
                 {filteredTickets.map((ticket) => {
-                  const secs = getTimerSeconds(ticket.timerState);
-                  const isRunning = ticket.timerState?.status === 'running';
+                  const hrs = totalHours(ticket.id);
                   return (
                   <TableRow key={ticket.id} className="cursor-pointer hover:bg-accent/40" onClick={() => setSelectedTicket(ticket)}>
                     <TableCell className="px-4 py-3 font-medium">
@@ -591,17 +527,21 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
                       </div>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm text-muted-foreground">{projectName(ticket.projectId)}</TableCell>
+                    <TableCell className="px-4 py-3 text-xs text-muted-foreground">{objetName(ticket.objetId) || '—'}</TableCell>
                     <TableCell className="px-4 py-3">
                       <Badge className={statusColor[ticket.status]}>{ticket.status.replace('_', ' ')}</Badge>
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <Badge className={priorityColor[ticket.priority]}>{ticket.priority}</Badge>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-sm font-mono" onClick={(e) => e.stopPropagation()}>
-                      {secs > 0 || isRunning ? (
-                        <span className={`inline-flex items-center gap-1 ${isRunning ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                    <TableCell className="px-4 py-3">
+                      {ticket.devType && <Badge className={devTypeColor[ticket.devType] + ' text-[10px]'}>{ticket.devType}</Badge>}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-sm font-mono">
+                      {hrs > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          {formatDuration(secs)}
+                          {formatHours(hrs)}
                         </span>
                       ) : (
                         <span className="text-muted-foreground">—</span>
@@ -619,7 +559,7 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
                 })}
                 {filteredTickets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">No tickets found.</TableCell>
+                    <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">No tickets found.</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -707,16 +647,11 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{ticket.description}</p>
                         <div className="mt-2 flex items-center justify-between">
-                          <Badge className={priorityColor[ticket.priority] + ' text-[10px]'}>{ticket.priority}</Badge>
-                          <div className="flex items-center gap-2">
-                            {(getTimerSeconds(ticket.timerState) > 0 || ticket.timerState?.status === 'running') && (
-                              <span className={`text-[10px] font-mono flex items-center gap-0.5 ${ticket.timerState?.status === 'running' ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
-                                <Clock className="h-2.5 w-2.5" />
-                                {formatDurationShort(getTimerSeconds(ticket.timerState))}
-                              </span>
-                            )}
-                            <span className="text-[10px] text-muted-foreground">{userName(ticket.assignedTo)}</span>
+                          <div className="flex items-center gap-1">
+                            <Badge className={priorityColor[ticket.priority] + ' text-[10px]'}>{ticket.priority}</Badge>
+                            {ticket.devType && <Badge className={devTypeColor[ticket.devType] + ' text-[10px]'}>{ticket.devType}</Badge>}
                           </div>
+                          <span className="text-[10px] text-muted-foreground">{userName(ticket.assignedTo)}</span>
                         </div>
                       </div>
                     ))}
@@ -730,14 +665,14 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
 
       {/* Create Ticket Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Ticket</DialogTitle>
           </DialogHeader>
           <form onSubmit={(e) => void submitTicket(e)} className="space-y-4">
             <div>
               <Label>Project *</Label>
-              <Select value={form.projectId} onValueChange={(v) => setForm({ ...form, projectId: v })}>
+              <Select value={form.projectId} onValueChange={(v) => setForm({ ...form, projectId: v, objetId: '' })}>
                 <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
                 <SelectContent>
                   {projects.map((p) => (
@@ -746,6 +681,40 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Objet selector + inline create */}
+            {form.projectId && (
+              <div>
+                <Label className="flex items-center gap-1">
+                  <FolderOpen className="h-3.5 w-3.5" /> Objet
+                </Label>
+                {!showNewObjet ? (
+                  <div className="flex gap-2">
+                    <Select value={form.objetId} onValueChange={(v) => setForm({ ...form, objetId: v })}>
+                      <SelectTrigger className="flex-1"><SelectValue placeholder="Select objet (optional)" /></SelectTrigger>
+                      <SelectContent>
+                        {formObjets.map((o) => (
+                          <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setShowNewObjet(true)}>
+                      <Plus className="h-3 w-3 mr-0.5" /> Créer
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2 rounded-lg border p-3 bg-muted/30">
+                    <Input placeholder="Nom de l'objet *" value={newObjetName} onChange={(e) => setNewObjetName(e.target.value)} />
+                    <Input placeholder="Description (optionnel)" value={newObjetDesc} onChange={(e) => setNewObjetDesc(e.target.value)} />
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setShowNewObjet(false)}>Annuler</Button>
+                      <Button type="button" size="sm" onClick={() => void createObjet()}>Créer l'objet</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <Label>Title *</Label>
               <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
@@ -754,6 +723,26 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
               <Label>Description</Label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
             </div>
+
+            {/* Dev Type segmented control */}
+            <div>
+              <Label>Development Type</Label>
+              <div className="flex gap-1 mt-1 rounded-lg border border-border p-0.5">
+                {DEV_TYPES.map((dt) => (
+                  <Button
+                    key={dt}
+                    type="button"
+                    size="sm"
+                    variant={form.devType === dt ? 'default' : 'ghost'}
+                    className={form.devType === dt ? '' : 'text-muted-foreground'}
+                    onClick={() => setForm({ ...form, devType: dt })}
+                  >
+                    {dt}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Priority</Label>
@@ -794,13 +783,7 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
       {/* Ticket Detail / History Dialog */}
       <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
         <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
-          {selectedTicket && (() => {
-            const secs = getTimerSeconds(selectedTicket.timerState);
-            const timerStatus = selectedTicket.timerState?.status ?? 'idle';
-            const isRunning = timerStatus === 'running';
-            const isPaused = timerStatus === 'paused';
-            const canToggle = selectedTicket.status !== 'CLOSED' && selectedTicket.status !== 'RESOLVED';
-            return (
+          {selectedTicket && (
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
@@ -814,62 +797,49 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
                 <div className="flex flex-wrap gap-2">
                   <Badge className={statusColor[selectedTicket.status]}>{selectedTicket.status.replace('_', ' ')}</Badge>
                   <Badge className={priorityColor[selectedTicket.priority]}>{selectedTicket.priority}</Badge>
+                  {selectedTicket.devType && <Badge className={devTypeColor[selectedTicket.devType]}>{selectedTicket.devType}</Badge>}
                 </div>
                 <div className="text-sm text-muted-foreground">{selectedTicket.description}</div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div><span className="text-muted-foreground">Project:</span> {projectName(selectedTicket.projectId)}</div>
+                  <div><span className="text-muted-foreground">Objet:</span> {objetName(selectedTicket.objetId) || '—'}</div>
                   <div><span className="text-muted-foreground">Created by:</span> {userName(selectedTicket.createdBy)}</div>
                   <div><span className="text-muted-foreground">Assigned to:</span> {userName(selectedTicket.assignedTo)}</div>
                   <div><span className="text-muted-foreground">Due:</span> {selectedTicket.dueDate ?? '-'}</div>
+                  <div><span className="text-muted-foreground">Hours logged:</span> {formatHours(totalHours(selectedTicket.id))}</div>
                 </div>
 
-                {/* Timer Section */}
+                {/* Work Session Section */}
                 <div className="rounded-lg border bg-muted/30 p-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Timer</span>
+                      <span className="text-sm font-medium">Sessions de travail</span>
                     </div>
-                    <span className={`text-lg font-mono font-semibold ${isRunning ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
-                      {formatDuration(secs)}
-                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-950"
+                      onClick={() => void openLogSession(selectedTicket)}
+                    >
+                      <Send className="h-3 w-3 mr-1" /> Logger & Imputer
+                    </Button>
                   </div>
-                  {canToggle && (
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        size="sm"
-                        variant={isRunning ? 'outline' : 'default'}
-                        onClick={() => void toggleTimer(selectedTicket)}
-                        className="flex-1"
-                      >
-                        {isRunning ? <><Pause className="h-3 w-3 mr-1" /> Pause</> : <><Play className="h-3 w-3 mr-1" /> {isPaused ? 'Resume' : 'Start'}</>}
-                      </Button>
-                      {(isRunning || isPaused) && (
-                        <Button size="sm" variant="destructive" onClick={() => void stopTimer(selectedTicket)}>
-                          <Square className="h-3 w-3 mr-1" /> Stop
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-950"
-                        onClick={() => void openImputation(selectedTicket)}
-                      >
-                        <Send className="h-3 w-3 mr-1" /> Imputer StraTIME
-                      </Button>
+                  {(sessionsMap[selectedTicket.id] || []).length > 0 ? (
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {(sessionsMap[selectedTicket.id] || []).map((ws) => (
+                        <div key={ws.id} className="flex items-center justify-between text-xs border rounded px-2 py-1">
+                          <span>{ws.date} — {formatHours(ws.hours)}</span>
+                          {ws.sentToStraTIME ? (
+                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[9px]">Envoyé</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[9px]">Brouillon</Badge>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  {!canToggle && secs > 0 && (
-                    <div className="mt-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-950"
-                        onClick={() => void openImputation(selectedTicket)}
-                      >
-                        <Send className="h-3 w-3 mr-1" /> Imputer StraTIME
-                      </Button>
-                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Aucune session enregistrée.</p>
                   )}
                 </div>
 
@@ -912,52 +882,50 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
                 </div>
               </div>
             </>
-            );
-          })()}
+          )}
         </DialogContent>
       </Dialog>
 
-      {/* StraTIME Imputation Modal */}
-      <Dialog open={showImputation} onOpenChange={setShowImputation}>
+      {/* Log Work Session / StraTIME Imputation Modal */}
+      <Dialog open={showLogSession} onOpenChange={setShowLogSession}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Send className="h-4 w-4 text-blue-500" /> Imputation StraTIME
             </DialogTitle>
           </DialogHeader>
-          {imputationTicket && (
+          {sessionTicket && (
             <div className="space-y-4">
               <div className="rounded-lg border bg-muted/30 p-3 text-sm space-y-1">
-                <div><span className="text-muted-foreground">Ticket:</span> {imputationTicket.title}</div>
-                <div><span className="text-muted-foreground">Projet:</span> {projectName(imputationTicket.projectId)}</div>
+                <div><span className="text-muted-foreground">Ticket:</span> {sessionTicket.title}</div>
+                <div><span className="text-muted-foreground">Projet:</span> {projectName(sessionTicket.projectId)}</div>
               </div>
               <div>
                 <Label>Date</Label>
-                <Input type="date" value={imputationDate} onChange={(e) => setImputationDate(e.target.value)} />
+                <Input type="date" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} />
               </div>
               <div>
-                <Label>Durée (minutes)</Label>
-                <Input type="number" min={1} value={imputationDuration} onChange={(e) => setImputationDuration(e.target.value)} />
-                {imputationDuration && (
+                <Label>Heures</Label>
+                <Input type="number" min={0.25} step={0.25} value={sessionHours} onChange={(e) => setSessionHours(e.target.value)} />
+                {sessionHours && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    = {formatDurationShort(parseInt(imputationDuration, 10) * 60)}
+                    = {formatHours(parseFloat(sessionHours) || 0)}
                   </p>
                 )}
               </div>
               <div>
                 <Label>Description</Label>
-                <Textarea value={imputationDesc} onChange={(e) => setImputationDesc(e.target.value)} rows={2} />
+                <Textarea value={sessionDesc} onChange={(e) => setSessionDesc(e.target.value)} rows={2} />
               </div>
 
-              {/* Previous logs for this ticket */}
-              {ticketTimeLogs.length > 0 && (
+              {ticketSessions.length > 0 && (
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground mb-1">Imputations précédentes</h4>
                   <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {ticketTimeLogs.map((log) => (
-                      <div key={log.id} className="flex items-center justify-between text-xs border rounded px-2 py-1">
-                        <span>{log.date} — {log.durationMinutes}min</span>
-                        {log.sentToStraTIME ? (
+                    {ticketSessions.map((ws) => (
+                      <div key={ws.id} className="flex items-center justify-between text-xs border rounded px-2 py-1">
+                        <span>{ws.date} — {formatHours(ws.hours)}</span>
+                        {ws.sentToStraTIME ? (
                           <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[9px]">Envoyé</Badge>
                         ) : (
                           <Badge variant="outline" className="text-[9px]">Brouillon</Badge>
@@ -969,9 +937,9 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
               )}
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowImputation(false)}>Annuler</Button>
+                <Button variant="outline" onClick={() => setShowLogSession(false)}>Annuler</Button>
                 <Button
-                  onClick={() => void submitImputation()}
+                  onClick={() => void submitSession()}
                   disabled={isSendingStraTIME}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >

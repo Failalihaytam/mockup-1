@@ -11,26 +11,43 @@ export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_FEEDBACK' | 'RESOLV
 export type Complexity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type CertificationStatus = 'VALID' | 'EXPIRING_SOON' | 'EXPIRED';
 export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-export type TimerStatus = 'idle' | 'running' | 'paused' | 'stopped';
+export type DevType = 'Formulaire' | 'Report' | 'Enhancement' | 'Programme';
 
 // ---------------------------------------------------------------------------
-// StraTIME – Timer & Time-log types
+// Objet – Grouping container for tickets, docs & SFDs inside a project
 // ---------------------------------------------------------------------------
 
-export interface TimerState {
-  status: TimerStatus;
-  startedAt?: string;
-  pausedAt?: string;
-  totalElapsedSeconds: number;
+export interface Objet {
+  id: string;
+  projectId: string;
+  name: string;
+  description?: string;
+  createdAt: string;
 }
 
-export interface TimeLog {
+export interface SFD {
+  id: string;
+  objetId: string;
+  title: string;
+  content: string;          // Markdown
+  version: number;
+  createdBy: string;
+  updatedBy?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// ---------------------------------------------------------------------------
+// WorkSession – Manual hour logging per ticket (replaces Timer / TimeLog)
+// ---------------------------------------------------------------------------
+
+export interface WorkSession {
   id: string;
   consultantId: string;
   ticketId: string;
   projectId: string;
   date: string;
-  durationMinutes: number;
+  hours: number;            // e.g. 1.5
   description?: string;
   sentToStraTIME: boolean;
   sentAt?: string;
@@ -158,18 +175,19 @@ export interface Deliverable {
 export interface Ticket {
   id: string;
   projectId: string;
+  objetId?: string;
   createdBy: string;
   assignedTo?: string;
   status: TicketStatus;
   priority: Priority;
+  devType?: DevType;
   title: string;
   description: string;
   dueDate?: string;
   createdAt: string;
   updatedAt?: string;
   history: TicketEvent[];
-  timerState?: TimerState;
-  timeLogs?: TimeLog[];
+  workSessions?: WorkSession[];
 }
 
 export interface Notification {

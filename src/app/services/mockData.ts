@@ -14,7 +14,9 @@ import {
   Allocation,
   KPI,
   LeaveRequest,
-  TimeLog,
+  WorkSession,
+  Objet,
+  SFD,
 } from '../types/entities';
 
 // ---------------------------------------------------------------------------
@@ -207,6 +209,88 @@ const _defaultProjects: Project[] = [
 ];
 
 export const mockProjects: Project[] = persistedArray('projects', _defaultProjects);
+
+// ---------------------------------------------------------------------------
+// Mock Objets (grouping containers inside projects)
+// ---------------------------------------------------------------------------
+
+const _defaultObjets: Objet[] = [
+  {
+    id: 'obj1',
+    projectId: 'p1',
+    name: 'Gestion des données client',
+    description: 'Migration et nettoyage des données client (KNA1, KNVV, etc.)',
+    createdAt: '2026-01-05T09:00:00Z',
+  },
+  {
+    id: 'obj2',
+    projectId: 'p1',
+    name: 'Scripts de migration batch',
+    description: 'Jobs batch nocturnes pour la migration incrémentale',
+    createdAt: '2026-01-10T09:00:00Z',
+  },
+  {
+    id: 'obj3',
+    projectId: 'p2',
+    name: 'Interface Fiori MM',
+    description: 'Applications Fiori pour le module MM (Purchase Orders, Stock Overview)',
+    createdAt: '2026-02-02T09:00:00Z',
+  },
+  {
+    id: 'obj4',
+    projectId: 'p2',
+    name: 'Services de notification',
+    description: 'Notifications push et alertes Fiori Launchpad',
+    createdAt: '2026-02-05T09:00:00Z',
+  },
+  {
+    id: 'obj5',
+    projectId: 'p3',
+    name: 'Reporting analytique',
+    description: 'Tableaux de bord exécutifs et rapports CDS',
+    createdAt: '2026-01-20T09:00:00Z',
+  },
+];
+
+export const mockObjets: Objet[] = persistedArray('objets', _defaultObjets);
+
+// ---------------------------------------------------------------------------
+// Mock SFDs (Spécifications Fonctionnelles Détaillées)
+// ---------------------------------------------------------------------------
+
+const _defaultSFDs: SFD[] = [
+  {
+    id: 'sfd1',
+    objetId: 'obj1',
+    title: 'SFD – Migration données client KNA1',
+    content: '## Objectif\n\nMigrer les fiches client (KNA1) vers S/4HANA BP.\n\n### Règles de mapping\n\n| Champ source | Champ cible | Règle |\n|---|---|---|\n| KUNNR | BP_NUMBER | Conversion 10→10 |\n| NAME1 | BP_NAME | Direct |\n| LAND1 | COUNTRY | Direct |\n\n### Cas particuliers\n- Clients archivés : exclus du périmètre\n- Doublons : fusion sur STCD1',
+    version: 2,
+    createdBy: 'u4',
+    updatedBy: 'u2',
+    createdAt: '2026-01-08T10:00:00Z',
+    updatedAt: '2026-02-01T14:00:00Z',
+  },
+  {
+    id: 'sfd2',
+    objetId: 'obj3',
+    title: 'SFD – App Fiori Purchase Order',
+    content: '## Description\n\nApplication Fiori basée sur UI5 pour la création et suivi des commandes d\'achat.\n\n### Fonctionnalités\n1. Liste des PO avec filtres avancés\n2. Création rapide de PO\n3. Workflow d\'approbation intégré\n\n### Services OData\n- `PurchaseOrderSet` (CRUD)\n- `SupplierSet` (read-only)',
+    version: 1,
+    createdBy: 'u4',
+    createdAt: '2026-02-05T11:00:00Z',
+  },
+  {
+    id: 'sfd3',
+    objetId: 'obj5',
+    title: 'SFD – Dashboard exécutif',
+    content: '## Périmètre\n\nTableau de bord pour la direction générale.\n\n### KPIs\n- Chiffre d\'affaires mensuel\n- Marge brute\n- Nombre de commandes\n- Taux de service\n\n### Sources de données\n- CDS views `Z_CA_MONTHLY`, `Z_MARGIN`\n- BW/4HANA InfoProvider `ZSALES`',
+    version: 1,
+    createdBy: 'u4',
+    createdAt: '2026-01-25T09:00:00Z',
+  },
+];
+
+export const mockSFDs: SFD[] = persistedArray('sfds', _defaultSFDs);
 
 // ---------------------------------------------------------------------------
 // Mock Tasks
@@ -411,10 +495,12 @@ const _defaultTickets: Ticket[] = [
   {
     id: 'tk1',
     projectId: 'p1',
+    objetId: 'obj1',
     createdBy: 'u4',
     assignedTo: 'u3',
     status: 'OPEN',
     priority: 'HIGH',
+    devType: 'Enhancement',
     title: 'Clarification needed on data mapping',
     description: 'Need technical input on customer master data mapping rules',
     dueDate: '2026-02-25',
@@ -427,10 +513,12 @@ const _defaultTickets: Ticket[] = [
   {
     id: 'tk2',
     projectId: 'p2',
+    objetId: 'obj3',
     createdBy: 'u4',
     assignedTo: 'u5',
     status: 'IN_PROGRESS',
     priority: 'MEDIUM',
+    devType: 'Programme',
     title: 'Integration issue with backend',
     description: 'Fiori app not connecting to backend service',
     dueDate: '2026-02-28',
@@ -440,15 +528,16 @@ const _defaultTickets: Ticket[] = [
       { id: 'te3', timestamp: '2026-02-10T11:00:00Z', userId: 'u4', action: 'CREATED', comment: 'Ticket created' },
       { id: 'te4', timestamp: '2026-02-12T16:30:00Z', userId: 'u2', action: 'STATUS_CHANGE', fromValue: 'OPEN', toValue: 'IN_PROGRESS', comment: 'Investigation started' },
     ],
-    timerState: { status: 'running', startedAt: '2026-02-12T16:30:00Z', totalElapsedSeconds: 7200 },
   },
   {
     id: 'tk3',
     projectId: 'p1',
+    objetId: 'obj2',
     createdBy: 'u2',
     assignedTo: 'u3',
     status: 'RESOLVED',
     priority: 'LOW',
+    devType: 'Enhancement',
     title: 'Update migration script logging',
     description: 'Add detailed logging to data migration scripts for audit trail',
     dueDate: '2026-02-20',
@@ -460,14 +549,15 @@ const _defaultTickets: Ticket[] = [
       { id: 'te7', timestamp: '2026-02-10T11:00:00Z', userId: 'u3', action: 'STATUS_CHANGE', fromValue: 'OPEN', toValue: 'IN_PROGRESS' },
       { id: 'te8', timestamp: '2026-02-18T10:00:00Z', userId: 'u3', action: 'STATUS_CHANGE', fromValue: 'IN_PROGRESS', toValue: 'RESOLVED', comment: 'Logging added and tested' },
     ],
-    timerState: { status: 'stopped', totalElapsedSeconds: 14400 },
   },
   {
     id: 'tk4',
     projectId: 'p3',
+    objetId: 'obj5',
     createdBy: 'u4',
     status: 'OPEN',
     priority: 'HIGH',
+    devType: 'Report',
     title: 'Dashboard filters not working',
     description: 'Date range filter on the analytics dashboard returns empty results',
     dueDate: '2026-03-01',
@@ -479,10 +569,12 @@ const _defaultTickets: Ticket[] = [
   {
     id: 'tk5',
     projectId: 'p1',
+    objetId: 'obj2',
     createdBy: 'u2',
     assignedTo: 'u3',
     status: 'OPEN',
     priority: 'HIGH',
+    devType: 'Programme',
     title: 'Implement batch job error handling',
     description: 'Add retry logic and error notifications to the nightly batch migration job',
     dueDate: '2026-03-05',
@@ -495,10 +587,12 @@ const _defaultTickets: Ticket[] = [
   {
     id: 'tk6',
     projectId: 'p2',
+    objetId: 'obj4',
     createdBy: 'u2',
     assignedTo: 'u3',
     status: 'OPEN',
     priority: 'MEDIUM',
+    devType: 'Formulaire',
     title: 'Configure Fiori notification service',
     description: 'Set up push notifications for task assignments and deadline reminders in Fiori Launchpad',
     dueDate: '2026-03-10',
@@ -511,10 +605,12 @@ const _defaultTickets: Ticket[] = [
   {
     id: 'tk7',
     projectId: 'p1',
+    objetId: 'obj1',
     createdBy: 'u3',
     assignedTo: 'u3',
     status: 'OPEN',
     priority: 'CRITICAL',
+    devType: 'Programme',
     title: 'Fix memory leak in data export module',
     description: 'The export of large datasets causes the Node process to run out of memory after ~500k rows',
     dueDate: '2026-02-25',
@@ -680,76 +776,76 @@ const _defaultLeaveRequests: LeaveRequest[] = [
 export const mockLeaveRequests: LeaveRequest[] = persistedArray('leaveRequests', _defaultLeaveRequests);
 
 // ---------------------------------------------------------------------------
-// Mock Time Logs (StraTIME integration)
+// Mock Work Sessions (manual hour logging – replaces TimeLogs)
 // ---------------------------------------------------------------------------
 
-const _defaultTimeLogs: TimeLog[] = [
+const _defaultWorkSessions: WorkSession[] = [
   {
-    id: 'tl1',
+    id: 'ws1',
     consultantId: 'u3',
     ticketId: 'tk3',
     projectId: 'p1',
     date: '2026-02-10',
-    durationMinutes: 120,
+    hours: 2,
     description: 'Initial analysis and logging framework setup',
     sentToStraTIME: true,
     sentAt: '2026-02-10T18:00:00Z',
   },
   {
-    id: 'tl2',
+    id: 'ws2',
     consultantId: 'u3',
     ticketId: 'tk3',
     projectId: 'p1',
     date: '2026-02-14',
-    durationMinutes: 90,
+    hours: 1.5,
     description: 'Implementation of detailed audit trail logging',
     sentToStraTIME: true,
     sentAt: '2026-02-14T17:30:00Z',
   },
   {
-    id: 'tl3',
+    id: 'ws3',
     consultantId: 'u3',
     ticketId: 'tk3',
     projectId: 'p1',
     date: '2026-02-18',
-    durationMinutes: 30,
+    hours: 0.5,
     description: 'Final testing and validation',
     sentToStraTIME: false,
   },
   {
-    id: 'tl4',
+    id: 'ws4',
     consultantId: 'u5',
     ticketId: 'tk2',
     projectId: 'p2',
     date: '2026-02-12',
-    durationMinutes: 180,
+    hours: 3,
     description: 'Backend connection investigation & debugging',
     sentToStraTIME: true,
     sentAt: '2026-02-12T19:00:00Z',
   },
   {
-    id: 'tl5',
+    id: 'ws5',
     consultantId: 'u5',
     ticketId: 'tk2',
     projectId: 'p2',
     date: '2026-02-15',
-    durationMinutes: 60,
+    hours: 1,
     description: 'OData endpoint testing',
     sentToStraTIME: false,
   },
   {
-    id: 'tl6',
+    id: 'ws6',
     consultantId: 'u3',
     ticketId: 'tk1',
     projectId: 'p1',
     date: '2026-02-16',
-    durationMinutes: 45,
+    hours: 0.75,
     description: 'Data mapping analysis for customer master',
     sentToStraTIME: false,
   },
 ];
 
-export const mockTimeLogs: TimeLog[] = persistedArray('timeLogs', _defaultTimeLogs);
+export const mockWorkSessions: WorkSession[] = persistedArray('workSessions', _defaultWorkSessions);
 
 // ---------------------------------------------------------------------------
 // Mock KPIs (static, not persisted)
