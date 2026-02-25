@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { PageHeader } from '../../components/common/PageHeader';
 import {
   AbaquesAPI,
@@ -35,7 +36,6 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Textarea } from '../../components/ui/textarea';
-import { Progress } from '../../components/ui/progress';
 import {
   Dialog,
   DialogContent,
@@ -149,6 +149,7 @@ const devTypeColor: Record<DevType, string> = {
 
 export const ManagerTickets: React.FC = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -168,7 +169,6 @@ export const ManagerTickets: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [sessionsMap, setSessionsMap] = useState<Record<string, WorkSession[]>>({});
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -245,13 +245,13 @@ export const ManagerTickets: React.FC = () => {
   const generateProjectCode = (projectId: string): string => {
     const p = projects.find((pr) => pr.id === projectId);
     if (!p) return '';
-    return p.name.replace(/[^A-Za-z]/g, '').slice(0, 4).toUpperCase();
+    return p.code;
   };
 
-  const generateObjetCode = (objetId: string): string => {
+  const getObjetCode = (objetId: string): string => {
     const o = objets.find((ob) => ob.id === objetId);
     if (!o) return '';
-    return o.name.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    return o.code;
   };
 
   const computeWricefSerial = (objetId: string): string => {
@@ -260,14 +260,13 @@ export const ManagerTickets: React.FC = () => {
   };
 
   const generatedWricef = useMemo(() => {
-    if (!form.projectId || !form.module || !form.objetId) return '';
+    if (!form.projectId || !form.objetId) return '';
     const projCode = generateProjectCode(form.projectId);
-    const mod = form.module.toUpperCase().replace(/\s+/g, '-');
-    const objCode = generateObjetCode(form.objetId);
+    const objCode = getObjetCode(form.objetId);
     const serial = computeWricefSerial(form.objetId);
     if (!projCode || !objCode) return '';
-    return `${projCode}-${mod}-${objCode}-${serial}`;
-  }, [form.projectId, form.module, form.objetId, projects, objets, tickets]);
+    return `${projCode}-${objCode}-${serial}`;
+  }, [form.projectId, form.objetId, projects, objets, tickets]);
 
   const copyWricef = (code: string) => {
     void navigator.clipboard.writeText(code);
@@ -297,28 +296,6 @@ export const ManagerTickets: React.FC = () => {
   const totalHours = useCallback((ticketId: string): number => {
     return (sessionsMap[ticketId] || []).reduce((s, ws) => s + ws.hours, 0);
   }, [sessionsMap]);
-
-  // Abaque reference for the selected ticket
-  const selectedTicketAbaque = useMemo(() => {
-    if (!selectedTicket) return null;
-    const approved = allAbaques.find((a) => a.projectId === selectedTicket.projectId && a.approvedByClient);
-    if (!approved) return null;
-    const entry = approved.entries.find(
-      (e) => e.devType === selectedTicket.devType && e.complexite === selectedTicket.complexite && e.priorite === selectedTicket.priorite,
-    );
-    if (!entry) return null;
-    const chiffrageDays = selectedTicket.chiffrage ? selectedTicket.chiffrage / 8 : 0;
-    const hoursLogged = totalHours(selectedTicket.id);
-    const chiffrageHours = selectedTicket.chiffrage ?? 0;
-    const progressPct = chiffrageHours > 0 ? Math.min(Math.round((hoursLogged / chiffrageHours) * 100), 150) : 0;
-    const zone: 'green' | 'orange' | 'red' =
-      chiffrageDays <= entry.standardDays ? 'green' :
-      chiffrageDays <= entry.maxDays ? 'orange' : 'red';
-    const isClosed = selectedTicket.status === 'CLOSED' || selectedTicket.status === 'RESOLVED';
-    const hoursLoggedDays = hoursLogged / 8;
-    const finalDeviation = isClosed ? +(hoursLoggedDays - entry.standardDays).toFixed(1) : null;
-    return { entry, approved, zone, chiffrageDays, progressPct, hoursLogged, finalDeviation, isClosed };
-  }, [selectedTicket, allAbaques, totalHours]);
 
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
@@ -378,7 +355,7 @@ export const ManagerTickets: React.FC = () => {
       toast.error('Project and title are required');
       return;
     }
-    if (abaqueValidation.zone === 'red' && !form.chiffrageJustification.trim()) {
+    if (abaqueValidation?.zone === 'red' && !form.chiffrageJustification.trim()) {
       toast.error('Justification requise : le chiffrage dépasse le maximum de l\'abaque');
       return;
     }
@@ -438,7 +415,6 @@ export const ManagerTickets: React.FC = () => {
         history: [...(ticket.history || []), event],
       });
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? updated : t)));
-      if (selectedTicket?.id === ticket.id) setSelectedTicket(updated);
       toast.success(`Status → ${newStatus.replace('_', ' ')}`);
     } catch {
       toast.error('Failed to update status');
@@ -661,7 +637,7 @@ export const ManagerTickets: React.FC = () => {
                 {sortedTickets.map((ticket) => {
                   const hrs = totalHours(ticket.id);
                   return (
-                  <TableRow key={ticket.id} className="cursor-pointer hover:bg-accent/40" onClick={() => setSelectedTicket(ticket)}>
+                  <TableRow key={ticket.id} className="cursor-pointer hover:bg-accent/40" onClick={() => navigate(`/manager/tickets/${ticket.id}`)}>
                     {visibleCols.has('wricef') && (
                       <TableCell className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                         <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded cursor-pointer" onClick={() => { void navigator.clipboard.writeText(ticket.wricef); toast.success('WRICEF copié'); }}>{ticket.wricef || '—'}</code>
@@ -745,7 +721,7 @@ export const ManagerTickets: React.FC = () => {
                         key={t.id}
                         draggable
                         onDragStart={(e) => onDragStart(e, t.id)}
-                        onClick={() => setSelectedTicket(t)}
+                        onClick={() => navigate(`/manager/tickets/${t.id}`)}
                         className="mb-0.5 cursor-grab truncate rounded px-1 py-0.5 text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20"
                       >
                         {t.title}
@@ -781,7 +757,7 @@ export const ManagerTickets: React.FC = () => {
                         key={ticket.id}
                         draggable
                         onDragStart={(e) => onDragStart(e, ticket.id)}
-                        onClick={() => setSelectedTicket(ticket)}
+                        onClick={() => navigate(`/manager/tickets/${ticket.id}`)}
                         className="cursor-grab rounded-lg border bg-card p-3 shadow-sm hover:shadow transition"
                       >
                         <p className="text-sm font-medium text-foreground">{ticket.title}</p>
@@ -901,7 +877,7 @@ export const ManagerTickets: React.FC = () => {
                   value={form.chiffrage}
                   onChange={(e) => setForm({ ...form, chiffrage: e.target.value })}
                 />
-                {abaqueValidation.zone !== 'none' && (
+                {abaqueValidation && abaqueValidation.zone !== 'none' && (
                   <p className={`text-xs mt-1 font-medium ${
                     abaqueValidation.zone === 'green' ? 'text-emerald-600' :
                     abaqueValidation.zone === 'orange' ? 'text-amber-600' :
@@ -949,7 +925,7 @@ export const ManagerTickets: React.FC = () => {
               </div>
             </div>
             {/* Justification for red-zone abaque deviation */}
-            {abaqueValidation.zone === 'red' && (
+            {abaqueValidation?.zone === 'red' && (
               <div>
                 <Label className="text-red-600">Justification du dépassement *</Label>
                 <Textarea
@@ -964,7 +940,7 @@ export const ManagerTickets: React.FC = () => {
             <div>
               <Label>WRICEF (auto-generated)</Label>
               <div className="flex items-center gap-2 mt-1 rounded-lg border border-border p-2 bg-muted/30">
-                <code className="font-mono text-sm flex-1 truncate">{generatedWricef || 'Select project, objet & module'}</code>
+                <code className="font-mono text-sm flex-1 truncate">{generatedWricef || 'Select project & objet'}</code>
                 {generatedWricef && (
                   <Button type="button" size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={copyWricef}>
                     <Copy className="h-3.5 w-3.5" />
@@ -1007,149 +983,6 @@ export const ManagerTickets: React.FC = () => {
               <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Create'}</Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* ---- Ticket Detail / History Dialog ---- */}
-      <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
-        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
-          {selectedTicket && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedTicket.title}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  <Badge className={statusColor[selectedTicket.status]}>{selectedTicket.status.replace('_', ' ')}</Badge>
-                  <Badge className={priorityColor[selectedTicket.priority]}>{selectedTicket.priority}</Badge>
-                  {selectedTicket.devType && <Badge className={devTypeColor[selectedTicket.devType]}>{selectedTicket.devType}</Badge>}
-                </div>
-                <div className="text-sm text-muted-foreground">{selectedTicket.description}</div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><span className="text-muted-foreground">Project:</span> {projectName(selectedTicket.projectId)}</div>
-                  <div><span className="text-muted-foreground">Objet:</span> {objetName(selectedTicket.objetId) || '—'}</div>
-                  <div><span className="text-muted-foreground">Created by:</span> {userName(selectedTicket.createdBy)}</div>
-                  <div><span className="text-muted-foreground">Assigned to:</span> {userName(selectedTicket.assignedTo)}</div>
-                  <div><span className="text-muted-foreground">Due:</span> {selectedTicket.dueDate ?? '-'}</div>
-                  {selectedTicket.chiffrage != null && (
-                    <div><span className="text-muted-foreground">Chiffrage:</span> {selectedTicket.chiffrage}h</div>
-                  )}
-                  {selectedTicket.complexite && (
-                    <div><span className="text-muted-foreground">Complexité:</span> {selectedTicket.complexite}</div>
-                  )}
-                  {selectedTicket.priorite != null && (
-                    <div><span className="text-muted-foreground">Priorité:</span> {selectedTicket.priorite}</div>
-                  )}
-                  {selectedTicket.module && (
-                    <div><span className="text-muted-foreground">Module:</span> {selectedTicket.module}</div>
-                  )}
-                  {selectedTicket.wricef && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">WRICEF:</span>
-                      <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded cursor-pointer" onClick={() => { navigator.clipboard.writeText(selectedTicket.wricef); toast.success('WRICEF copied'); }}>{selectedTicket.wricef}</code>
-                    </div>
-                  )}
-                </div>
-
-                {/* Status change actions */}
-                {selectedTicket.status !== 'CLOSED' && (
-                  <div className="flex gap-2 flex-wrap">
-                    {STATUS_ORDER.filter((s) => s !== selectedTicket.status).map((s) => (
-                      <Button key={s} size="sm" variant="outline" onClick={() => void changeStatus(selectedTicket, s)}>
-                        → {s.replace('_', ' ')}
-                      </Button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Abaque Reference Panel */}
-                {selectedTicketAbaque && (
-                  <div className={`rounded-lg border p-3 ${
-                    selectedTicketAbaque.zone === 'green' ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30' :
-                    selectedTicketAbaque.zone === 'orange' ? 'border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30' :
-                    'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30'
-                  }`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm font-semibold">Référence Abaque</span>
-                      <Badge variant="outline" className="text-[10px]">v{selectedTicketAbaque.approved.version}</Badge>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs mb-2">
-                      <div>
-                        <span className="text-muted-foreground">Standard:</span>{' '}
-                        <span className="font-medium">{selectedTicketAbaque.entry.standardDays}j</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Max:</span>{' '}
-                        <span className="font-medium">{selectedTicketAbaque.entry.maxDays}j</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Chiffré:</span>{' '}
-                        <span className={`font-medium ${
-                          selectedTicketAbaque.zone === 'green' ? 'text-emerald-700 dark:text-emerald-400' :
-                          selectedTicketAbaque.zone === 'orange' ? 'text-amber-700 dark:text-amber-400' :
-                          'text-red-700 dark:text-red-400'
-                        }`}>{selectedTicketAbaque.chiffrageDays.toFixed(1)}j</span>
-                      </div>
-                    </div>
-                    {selectedTicket!.chiffrage && selectedTicketAbaque.progressPct > 0 && (
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Progression temps passé</span>
-                          <span className="font-medium">{selectedTicketAbaque.progressPct}%</span>
-                        </div>
-                        <Progress
-                          value={Math.min(selectedTicketAbaque.progressPct, 100)}
-                          className="h-2"
-                        />
-                      </div>
-                    )}
-                    {selectedTicketAbaque.isClosed && selectedTicketAbaque.finalDeviation !== null && (
-                      <div className="mt-2 text-xs font-medium">
-                        Écart final : <span className={selectedTicketAbaque.finalDeviation > 0 ? 'text-red-600' : 'text-emerald-600'}>
-                          {selectedTicketAbaque.finalDeviation > 0 ? '+' : ''}{selectedTicketAbaque.finalDeviation}j
-                        </span> vs standard
-                      </div>
-                    )}
-                    {selectedTicket!.chiffrageJustification && (
-                      <div className="mt-2 text-xs border-t pt-2">
-                        <span className="text-muted-foreground">Justification :</span>{' '}
-                        {selectedTicket!.chiffrageJustification}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* History */}
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground mb-2">History</h4>
-                  <div className="space-y-2">
-                    {(selectedTicket.history || []).map((evt) => (
-                      <div key={evt.id} className="flex gap-3 text-xs border-l-2 border-primary/30 pl-3 py-1">
-                        <span className="text-muted-foreground whitespace-nowrap">
-                          {new Date(evt.timestamp).toLocaleString()}
-                        </span>
-                        <div>
-                          <span className="font-medium">{userName(evt.userId)}</span>
-                          {evt.action === 'CREATED' && ' created this ticket'}
-                          {evt.action === 'STATUS_CHANGE' && (
-                            <> changed status from <Badge variant="outline" className="text-[10px] mx-0.5">{evt.fromValue}</Badge> to <Badge variant="outline" className="text-[10px] mx-0.5">{evt.toValue}</Badge></>
-                          )}
-                          {evt.action === 'ASSIGNED' && ` assigned to ${userName(evt.toValue)}`}
-                          {evt.action === 'COMMENT' && `: ${evt.comment}`}
-                          {evt.comment && evt.action !== 'COMMENT' && (
-                            <span className="block text-muted-foreground mt-0.5">{evt.comment}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {(!selectedTicket.history || selectedTicket.history.length === 0) && (
-                      <p className="text-xs text-muted-foreground">No history available.</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
         </DialogContent>
       </Dialog>
     </div>

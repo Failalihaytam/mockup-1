@@ -4,20 +4,23 @@ import { PageHeader } from '../../components/common/PageHeader';
 import {
   AllocationsAPI,
   DeliverablesAPI,
+  ObjetsAPI,
   ProjectsAPI,
   TasksAPI,
   TicketsAPI,
   UsersAPI,
   AbaquesAPI,
+  DocumentationsAPI,
 } from '../../services/odataClient';
-import { Allocation, Deliverable, Project, Task, Ticket, User, Abaque, AbaqueEntry } from '../../types/entities';
+import { Allocation, Deliverable, Documentation, Objet, Project, Task, Ticket, User, Abaque, AbaqueEntry, DevType, TicketComplexite } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 import { Badge } from '../../components/ui/badge';
-import { Textarea } from '../../components/ui/textarea';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { FileSpreadsheet, Plus, Search, ArrowUpDown } from 'lucide-react';
+import { WricefImportModal } from '../../components/business/WricefImportModal';
 
 import {
   Select,
@@ -34,14 +37,20 @@ import {
   TableHeader,
   TableRow,
 } from '../../components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
 
-type TabKey = 'overview' | 'tasks' | 'team' | 'kpi' | 'docs' | 'abaques';
+type TabKey = 'overview' | 'objets' | 'tasks' | 'team' | 'kpi' | 'abaques';
 const PROJECT_TABS: { key: TabKey; label: string }[] = [
-  { key: 'overview', label: 'Overview' },
-  { key: 'tasks', label: 'Tasks' },
-  { key: 'team', label: 'Team & Allocation' },
+  { key: 'overview', label: 'Vue Générale' },
+  { key: 'objets', label: 'Objets' },
+  { key: 'tasks', label: 'Tâches' },
+  { key: 'team', label: 'Équipe & Allocation' },
   { key: 'kpi', label: 'KPI Report' },
-  { key: 'docs', label: 'Documentation' },
   { key: 'abaques', label: 'Abaques' },
 ];
 
@@ -60,10 +69,23 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ basePath = '/man
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [abaques, setAbaques] = useState<Abaque[]>([]);
+  const [objets, setObjets] = useState<Objet[]>([]);
+  const [docs, setDocs] = useState<Documentation[]>([]);
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [loading, setLoading] = useState(true);
-  const [docText, setDocText] = useState('');
-  const [docSaving, setDocSaving] = useState(false);
+  const [showWricefImport, setShowWricefImport] = useState(false);
+  const [objetSearch, setObjetSearch] = useState('');
+  const [objetSortCol, setObjetSortCol] = useState<string>('code');
+  const [objetSortAsc, setObjetSortAsc] = useState(true);
+  const [showCreateObjet, setShowCreateObjet] = useState(false);
+  const [newObjetCode, setNewObjetCode] = useState('');
+  const [newObjetName, setNewObjetName] = useState('');
+  const [newObjetDesc, setNewObjetDesc] = useState('');
+  const [newObjetModule, setNewObjetModule] = useState('');
+  const [newObjetDevType, setNewObjetDevType] = useState('');
+  const [newObjetComplexite, setNewObjetComplexite] = useState('');
+  const [newObjetPriorite, setNewObjetPriorite] = useState('');
+  const [isCreatingObjet, setIsCreatingObjet] = useState(false);
 
   // Abaque state
   const [selectedAbaqueId, setSelectedAbaqueId] = useState<string>('');
@@ -79,7 +101,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ basePath = '/man
   const loadProjectData = async (projectId: string) => {
     setLoading(true);
     try {
-      const [p, taskData, allocationData, userData, deliverableData, ticketData, abaqueData] =
+      const [p, taskData, allocationData, userData, deliverableData, ticketData, abaqueData, objetData, docData] =
         await Promise.all([
           ProjectsAPI.getById(projectId),
           TasksAPI.getByProject(projectId),
@@ -88,6 +110,8 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ basePath = '/man
           DeliverablesAPI.getAll(),
           TicketsAPI.getAll(),
           AbaquesAPI.getByProject(projectId),
+          ObjetsAPI.getByProject(projectId),
+          DocumentationsAPI.getAll(),
         ]);
 
       if (!p) {
@@ -97,13 +121,14 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ basePath = '/man
       }
 
       setProject(p);
-      setDocText(p.documentation || '');
       setTasks(taskData);
       setAllocations(allocationData.filter((a) => a.projectId === projectId));
       setUsers(userData);
       setDeliverables(deliverableData.filter((d) => d.projectId === projectId));
       setTickets(ticketData.filter((t) => t.projectId === projectId));
       setAbaques(abaqueData);
+      setObjets(objetData);
+      setDocs(docData.filter((d) => objetData.some((o) => o.id === d.objetId)));
       if (abaqueData.length > 0) {
         // Select latest version by default
         const sorted = [...abaqueData].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -118,6 +143,116 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ basePath = '/man
     if (!project) return null;
     return users.find((u) => u.id === project.managerId) ?? null;
   }, [project, users]);
+
+  // ---------------------------------------------------------------------------
+  // Objet helpers
+  // ---------------------------------------------------------------------------
+
+  const canManageObjets = currentUser?.role === 'MANAGER' || currentUser?.role === 'COORDINATEUR_DEV';
+
+  const devTypeColor: Record<string, string> = {
+    Formulaire: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+    Report: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
+    Enhancement: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+    Programme: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+  };
+
+  const complexiteColor: Record<string, string> = {
+    Simple: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    Moyen: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    Complexe: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+    'Très Complexe': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+  };
+
+  const prioriteColor: Record<number, string> = {
+    0: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    1: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+    2: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    3: 'bg-gray-100 text-gray-800 dark:bg-gray-700/40 dark:text-gray-300',
+  };
+
+  const objetTableData = useMemo(() => {
+    return objets.map((o) => {
+      const objTickets = tickets.filter((t) => t.objetId === o.id);
+      const objDocs = docs.filter((d) => d.objetId === o.id);
+      const allClosed = objTickets.length > 0 && objTickets.every((t) => t.status === 'CLOSED' || t.status === 'RESOLVED');
+      const hasInProgress = objTickets.some((t) => t.status === 'IN_PROGRESS' || t.status === 'WAITING_FEEDBACK');
+      const statut = objTickets.length === 0 ? 'Open' : allClosed ? 'Closed' : hasInProgress ? 'In Progress' : 'Open';
+      return { ...o, ticketCount: objTickets.length, sfdCount: objDocs.length, statut };
+    });
+  }, [objets, tickets, docs]);
+
+  const filteredObjets = useMemo(() => {
+    let list = [...objetTableData];
+    if (objetSearch) {
+      const q = objetSearch.toLowerCase();
+      list = list.filter((o) =>
+        o.code.toLowerCase().includes(q) ||
+        o.name.toLowerCase().includes(q) ||
+        (o.module ?? '').toLowerCase().includes(q)
+      );
+    }
+    list.sort((a, b) => {
+      const col = objetSortCol;
+      let valA: string | number = '';
+      let valB: string | number = '';
+      if (col === 'code') { valA = a.code; valB = b.code; }
+      else if (col === 'name') { valA = a.name; valB = b.name; }
+      else if (col === 'module') { valA = a.module ?? ''; valB = b.module ?? ''; }
+      else if (col === 'devType') { valA = a.devType ?? ''; valB = b.devType ?? ''; }
+      else if (col === 'complexite') { valA = a.complexite ?? ''; valB = b.complexite ?? ''; }
+      else if (col === 'priorite') { valA = a.priorite ?? 9; valB = b.priorite ?? 9; }
+      else if (col === 'ticketCount') { valA = a.ticketCount; valB = b.ticketCount; }
+      else if (col === 'sfdCount') { valA = a.sfdCount; valB = b.sfdCount; }
+      else if (col === 'statut') { valA = a.statut; valB = b.statut; }
+      if (typeof valA === 'number' && typeof valB === 'number') return objetSortAsc ? valA - valB : valB - valA;
+      return objetSortAsc ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+    });
+    return list;
+  }, [objetTableData, objetSearch, objetSortCol, objetSortAsc]);
+
+  const toggleObjetSort = (col: string) => {
+    if (objetSortCol === col) setObjetSortAsc((prev) => !prev);
+    else { setObjetSortCol(col); setObjetSortAsc(true); }
+  };
+
+  const handleWricefImport = useCallback(async (newObjets: Omit<Objet, 'id'>[]) => {
+    for (const o of newObjets) {
+      const created = await ObjetsAPI.create(o);
+      setObjets((prev) => [...prev, created]);
+    }
+  }, []);
+
+  const createObjetManually = async () => {
+    if (!project || !currentUser || !newObjetCode.trim() || !newObjetName.trim()) {
+      toast.error('Code et Titre sont obligatoires');
+      return;
+    }
+    setIsCreatingObjet(true);
+    try {
+      const created = await ObjetsAPI.create({
+        projectId: project.id,
+        code: newObjetCode.trim(),
+        name: newObjetName.trim(),
+        description: newObjetDesc.trim() || undefined,
+        module: newObjetModule.trim().toUpperCase() || undefined,
+        devType: (newObjetDevType || undefined) as DevType | undefined,
+        complexite: (newObjetComplexite || undefined) as TicketComplexite | undefined,
+        priorite: newObjetPriorite !== '' ? (parseInt(newObjetPriorite) as 0 | 1 | 2 | 3) : undefined,
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser.id,
+      });
+      setObjets((prev) => [...prev, created]);
+      setNewObjetCode(''); setNewObjetName(''); setNewObjetDesc('');
+      setNewObjetModule(''); setNewObjetDevType(''); setNewObjetComplexite(''); setNewObjetPriorite('');
+      setShowCreateObjet(false);
+      toast.success('Objet créé');
+    } catch {
+      toast.error('Erreur lors de la création');
+    } finally {
+      setIsCreatingObjet(false);
+    }
+  };
 
   const kpis = useMemo(() => {
     if (!tasks.length) {
@@ -378,6 +513,16 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ basePath = '/man
       />
 
       <div className="p-6 space-y-6">
+        {/* Header actions — always visible */}
+        {canManageObjets && (
+          <div className="flex justify-end">
+            <Button onClick={() => setShowWricefImport(true)}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Importer WRICEF
+            </Button>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <div role="tablist" aria-label="Project detail sections" className="flex min-w-max gap-2">
             {PROJECT_TABS.map((tab) => {
@@ -479,6 +624,116 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ basePath = '/man
                 <span className="text-muted-foreground">Blocked</span>
                 <span className="font-medium text-accent-foreground">{kpis.blocked}</span>
               </div>
+            </div>
+          </section>
+        )}
+
+        {/* ----------------------------------------------------------------- */}
+        {/* Objets Tab                                                        */}
+        {/* ----------------------------------------------------------------- */}
+        {activeTab === 'objets' && (
+          <section
+            id="project-panel-objets"
+            role="tabpanel"
+            tabIndex={0}
+            aria-labelledby="project-tab-objets"
+            className="space-y-4"
+          >
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par code, titre ou module..."
+                  value={objetSearch}
+                  onChange={(e) => setObjetSearch(e.target.value)}
+                  className="w-72 pl-8"
+                />
+              </div>
+              <div className="flex-1" />
+              {canManageObjets && (
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowCreateObjet(true)}>
+                    <Plus className="mr-1 h-4 w-4" /> Nouvel Objet
+                  </Button>
+                  <Button onClick={() => setShowWricefImport(true)}>
+                    <FileSpreadsheet className="mr-1 h-4 w-4" /> Importer WRICEF
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Objets data table */}
+            <div className="rounded-lg border bg-card overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    {[
+                      { key: 'code', label: 'Code' },
+                      { key: 'name', label: 'Titre' },
+                      { key: 'module', label: 'Module' },
+                      { key: 'devType', label: 'Type de Dev' },
+                      { key: 'complexite', label: 'Complexité' },
+                      { key: 'priorite', label: 'Priorité' },
+                      { key: 'ticketCount', label: 'Nb Tickets' },
+                      { key: 'sfdCount', label: 'Nb SFDs' },
+                      { key: 'statut', label: 'Statut' },
+                    ].map((col) => (
+                      <TableHead
+                        key={col.key}
+                        className="px-3 cursor-pointer select-none hover:bg-muted"
+                        onClick={() => toggleObjetSort(col.key)}
+                      >
+                        <span className="flex items-center gap-1">
+                          {col.label}
+                          <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                        </span>
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredObjets.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                        Aucun objet trouvé.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredObjets.map((o) => (
+                      <TableRow key={o.id} className="hover:bg-accent/40">
+                        <TableCell className="px-3">
+                          <Badge variant="outline" className="font-mono text-xs">{o.code}</Badge>
+                        </TableCell>
+                        <TableCell className="px-3 text-sm font-medium cursor-pointer text-primary hover:underline"
+                          onClick={() => navigate(`${basePath}/objets/${o.id}`)}
+                        >
+                          {o.name}
+                        </TableCell>
+                        <TableCell className="px-3 text-xs">
+                          {o.module ? <Badge variant="secondary" className="text-xs">{o.module}</Badge> : '—'}
+                        </TableCell>
+                        <TableCell className="px-3 text-xs">
+                          {o.devType ? <Badge className={`${devTypeColor[o.devType] ?? ''} text-xs`}>{o.devType}</Badge> : '—'}
+                        </TableCell>
+                        <TableCell className="px-3 text-xs">
+                          {o.complexite ? <Badge className={`${complexiteColor[o.complexite] ?? ''} text-xs`}>{o.complexite}</Badge> : '—'}
+                        </TableCell>
+                        <TableCell className="px-3 text-xs">
+                          {o.priorite != null ? <Badge className={`${prioriteColor[o.priorite] ?? ''} text-xs`}>P{o.priorite}</Badge> : '—'}
+                        </TableCell>
+                        <TableCell className="px-3 text-sm text-center">{o.ticketCount}</TableCell>
+                        <TableCell className="px-3 text-sm text-center">{o.sfdCount}</TableCell>
+                        <TableCell className="px-3 text-xs">
+                          <Badge variant={o.statut === 'Closed' ? 'secondary' : o.statut === 'In Progress' ? 'default' : 'outline'}>
+                            {o.statut}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </section>
         )}
@@ -737,87 +992,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ basePath = '/man
           </section>
         )}
 
-        {activeTab === 'docs' && (
-          <section
-            id="project-panel-docs"
-            role="tabpanel"
-            tabIndex={0}
-            aria-labelledby="project-tab-docs"
-            className="space-y-4"
-          >
-            {/* Project Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="text-xs text-muted-foreground mb-1">Complexity</div>
-                <div className="text-lg font-semibold text-foreground">
-                  <Badge variant="outline">{project.complexity ?? 'N/A'}</Badge>
-                </div>
-              </div>
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="text-xs text-muted-foreground mb-1">Budget (Chiffrage)</div>
-                <div className="text-lg font-semibold text-foreground">
-                  ${project.budget?.toLocaleString() ?? 'N/A'}
-                </div>
-              </div>
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="text-xs text-muted-foreground mb-1">Time Spent (h)</div>
-                <div className="text-lg font-semibold text-foreground">
-                  {tasks.reduce((sum, t) => sum + t.actualHours, 0).toFixed(1)}
-                </div>
-              </div>
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="text-xs text-muted-foreground mb-1">Estimated Hours</div>
-                <div className="text-lg font-semibold text-foreground">
-                  {tasks.reduce((sum, t) => sum + t.estimatedHours, 0).toFixed(1)}
-                </div>
-              </div>
-            </div>
-
-            {/* Tech Keywords */}
-            {project.techKeywords && project.techKeywords.length > 0 && (
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="text-xs text-muted-foreground mb-2">Tech Keywords</div>
-                <div className="flex flex-wrap gap-2">
-                  {project.techKeywords.map((kw) => (
-                    <Badge key={kw} variant="secondary">{kw}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Documentation area */}
-            <div className="bg-card border border-border rounded-lg p-5 space-y-3">
-              <h3 className="text-lg font-semibold text-foreground">Project Documentation</h3>
-              <Textarea
-                value={docText}
-                onChange={(e) => setDocText(e.target.value)}
-                rows={12}
-                placeholder="Write project documentation here (markdown supported)..."
-                className="font-mono text-sm"
-              />
-              <div className="flex justify-end">
-                <Button
-                  disabled={docSaving}
-                  onClick={async () => {
-                    setDocSaving(true);
-                    try {
-                      await ProjectsAPI.update(project.id, { documentation: docText });
-                      setProject((prev) => (prev ? { ...prev, documentation: docText } : prev));
-                      toast.success('Documentation saved');
-                    } catch {
-                      toast.error('Failed to save documentation');
-                    } finally {
-                      setDocSaving(false);
-                    }
-                  }}
-                >
-                  {docSaving ? 'Saving...' : 'Save'}
-                </Button>
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* ----------------------------------------------------------------- */}
         {/* Abaques Tab                                                       */}
         {/* ----------------------------------------------------------------- */}
@@ -1041,6 +1215,91 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ basePath = '/man
           </section>
         )}
       </div>
+
+      {/* WRICEF Import Modal */}
+      {project && currentUser && (
+        <WricefImportModal
+          open={showWricefImport}
+          onOpenChange={setShowWricefImport}
+          projectId={project.id}
+          existingObjetCount={objets.length}
+          currentUserId={currentUser.id}
+          onImport={(newObjets) => void handleWricefImport(newObjets)}
+        />
+      )}
+
+      {/* Manual Create Objet Dialog */}
+      <Dialog open={showCreateObjet} onOpenChange={setShowCreateObjet}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nouvel Objet</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Code *</Label>
+              <Input value={newObjetCode} onChange={(e) => setNewObjetCode(e.target.value)} placeholder="MM-001" />
+            </div>
+            <div>
+              <Label>Titre *</Label>
+              <Input value={newObjetName} onChange={(e) => setNewObjetName(e.target.value)} placeholder="Nom de l'objet" />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Input value={newObjetDesc} onChange={(e) => setNewObjetDesc(e.target.value)} placeholder="Description optionnelle" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Module</Label>
+                <Input value={newObjetModule} onChange={(e) => setNewObjetModule(e.target.value)} placeholder="MM, SD, FI..." />
+              </div>
+              <div>
+                <Label>Type de Dev</Label>
+                <Select value={newObjetDevType} onValueChange={setNewObjetDevType}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Formulaire">Formulaire</SelectItem>
+                    <SelectItem value="Report">Report</SelectItem>
+                    <SelectItem value="Enhancement">Enhancement</SelectItem>
+                    <SelectItem value="Programme">Programme</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Complexité</Label>
+                <Select value={newObjetComplexite} onValueChange={setNewObjetComplexite}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Simple">Simple</SelectItem>
+                    <SelectItem value="Moyen">Moyen</SelectItem>
+                    <SelectItem value="Complexe">Complexe</SelectItem>
+                    <SelectItem value="Très Complexe">Très Complexe</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Priorité</Label>
+                <Select value={newObjetPriorite} onValueChange={setNewObjetPriorite}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">P0 — Critique</SelectItem>
+                    <SelectItem value="1">P1 — Haute</SelectItem>
+                    <SelectItem value="2">P2 — Moyenne</SelectItem>
+                    <SelectItem value="3">P3 — Basse</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowCreateObjet(false)}>Annuler</Button>
+              <Button onClick={() => void createObjetManually()} disabled={isCreatingObjet}>
+                {isCreatingObjet ? 'Création...' : 'Créer'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

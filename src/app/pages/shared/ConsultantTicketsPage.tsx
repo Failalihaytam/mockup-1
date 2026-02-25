@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { PageHeader } from '../../components/common/PageHeader';
 import {
   ObjetsAPI,
@@ -10,7 +11,7 @@ import {
 } from '../../services/odataClient';
 import { DevType, Objet, Project, Ticket, TicketEvent, TicketStatus, TicketComplexite, TicketPriorite, WorkSession, User, Abaque, AbaqueEntry } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
-import { ArrowDown, ArrowUp, ArrowUpDown, CalendarDays, CheckCircle2, Clock, Copy, FolderOpen, KanbanSquare, List, Plus, Send, SlidersHorizontal } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, CalendarDays, CheckCircle2, Clock, Copy, FolderOpen, KanbanSquare, List, Plus, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -34,7 +35,7 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Textarea } from '../../components/ui/textarea';
-import { Progress } from '../../components/ui/progress';
+
 import {
   Dialog,
   DialogContent,
@@ -164,6 +165,9 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
   filterFn,
 }) => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  // Derive role base path from homePath, e.g. /consultant-tech/dashboard -> /consultant-tech
+  const basePath = homePath.replace(/\/[^/]+$/, '');
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -180,7 +184,6 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [visibleCols, setVisibleCols] = useState<Set<SortKey>>(() => new Set(DEFAULT_VISIBLE));
@@ -194,15 +197,8 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
   const [newObjetName, setNewObjetName] = useState('');
   const [newObjetDesc, setNewObjetDesc] = useState('');
 
-  // Work session logging (in detail dialog)
+  // Work session logging
   const [sessionsMap, setSessionsMap] = useState<Record<string, WorkSession[]>>({});
-  const [ticketSessions, setTicketSessions] = useState<WorkSession[]>([]);
-  const [showLogSession, setShowLogSession] = useState(false);
-  const [sessionTicket, setSessionTicket] = useState<Ticket | null>(null);
-  const [sessionHours, setSessionHours] = useState('');
-  const [sessionDate, setSessionDate] = useState('');
-  const [sessionDesc, setSessionDesc] = useState('');
-  const [isSendingStraTIME, setIsSendingStraTIME] = useState(false);
 
   // Abaque validation
   const [abaques, setAbaques] = useState<Abaque[]>([]);
@@ -277,13 +273,13 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
   const generateProjectCode = (projectId: string): string => {
     const p = projects.find((pr) => pr.id === projectId);
     if (!p) return '';
-    return p.name.replace(/[^A-Za-z]/g, '').slice(0, 4).toUpperCase();
+    return p.code;
   };
 
-  const generateObjetCode = (objetId: string): string => {
+  const getObjetCode = (objetId: string): string => {
     const o = objets.find((ob) => ob.id === objetId);
     if (!o) return '';
-    return o.name.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    return o.code;
   };
 
   const computeWricefSerial = (objetId: string): string => {
@@ -292,14 +288,13 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
   };
 
   const generatedWricef = useMemo(() => {
-    if (!form.projectId || !form.module || !form.objetId) return '';
+    if (!form.projectId || !form.objetId) return '';
     const projCode = generateProjectCode(form.projectId);
-    const mod = form.module.toUpperCase().replace(/\s+/g, '-');
-    const objCode = generateObjetCode(form.objetId);
+    const objCode = getObjetCode(form.objetId);
     const serial = computeWricefSerial(form.objetId);
     if (!projCode || !objCode) return '';
-    return `${projCode}-${mod}-${objCode}-${serial}`;
-  }, [form.projectId, form.module, form.objetId, projects, objets, tickets]);
+    return `${projCode}-${objCode}-${serial}`;
+  }, [form.projectId, form.objetId, projects, objets, tickets]);
 
   const copyWricef = (code: string) => {
     void navigator.clipboard.writeText(code);
@@ -336,28 +331,6 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
   const totalHours = useCallback((ticketId: string): number => {
     return (sessionsMap[ticketId] || []).reduce((s, ws) => s + ws.hours, 0);
   }, [sessionsMap]);
-
-  // Abaque reference for the selected ticket
-  const selectedTicketAbaque = useMemo(() => {
-    if (!selectedTicket) return null;
-    const approved = allAbaques.find((a) => a.projectId === selectedTicket.projectId && a.approvedByClient);
-    if (!approved) return null;
-    const entry = approved.entries.find(
-      (e) => e.devType === selectedTicket.devType && e.complexite === selectedTicket.complexite && e.priorite === selectedTicket.priorite,
-    );
-    if (!entry) return null;
-    const chiffrageDays = selectedTicket.chiffrage ? selectedTicket.chiffrage / 8 : 0;
-    const hoursLogged = totalHours(selectedTicket.id);
-    const hoursLoggedDays = hoursLogged / 8;
-    const chiffrageHours = selectedTicket.chiffrage ?? 0;
-    const progressPct = chiffrageHours > 0 ? Math.min(Math.round((hoursLogged / chiffrageHours) * 100), 150) : 0;
-    const zone: 'green' | 'orange' | 'red' =
-      chiffrageDays <= entry.standardDays ? 'green' :
-      chiffrageDays <= entry.maxDays ? 'orange' : 'red';
-    const isClosed = selectedTicket.status === 'CLOSED' || selectedTicket.status === 'RESOLVED';
-    const finalDeviation = isClosed ? +(hoursLoggedDays - entry.standardDays).toFixed(1) : null;
-    return { entry, approved, zone, chiffrageDays, progressPct, hoursLogged, finalDeviation, isClosed };
-  }, [selectedTicket, allAbaques, totalHours]);
 
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
@@ -477,7 +450,6 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
         history: [...(ticket.history || []), event],
       });
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? updated : t)));
-      if (selectedTicket?.id === ticket.id) setSelectedTicket(updated);
       toast.success(`Status → ${newStatus.replace('_', ' ')}`);
     } catch {
       toast.error('Failed to update status');
@@ -504,58 +476,6 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
       toast.success('Objet créé');
     } catch {
       toast.error("Erreur lors de la création de l'objet");
-    }
-  };
-
-  // ---------------------------------------------------------------------------
-  // Work Session logging
-  // ---------------------------------------------------------------------------
-
-  const openLogSession = useCallback(async (ticket: Ticket) => {
-    setSessionTicket(ticket);
-    setSessionHours('1');
-    setSessionDate(new Date().toISOString().slice(0, 10));
-    setSessionDesc(`Travail sur: ${ticket.title}`);
-    setShowLogSession(true);
-    try {
-      const sessions = await WorkSessionsAPI.getByTicket(ticket.id);
-      setTicketSessions(sessions);
-    } catch {
-      setTicketSessions([]);
-    }
-  }, []);
-
-  const submitSession = async () => {
-    if (!sessionTicket || !currentUser) return;
-    const hours = parseFloat(sessionHours);
-    if (!hours || hours <= 0) {
-      toast.error('Les heures doivent être positives');
-      return;
-    }
-    try {
-      setIsSendingStraTIME(true);
-      const newSession = await WorkSessionsAPI.create({
-        consultantId: currentUser.id,
-        ticketId: sessionTicket.id,
-        projectId: sessionTicket.projectId,
-        date: sessionDate,
-        hours,
-        description: sessionDesc.trim(),
-        sentToStraTIME: false,
-      });
-      // Immediately send to StraTIME
-      const sent = await WorkSessionsAPI.sendToStraTIME(newSession.id);
-      setSessionsMap((prev) => ({
-        ...prev,
-        [sessionTicket.id]: [...(prev[sessionTicket.id] || []), sent],
-      }));
-      setTicketSessions((prev) => [...prev, sent]);
-      toast.success('Imputation envoyée à StraTIME');
-      setShowLogSession(false);
-    } catch {
-      toast.error("Erreur d'envoi vers StraTIME");
-    } finally {
-      setIsSendingStraTIME(false);
     }
   };
 
@@ -773,7 +693,7 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
                 {sortedTickets.map((ticket) => {
                   const hrs = totalHours(ticket.id);
                   return (
-                  <TableRow key={ticket.id} className="cursor-pointer hover:bg-accent/40" onClick={() => setSelectedTicket(ticket)}>
+                  <TableRow key={ticket.id} className="cursor-pointer hover:bg-accent/40" onClick={() => navigate(`${basePath}/tickets/${ticket.id}`)}>
                     {visibleCols.has('wricef') && (
                       <TableCell className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                         <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded cursor-pointer" onClick={() => { void navigator.clipboard.writeText(ticket.wricef); toast.success('WRICEF copié'); }}>{ticket.wricef || '—'}</code>
@@ -865,7 +785,7 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
                         key={t.id}
                         draggable
                         onDragStart={(e) => onDragStart(e, t.id)}
-                        onClick={() => setSelectedTicket(t)}
+                        onClick={() => navigate(`${basePath}/tickets/${t.id}`)}
                         className="mb-0.5 cursor-grab truncate rounded px-1 py-0.5 text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20"
                       >
                         {t.title}
@@ -900,7 +820,7 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
                         key={ticket.id}
                         draggable
                         onDragStart={(e) => onDragStart(e, ticket.id)}
-                        onClick={() => setSelectedTicket(ticket)}
+                        onClick={() => navigate(`${basePath}/tickets/${ticket.id}`)}
                         className="cursor-grab rounded-lg border bg-card p-3 shadow-sm hover:shadow transition"
                       >
                         <div className="flex items-start justify-between gap-1">
@@ -1019,7 +939,7 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
                   value={form.chiffrage}
                   onChange={(e) => setForm({ ...form, chiffrage: e.target.value })}
                 />
-                {abaqueValidation.zone !== 'none' && (
+                {abaqueValidation && abaqueValidation.zone !== 'none' && (
                   <p className={`text-xs mt-1 font-medium ${
                     abaqueValidation.zone === 'green' ? 'text-emerald-600' :
                     abaqueValidation.zone === 'orange' ? 'text-amber-600' :
@@ -1067,7 +987,7 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
               </div>
             </div>
             {/* Justification for red-zone abaque deviation */}
-            {abaqueValidation.zone === 'red' && (
+            {abaqueValidation?.zone === 'red' && (
               <div>
                 <Label className="text-red-600">Justification du dépassement *</Label>
                 <Textarea
@@ -1128,258 +1048,6 @@ export const ConsultantTicketsPage: React.FC<ConsultantTicketsPageProps> = ({
               <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Create'}</Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Ticket Detail / History Dialog */}
-      <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
-        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
-          {selectedTicket && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  {selectedTicket.title}
-                  {isFullyImputed(selectedTicket.id) && (
-                    <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-xs"><CheckCircle2 className="h-3 w-3 mr-0.5" />Imputé</Badge>
-                  )}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  <Badge className={statusColor[selectedTicket.status]}>{selectedTicket.status.replace('_', ' ')}</Badge>
-                  <Badge className={priorityColor[selectedTicket.priority]}>{selectedTicket.priority}</Badge>
-                  {selectedTicket.devType && <Badge className={devTypeColor[selectedTicket.devType]}>{selectedTicket.devType}</Badge>}
-                </div>
-                <div className="text-sm text-muted-foreground">{selectedTicket.description}</div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><span className="text-muted-foreground">Project:</span> {projectName(selectedTicket.projectId)}</div>
-                  <div><span className="text-muted-foreground">Objet:</span> {objetName(selectedTicket.objetId) || '—'}</div>
-                  <div><span className="text-muted-foreground">Created by:</span> {userName(selectedTicket.createdBy)}</div>
-                  <div><span className="text-muted-foreground">Assigned to:</span> {userName(selectedTicket.assignedTo)}</div>
-                  <div><span className="text-muted-foreground">Due:</span> {selectedTicket.dueDate ?? '-'}</div>
-                  <div><span className="text-muted-foreground">Hours logged:</span> {formatHours(totalHours(selectedTicket.id))}</div>
-                  {selectedTicket.chiffrage != null && (
-                    <div><span className="text-muted-foreground">Chiffrage:</span> {selectedTicket.chiffrage}h</div>
-                  )}
-                  {selectedTicket.complexite && (
-                    <div><span className="text-muted-foreground">Complexité:</span> {selectedTicket.complexite}</div>
-                  )}
-                  {selectedTicket.priorite != null && (
-                    <div><span className="text-muted-foreground">Priorité:</span> {selectedTicket.priorite}</div>
-                  )}
-                  {selectedTicket.module && (
-                    <div><span className="text-muted-foreground">Module:</span> {selectedTicket.module}</div>
-                  )}
-                  {selectedTicket.wricef && (
-                    <div className="col-span-2">
-                      <span className="text-muted-foreground">WRICEF:</span>{' '}
-                      <span className="font-mono text-sm bg-muted/50 rounded px-1.5 py-0.5 cursor-pointer" onClick={() => copyWricef(selectedTicket.wricef)}>
-                        {selectedTicket.wricef}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Work Session Section */}
-                <div className="rounded-lg border bg-muted/30 p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Sessions de travail</span>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-950"
-                      onClick={() => void openLogSession(selectedTicket)}
-                    >
-                      <Send className="h-3 w-3 mr-1" /> Logger & Imputer
-                    </Button>
-                  </div>
-                  {(sessionsMap[selectedTicket.id] || []).length > 0 ? (
-                    <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {(sessionsMap[selectedTicket.id] || []).map((ws) => (
-                        <div key={ws.id} className="flex items-center justify-between text-xs border rounded px-2 py-1">
-                          <span>{ws.date} — {formatHours(ws.hours)}</span>
-                          {ws.sentToStraTIME ? (
-                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[9px]">Envoyé</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[9px]">Brouillon</Badge>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">Aucune session enregistrée.</p>
-                  )}
-                </div>
-
-                {selectedTicket.status !== 'CLOSED' && (
-                  <div className="flex gap-2 flex-wrap">
-                    {STATUS_ORDER.filter((s) => s !== selectedTicket.status).map((s) => (
-                      <Button key={s} size="sm" variant="outline" onClick={() => void changeStatus(selectedTicket, s)}>
-                        → {s.replace('_', ' ')}
-                      </Button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Abaque Reference Panel */}
-                {selectedTicketAbaque && (
-                  <div className={`rounded-lg border p-3 ${
-                    selectedTicketAbaque.zone === 'green' ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30' :
-                    selectedTicketAbaque.zone === 'orange' ? 'border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30' :
-                    'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30'
-                  }`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm font-semibold">Référence Abaque</span>
-                      <Badge variant="outline" className="text-[10px]">v{selectedTicketAbaque.approved.version}</Badge>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs mb-2">
-                      <div>
-                        <span className="text-muted-foreground">Standard:</span>{' '}
-                        <span className="font-medium">{selectedTicketAbaque.entry.standardDays}j</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Max:</span>{' '}
-                        <span className="font-medium">{selectedTicketAbaque.entry.maxDays}j</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Chiffré:</span>{' '}
-                        <span className={`font-medium ${
-                          selectedTicketAbaque.zone === 'green' ? 'text-emerald-700 dark:text-emerald-400' :
-                          selectedTicketAbaque.zone === 'orange' ? 'text-amber-700 dark:text-amber-400' :
-                          'text-red-700 dark:text-red-400'
-                        }`}>{selectedTicketAbaque.chiffrageDays.toFixed(1)}j</span>
-                      </div>
-                    </div>
-                    {selectedTicket!.chiffrage && selectedTicketAbaque.progressPct > 0 && (
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Progression temps passé</span>
-                          <span className="font-medium">{selectedTicketAbaque.progressPct}%</span>
-                        </div>
-                        <Progress
-                          value={Math.min(selectedTicketAbaque.progressPct, 100)}
-                          className="h-2"
-                        />
-                      </div>
-                    )}
-                    {selectedTicketAbaque.isClosed && selectedTicketAbaque.finalDeviation !== null && (
-                      <div className="mt-2 text-xs font-medium">
-                        Écart final : <span className={selectedTicketAbaque.finalDeviation > 0 ? 'text-red-600' : 'text-emerald-600'}>
-                          {selectedTicketAbaque.finalDeviation > 0 ? '+' : ''}{selectedTicketAbaque.finalDeviation}j
-                        </span> vs standard
-                      </div>
-                    )}
-                    {selectedTicket!.chiffrageJustification && (
-                      <div className="mt-2 text-xs border-t pt-2">
-                        <span className="text-muted-foreground">Justification :</span>{' '}
-                        {selectedTicket!.chiffrageJustification}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground mb-2">History</h4>
-                  <div className="space-y-2">
-                    {(selectedTicket.history || []).map((evt) => (
-                      <div key={evt.id} className="flex gap-3 text-xs border-l-2 border-primary/30 pl-3 py-1">
-                        <span className="text-muted-foreground whitespace-nowrap">
-                          {new Date(evt.timestamp).toLocaleString()}
-                        </span>
-                        <div>
-                          <span className="font-medium">{userName(evt.userId)}</span>
-                          {evt.action === 'CREATED' && ' created this ticket'}
-                          {evt.action === 'STATUS_CHANGE' && (
-                            <> changed status from <Badge variant="outline" className="text-[10px] mx-0.5">{evt.fromValue}</Badge> to <Badge variant="outline" className="text-[10px] mx-0.5">{evt.toValue}</Badge></>
-                          )}
-                          {evt.action === 'ASSIGNED' && ` assigned to ${userName(evt.toValue)}`}
-                          {evt.action === 'COMMENT' && `: ${evt.comment}`}
-                          {evt.comment && evt.action !== 'COMMENT' && (
-                            <span className="block text-muted-foreground mt-0.5">{evt.comment}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {(!selectedTicket.history || selectedTicket.history.length === 0) && (
-                      <p className="text-xs text-muted-foreground">No history available.</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Log Work Session / StraTIME Imputation Modal */}
-      <Dialog open={showLogSession} onOpenChange={setShowLogSession}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Send className="h-4 w-4 text-blue-500" /> Imputation StraTIME
-            </DialogTitle>
-          </DialogHeader>
-          {sessionTicket && (
-            <div className="space-y-4">
-              <div className="rounded-lg border bg-muted/30 p-3 text-sm space-y-1">
-                <div><span className="text-muted-foreground">Ticket:</span> {sessionTicket.title}</div>
-                <div><span className="text-muted-foreground">Projet:</span> {projectName(sessionTicket.projectId)}</div>
-              </div>
-              <div>
-                <Label>Date</Label>
-                <Input type="date" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} />
-              </div>
-              <div>
-                <Label>Heures</Label>
-                <Input type="number" min={0.25} step={0.25} value={sessionHours} onChange={(e) => setSessionHours(e.target.value)} />
-                {sessionHours && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    = {formatHours(parseFloat(sessionHours) || 0)}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea value={sessionDesc} onChange={(e) => setSessionDesc(e.target.value)} rows={2} />
-              </div>
-
-              {ticketSessions.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-1">Imputations précédentes</h4>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {ticketSessions.map((ws) => (
-                      <div key={ws.id} className="flex items-center justify-between text-xs border rounded px-2 py-1">
-                        <span>{ws.date} — {formatHours(ws.hours)}</span>
-                        {ws.sentToStraTIME ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[9px]">Envoyé</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[9px]">Brouillon</Badge>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowLogSession(false)}>Annuler</Button>
-                <Button
-                  onClick={() => void submitSession()}
-                  disabled={isSendingStraTIME}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  {isSendingStraTIME ? (
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3 animate-spin" /> Envoi en cours...</span>
-                  ) : (
-                    <span className="flex items-center gap-1"><Send className="h-3 w-3" /> Envoyer à StraTIME</span>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
     </div>

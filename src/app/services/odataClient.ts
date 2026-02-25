@@ -479,6 +479,15 @@ export const TicketsAPI = {
     return response.value;
   },
 
+  async getById(id: string): Promise<Ticket | undefined> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return mockTickets.find((t) => t.id === id);
+    }
+    const response = await odataFetch<ODataSingleResponse<Ticket>>(`/Tickets('${id}')`);
+    return response.value;
+  },
+
   async create(ticket: Omit<Ticket, 'id' | 'createdAt'>): Promise<Ticket> {
     if (USE_MOCK_DATA) {
       await mockDelay();
@@ -875,13 +884,12 @@ export const ObjetsAPI = {
     return await odataFetch<Objet>(`/Objets('${id}')`);
   },
 
-  async create(objet: Omit<Objet, 'id' | 'createdAt'>): Promise<Objet> {
+  async create(objet: Omit<Objet, 'id'>): Promise<Objet> {
     if (USE_MOCK_DATA) {
       await mockDelay();
       const newObjet: Objet = {
         ...objet,
-        id: `obj${Date.now()}`,
-        createdAt: new Date().toISOString(),
+        id: `obj${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       };
       mockObjets.push(newObjet);
       return newObjet;

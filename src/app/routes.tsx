@@ -35,7 +35,6 @@ const CertifiedConsultants = lazy(() => import('./pages/manager/CertifiedConsult
 const GestionConges = lazy(() => import('./pages/manager/GestionConges').then(m => ({ default: m.GestionConges })));
 
 const ObjetDetail = lazy(() => import('./pages/shared/ObjetDetail').then(m => ({ default: m.ObjetDetail })));
-const ObjetsListPage = lazy(() => import('./pages/shared/ObjetsListPage').then(m => ({ default: m.ObjetsListPage })));
 
 const MyCertifications = lazy(() => import('./pages/consultant-tech/MyCertifications').then(m => ({ default: m.MyCertifications })));
 const MesConges = lazy(() => import('./pages/consultant-tech/MesConges').then(m => ({ default: m.MesConges })));
@@ -48,6 +47,8 @@ const ValidationImputations = lazy(() => import('./pages/chef-projet/ValidationI
 
 const CoordinateurDashboard = lazy(() => import('./pages/coordinateur/CoordinateurDashboard').then(m => ({ default: m.CoordinateurDashboard })));
 const CoordinateurTickets = lazy(() => import('./pages/coordinateur/CoordinateurTickets').then(m => ({ default: m.CoordinateurTickets })));
+
+const TicketDetailPage = lazy(() => import('./pages/shared/TicketDetailPage').then(m => ({ default: m.TicketDetailPage })));
 
 const ProfilePage = lazy(() => import('./pages/shared/Profile').then(m => ({ default: m.ProfilePage })));
 const SettingsPage = lazy(() => import('./pages/shared/Settings').then(m => ({ default: m.SettingsPage })));
@@ -231,6 +232,10 @@ export const router = createBrowserRouter([
             element: <SuspensePage><ManagerTickets /></SuspensePage>,
           },
           {
+            path: 'tickets/:ticketId',
+            element: <SuspensePage><TicketDetailPage /></SuspensePage>,
+          },
+          {
             path: 'certifications',
             element: <SuspensePage><CertifiedConsultants /></SuspensePage>,
           },
@@ -241,10 +246,6 @@ export const router = createBrowserRouter([
           {
             path: 'imputations',
             element: <SuspensePage><SharedMesImputations basePath="/manager" /></SuspensePage>,
-          },
-          {
-            path: 'objets',
-            element: <SuspensePage><ObjetsListPage basePath="/manager" /></SuspensePage>,
           },
           {
             path: 'objets/:id',
@@ -279,6 +280,10 @@ export const router = createBrowserRouter([
             element: <SuspensePage><TechTickets /></SuspensePage>,
           },
           {
+            path: 'tickets/:ticketId',
+            element: <SuspensePage><TicketDetailPage /></SuspensePage>,
+          },
+          {
             path: 'performance',
             element: <SuspensePage><MyPerformance /></SuspensePage>,
           },
@@ -293,10 +298,6 @@ export const router = createBrowserRouter([
           {
             path: 'imputations',
             element: <SuspensePage><MesImputations /></SuspensePage>,
-          },
-          {
-            path: 'objets',
-            element: <SuspensePage><ObjetsListPage basePath="/consultant-tech" /></SuspensePage>,
           },
           {
             path: 'objets/:id',
@@ -331,8 +332,8 @@ export const router = createBrowserRouter([
             element: <SuspensePage><FuncTickets /></SuspensePage>,
           },
           {
-            path: 'objets',
-            element: <SuspensePage><ObjetsListPage basePath="/consultant-func" /></SuspensePage>,
+            path: 'tickets/:ticketId',
+            element: <SuspensePage><TicketDetailPage /></SuspensePage>,
           },
           {
             path: 'objets/:id',
@@ -366,6 +367,10 @@ export const router = createBrowserRouter([
             path: 'imputations',
             element: <SuspensePage><SharedMesImputations basePath="/chef-projet" /></SuspensePage>,
           },
+          {
+            path: 'tickets/:ticketId',
+            element: <SuspensePage><TicketDetailPage /></SuspensePage>,
+          },
         ],
       },
 
@@ -387,6 +392,10 @@ export const router = createBrowserRouter([
             element: <SuspensePage><CoordinateurTickets /></SuspensePage>,
           },
           {
+            path: 'tickets/:ticketId',
+            element: <SuspensePage><TicketDetailPage /></SuspensePage>,
+          },
+          {
             path: 'allocations',
             element: <SuspensePage><ResourceAllocation basePath="/coordinateur" /></SuspensePage>,
           },
@@ -401,10 +410,6 @@ export const router = createBrowserRouter([
           {
             path: 'imputations',
             element: <SuspensePage><SharedMesImputations basePath="/coordinateur" /></SuspensePage>,
-          },
-          {
-            path: 'objets',
-            element: <SuspensePage><ObjetsListPage basePath="/coordinateur" /></SuspensePage>,
           },
           {
             path: 'objets/:id',

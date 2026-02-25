@@ -24,9 +24,15 @@ export type ImputationPeriodStatus = 'draft' | 'sent' | 'pending' | 'validated' 
 export interface Objet {
   id: string;
   projectId: string;
+  code: string;               // WRICEF code e.g. MM-001, SD-005
   name: string;
   description?: string;
+  module?: string;             // SAP module e.g. MM, SD, FI, CO, PP
+  devType?: DevType;
+  complexite?: TicketComplexite;
+  priorite?: TicketPriorite;
   createdAt: string;
+  createdBy?: string;
 }
 
 export interface Documentation {
@@ -83,6 +89,48 @@ export interface TicketEvent {
 }
 
 // ---------------------------------------------------------------------------
+// Message – Chat message on a ticket
+// ---------------------------------------------------------------------------
+
+export interface Message {
+  id: string;
+  ticketId: string;
+  senderId: string;
+  senderName: string;
+  senderRole: string;
+  content: string;
+  sentAt: string; // ISO datetime
+}
+
+// ---------------------------------------------------------------------------
+// ActivityEvent – Chronological event on a ticket
+// ---------------------------------------------------------------------------
+
+export type ActivityEventType =
+  | 'status_change'
+  | 'assignee_change'
+  | 'message_sent'
+  | 'work_session_logged'
+  | 'chiffrage_updated'
+  | 'comment_added'
+  | 'ticket_created'
+  | 'priority_change'
+  | 'straTIME_sent'
+  | 'abaque_exceeded';
+
+export interface ActivityEvent {
+  id: string;
+  ticketId: string;
+  type: ActivityEventType;
+  actorId: string;
+  actorName: string;
+  actorRole: string;
+  description: string;
+  metadata?: Record<string, unknown>;
+  occurredAt: string; // ISO datetime
+}
+
+// ---------------------------------------------------------------------------
 // Core entities
 // ---------------------------------------------------------------------------
 
@@ -101,6 +149,7 @@ export interface User {
 
 export interface Project {
   id: string;
+  code: string;                // Short project code for WRICEF generation e.g. SAPS, FIOR
   name: string;
   managerId: string;
   startDate: string;
@@ -197,8 +246,10 @@ export interface Ticket {
   complexite?: TicketComplexite;
   priorite?: TicketPriorite;    // 0=Critique, 1=Haute, 2=Moyenne, 3=Basse
   module?: string;              // SAP module (e.g. FI, CO, MM, SD, PP)
-  wricef: string;               // Auto-generated WRICEF code: {ProjectCode}-{Module}-{ObjetCode}-{Serial}
+  wricef: string;               // Auto-generated WRICEF code: {ProjectCode}-{ObjetCode}-{Serial}
   chiffrageJustification?: string; // Required when chiffrage exceeds abaque maxDays
+  messages?: Message[];
+  activityFeed?: ActivityEvent[];
 }
 
 export interface Notification {

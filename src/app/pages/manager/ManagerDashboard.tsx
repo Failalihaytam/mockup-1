@@ -8,19 +8,16 @@ import { Button } from '../../components/ui/button';
 import {
   AbaquesAPI,
   AllocationsAPI,
-  EvaluationsAPI,
   TasksAPI,
   TicketsAPI,
   UsersAPI,
 } from '../../services/odataClient';
-import { Abaque, Allocation, Evaluation, Task, Ticket, User } from '../../types/entities';
-import { TopPerformersWidget } from '../../components/business/TopPerformersWidget';
+import { Abaque, Allocation, Task, Ticket, User } from '../../types/entities';
 
 export const ManagerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [allAbaques, setAllAbaques] = useState<Abaque[]>([]);
@@ -30,10 +27,9 @@ export const ManagerDashboard: React.FC = () => {
     try {
       setLoadError(null);
       
-      const [fetchedTasks, fetchedUsers, fetchedEvaluations, fetchedAllocations, fetchedTickets, fetchedAbaques] = await Promise.all([
+      const [fetchedTasks, fetchedUsers, fetchedAllocations, fetchedTickets, fetchedAbaques] = await Promise.all([
         TasksAPI.getAll(),
         UsersAPI.getAll(),
-        EvaluationsAPI.getAll(),
         AllocationsAPI.getAll(),
         TicketsAPI.getAll(),
         AbaquesAPI.getAll(),
@@ -41,7 +37,6 @@ export const ManagerDashboard: React.FC = () => {
 
       setTasks(fetchedTasks);
       setUsers(fetchedUsers);
-      setEvaluations(fetchedEvaluations);
       setAllocations(fetchedAllocations);
       setAllTickets(fetchedTickets);
       setAllAbaques(fetchedAbaques);
@@ -202,8 +197,7 @@ export const ManagerDashboard: React.FC = () => {
           />
         </section>
 
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-3">
-          <TopPerformersWidget users={users} evaluations={evaluations} />
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
 
             <Card className="border-border/80 bg-card">
               <CardHeader>
@@ -241,13 +235,6 @@ export const ManagerDashboard: React.FC = () => {
                   onClick={() => navigate('/manager/allocations')}
                 >
                   Allocate Resources
-                </Button>
-                <Button
-                  className="w-full justify-start"
-                  variant="outline"
-                  onClick={() => navigate('/manager/evaluations')}
-                >
-                  New Evaluation
                 </Button>
               </CardContent>
             </Card>

@@ -45,6 +45,7 @@ const PRIORITY_OPTIONS: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 type DialogMode = 'create' | 'edit' | null;
 
 interface ProjectFormState {
+  code: string;
   name: string;
   description: string;
   status: ProjectStatus;
@@ -56,6 +57,7 @@ interface ProjectFormState {
 }
 
 const DEFAULT_FORM: ProjectFormState = {
+  code: '',
   name: '',
   description: '',
   status: 'PLANNED',
@@ -142,6 +144,7 @@ export const ProjectsEnhanced: React.FC = () => {
   const openEditDialog = (project: Project) => {
     setSelectedProject(project);
     setForm({
+      code: project.code,
       name: project.name,
       description: project.description,
       status: project.status,
@@ -168,6 +171,11 @@ export const ProjectsEnhanced: React.FC = () => {
       return;
     }
 
+    if (!form.code.trim()) {
+      toast.error('Project code is required');
+      return;
+    }
+
     if (!form.startDate || !form.endDate) {
       toast.error('Start and end dates are required');
       return;
@@ -187,6 +195,7 @@ export const ProjectsEnhanced: React.FC = () => {
     }
 
     const payload = {
+      code: form.code.trim().toUpperCase(),
       name: form.name.trim(),
       description: form.description.trim(),
       status: form.status,
@@ -447,7 +456,19 @@ export const ProjectsEnhanced: React.FC = () => {
 
           <form className="space-y-4" onSubmit={saveProject}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-1.5 md:col-span-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="project-code">Project Code</Label>
+                <Input
+                  id="project-code"
+                  value={form.code}
+                  onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))}
+                  placeholder="SAPS"
+                  maxLength={8}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
                 <Label htmlFor="project-name">Project Name</Label>
                 <Input
                   id="project-name"
