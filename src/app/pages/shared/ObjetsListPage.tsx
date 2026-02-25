@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { PageHeader } from '../../components/common/PageHeader';
-import { ObjetsAPI, ProjectsAPI, TicketsAPI, SFDsAPI } from '../../services/odataClient';
-import { Objet, Project, Ticket, SFD, DevType } from '../../types/entities';
+import { ObjetsAPI, ProjectsAPI, TicketsAPI, DocumentationsAPI } from '../../services/odataClient';
+import { Objet, Project, Ticket, Documentation, DevType } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
 import {
   FileText,
@@ -62,7 +62,7 @@ export const ObjetsListPage: React.FC<ObjetsListPageProps> = ({ basePath }) => {
   const [objets, setObjets] = useState<Objet[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [sfds, setSfds] = useState<SFD[]>([]);
+  const [docs, setDocs] = useState<Documentation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [projectFilter, setProjectFilter] = useState<string>('ALL');
@@ -79,16 +79,16 @@ export const ObjetsListPage: React.FC<ObjetsListPageProps> = ({ basePath }) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [objetData, projectData, ticketData, sfdData] = await Promise.all([
+      const [objetData, projectData, ticketData, docData] = await Promise.all([
         ObjetsAPI.getAll(),
         ProjectsAPI.getAll(),
         TicketsAPI.getAll(),
-        SFDsAPI.getAll(),
+        DocumentationsAPI.getAll(),
       ]);
       setObjets(objetData);
       setProjects(projectData);
       setTickets(ticketData);
-      setSfds(sfdData);
+      setDocs(docData);
     } finally {
       setLoading(false);
     }
@@ -98,9 +98,9 @@ export const ObjetsListPage: React.FC<ObjetsListPageProps> = ({ basePath }) => {
 
   // Stats per objet
   const objetStats = useMemo(() => {
-    const map: Record<string, { ticketCount: number; openTickets: number; sfdCount: number; devTypes: Set<string> }> = {};
+    const map: Record<string, { ticketCount: number; openTickets: number; docCount: number; devTypes: Set<string> }> = {};
     objets.forEach((o) => {
-      map[o.id] = { ticketCount: 0, openTickets: 0, sfdCount: 0, devTypes: new Set() };
+      map[o.id] = { ticketCount: 0, openTickets: 0, docCount: 0, devTypes: new Set() };
     });
     tickets.forEach((t) => {
       if (t.objetId && map[t.objetId]) {
@@ -111,11 +111,11 @@ export const ObjetsListPage: React.FC<ObjetsListPageProps> = ({ basePath }) => {
         if (t.devType) map[t.objetId].devTypes.add(t.devType);
       }
     });
-    sfds.forEach((s) => {
-      if (map[s.objetId]) map[s.objetId].sfdCount++;
+    docs.forEach((d) => {
+      if (map[d.objetId]) map[d.objetId].docCount++;
     });
     return map;
-  }, [objets, tickets, sfds]);
+  }, [objets, tickets, docs]);
 
   const filteredObjets = useMemo(() => {
     return objets.filter((o) => {
@@ -226,9 +226,9 @@ export const ObjetsListPage: React.FC<ObjetsListPageProps> = ({ basePath }) => {
           </div>
           <div className="rounded-lg border bg-card p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <FileText className="h-4 w-4" /> SFDs
+              <FileText className="h-4 w-4" /> Documentations
             </div>
-            <p className="text-2xl font-bold">{sfds.length}</p>
+            <p className="text-2xl font-bold">{docs.length}</p>
           </div>
         </div>
 
@@ -243,7 +243,7 @@ export const ObjetsListPage: React.FC<ObjetsListPageProps> = ({ basePath }) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredObjets.map((objet) => {
-              const stats = objetStats[objet.id] ?? { ticketCount: 0, openTickets: 0, sfdCount: 0, devTypes: new Set() };
+              const stats = objetStats[objet.id] ?? { ticketCount: 0, openTickets: 0, docCount: 0, devTypes: new Set() };
               return (
                 <Card
                   key={objet.id}
@@ -280,7 +280,7 @@ export const ObjetsListPage: React.FC<ObjetsListPageProps> = ({ basePath }) => {
                       )}
                       <span className="flex items-center gap-1">
                         <FileText className="h-3 w-3" />
-                        {stats.sfdCount} SFD{stats.sfdCount !== 1 ? 's' : ''}
+                        {stats.docCount} doc{stats.docCount !== 1 ? 's' : ''}
                       </span>
                     </div>
 

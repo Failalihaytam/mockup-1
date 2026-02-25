@@ -25,6 +25,10 @@ export const getDefaultRouteForRole = (role: UserRole): string => {
       return '/consultant-tech/dashboard';
     case 'CONSULTANT_FONCTIONNEL':
       return '/consultant-func/dashboard';
+    case 'CHEF_DE_PROJET':
+      return '/chef-projet/dashboard';
+    case 'COORDINATEUR_DEV':
+      return '/coordinateur/dashboard';
     default:
       return '/dashboard';
   }

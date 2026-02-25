@@ -123,7 +123,7 @@ const navigationItems: NavItem[] = [
     section: 'Manager',
   },
   {
-    label: 'Imputations',
+    label: 'Mes Imputations',
     path: '/manager/imputations',
     icon: Clock,
     roles: ['MANAGER'],
@@ -227,6 +227,78 @@ const navigationItems: NavItem[] = [
     roles: ['CONSULTANT_FONCTIONNEL'],
     section: 'Functional Consultant',
   },
+  // Chef de Projet
+  {
+    label: 'Dashboard',
+    path: '/chef-projet/dashboard',
+    icon: BarChart3,
+    roles: ['CHEF_DE_PROJET'],
+    section: 'Chef de Projet',
+  },
+  {
+    label: 'Validation',
+    path: '/chef-projet/validation',
+    icon: ClipboardList,
+    roles: ['CHEF_DE_PROJET'],
+    section: 'Chef de Projet',
+  },
+  {
+    label: 'Suivi Global',
+    path: '/chef-projet/suivi',
+    icon: FolderKanban,
+    roles: ['CHEF_DE_PROJET'],
+    section: 'Chef de Projet',
+  },
+  {
+    label: 'Imputations',
+    path: '/chef-projet/imputations',
+    icon: Clock,
+    roles: ['CHEF_DE_PROJET'],
+    section: 'Chef de Projet',
+  },
+  // Coordinateur Dev
+  {
+    label: 'Dashboard',
+    path: '/coordinateur/dashboard',
+    icon: Gauge,
+    roles: ['COORDINATEUR_DEV'],
+    section: 'Coordinateur Dev',
+  },
+  {
+    label: 'Tickets Équipe',
+    path: '/coordinateur/tickets',
+    icon: Ticket,
+    roles: ['COORDINATEUR_DEV'],
+    section: 'Coordinateur Dev',
+  },
+  {
+    label: 'Allocations',
+    path: '/coordinateur/allocations',
+    icon: LayoutDashboard,
+    roles: ['COORDINATEUR_DEV'],
+    section: 'Coordinateur Dev',
+  },
+  {
+    label: 'Projets',
+    path: '/coordinateur/projects',
+    icon: FolderKanban,
+    roles: ['COORDINATEUR_DEV'],
+    section: 'Coordinateur Dev',
+  },
+  {
+    label: 'Imputations',
+    path: '/coordinateur/imputations',
+    icon: Clock,
+    roles: ['COORDINATEUR_DEV'],
+    section: 'Coordinateur Dev',
+  },
+  {
+    label: 'Objets',
+    path: '/coordinateur/objets',
+    icon: FolderOpen,
+    roles: ['COORDINATEUR_DEV'],
+    section: 'Coordinateur Dev',
+  },
 ];
 
 interface SidebarProps {
@@ -241,6 +313,8 @@ const roleLabel: Record<UserRole, string> = {
   MANAGER: 'Manager',
   CONSULTANT_TECHNIQUE: 'Technical Consultant',
   CONSULTANT_FONCTIONNEL: 'Functional Consultant',
+  CHEF_DE_PROJET: 'Chef de Projet',
+  COORDINATEUR_DEV: 'Coordinateur Dev',
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({

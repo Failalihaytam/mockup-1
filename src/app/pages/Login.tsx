@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import { ArrowRight, Briefcase, FileSearch, ShieldCheck, Wrench } from 'lucide-react';
+import { ArrowRight, Briefcase, FileSearch, FolderKanban, ShieldCheck, Users, Wrench } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -61,6 +61,16 @@ export const Login: React.FC = () => {
       email: 'sophie.bernard@company.com',
       role: 'Functional Consultant',
       icon: FileSearch,
+    },
+    {
+      email: 'claire.lefebvre@company.com',
+      role: 'Chef de Projet',
+      icon: FolderKanban,
+    },
+    {
+      email: 'thomas.girard@company.com',
+      role: 'Coordinateur Dev',
+      icon: Users,
     },
   ];
 

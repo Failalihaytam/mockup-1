@@ -66,7 +66,11 @@ const EMPTY_FORM: NewAllocationForm = {
 const rangesOverlap = (startA: string, endA: string, startB: string, endB: string) =>
   !(endA < startB || endB < startA);
 
-export const ResourceAllocation: React.FC = () => {
+interface ResourceAllocationProps {
+  basePath?: string;
+}
+
+export const ResourceAllocation: React.FC<ResourceAllocationProps> = ({ basePath = '/manager' }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [allocations, setAllocations] = useState<Allocation[]>([]);
@@ -309,7 +313,7 @@ export const ResourceAllocation: React.FC = () => {
         title="Resource Allocation"
         subtitle="Assign consultants to projects and monitor allocation rates"
         breadcrumbs={[
-          { label: 'Home', path: '/manager/dashboard' },
+          { label: 'Home', path: `${basePath}/dashboard` },
           { label: 'Resource Allocation' },
         ]}
       />

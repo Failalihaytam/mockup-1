@@ -33,7 +33,6 @@ const FuncTickets = lazy(() => import('./pages/consultant-func/Tickets').then(m 
 const ManagerTickets = lazy(() => import('./pages/manager/ManagerTickets').then(m => ({ default: m.ManagerTickets })));
 const CertifiedConsultants = lazy(() => import('./pages/manager/CertifiedConsultants').then(m => ({ default: m.CertifiedConsultants })));
 const GestionConges = lazy(() => import('./pages/manager/GestionConges').then(m => ({ default: m.GestionConges })));
-const ImputationsEquipe = lazy(() => import('./pages/manager/ImputationsEquipe').then(m => ({ default: m.ImputationsEquipe })));
 
 const ObjetDetail = lazy(() => import('./pages/shared/ObjetDetail').then(m => ({ default: m.ObjetDetail })));
 const ObjetsListPage = lazy(() => import('./pages/shared/ObjetsListPage').then(m => ({ default: m.ObjetsListPage })));
@@ -41,6 +40,14 @@ const ObjetsListPage = lazy(() => import('./pages/shared/ObjetsListPage').then(m
 const MyCertifications = lazy(() => import('./pages/consultant-tech/MyCertifications').then(m => ({ default: m.MyCertifications })));
 const MesConges = lazy(() => import('./pages/consultant-tech/MesConges').then(m => ({ default: m.MesConges })));
 const MesImputations = lazy(() => import('./pages/consultant-tech/MesImputations').then(m => ({ default: m.MesImputations })));
+
+const SharedMesImputations = lazy(() => import('./pages/shared/MesImputations').then(m => ({ default: m.MesImputations })));
+
+const ChefProjetDashboard = lazy(() => import('./pages/chef-projet/ChefProjetDashboard').then(m => ({ default: m.ChefProjetDashboard })));
+const ValidationImputations = lazy(() => import('./pages/chef-projet/ValidationImputations').then(m => ({ default: m.ValidationImputations })));
+
+const CoordinateurDashboard = lazy(() => import('./pages/coordinateur/CoordinateurDashboard').then(m => ({ default: m.CoordinateurDashboard })));
+const CoordinateurTickets = lazy(() => import('./pages/coordinateur/CoordinateurTickets').then(m => ({ default: m.CoordinateurTickets })));
 
 const ProfilePage = lazy(() => import('./pages/shared/Profile').then(m => ({ default: m.ProfilePage })));
 const SettingsPage = lazy(() => import('./pages/shared/Settings').then(m => ({ default: m.SettingsPage })));
@@ -233,7 +240,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'imputations',
-            element: <SuspensePage><ImputationsEquipe /></SuspensePage>,
+            element: <SuspensePage><SharedMesImputations basePath="/manager" /></SuspensePage>,
           },
           {
             path: 'objets',
@@ -262,6 +269,10 @@ export const router = createBrowserRouter([
           {
             path: 'projects',
             element: <SuspensePage><MyProjects /></SuspensePage>,
+          },
+          {
+            path: 'projects/:id',
+            element: <SuspensePage><ProjectDetails basePath="/consultant-tech" /></SuspensePage>,
           },
           {
             path: 'tickets',
@@ -322,6 +333,78 @@ export const router = createBrowserRouter([
           {
             path: 'objets',
             element: <SuspensePage><ObjetsListPage basePath="/consultant-func" /></SuspensePage>,
+          },
+          {
+            path: 'objets/:id',
+            element: <SuspensePage><ObjetDetail /></SuspensePage>,
+          },
+        ],
+      },
+
+      // Chef de Projet routes
+      {
+        path: 'chef-projet',
+        element: <RequireRole allowedRoles={['CHEF_DE_PROJET']} />,
+        children: [
+          {
+            index: true,
+            element: <Navigate to="dashboard" replace />,
+          },
+          {
+            path: 'dashboard',
+            element: <SuspensePage><ChefProjetDashboard /></SuspensePage>,
+          },
+          {
+            path: 'validation',
+            element: <SuspensePage><ValidationImputations /></SuspensePage>,
+          },
+          {
+            path: 'suivi',
+            element: <SuspensePage><Projects /></SuspensePage>,
+          },
+          {
+            path: 'imputations',
+            element: <SuspensePage><SharedMesImputations basePath="/chef-projet" /></SuspensePage>,
+          },
+        ],
+      },
+
+      // Coordinateur Dev routes
+      {
+        path: 'coordinateur',
+        element: <RequireRole allowedRoles={['COORDINATEUR_DEV']} />,
+        children: [
+          {
+            index: true,
+            element: <Navigate to="dashboard" replace />,
+          },
+          {
+            path: 'dashboard',
+            element: <SuspensePage><CoordinateurDashboard /></SuspensePage>,
+          },
+          {
+            path: 'tickets',
+            element: <SuspensePage><CoordinateurTickets /></SuspensePage>,
+          },
+          {
+            path: 'allocations',
+            element: <SuspensePage><ResourceAllocation basePath="/coordinateur" /></SuspensePage>,
+          },
+          {
+            path: 'projects',
+            element: <SuspensePage><MyProjects basePath="/coordinateur" /></SuspensePage>,
+          },
+          {
+            path: 'projects/:id',
+            element: <SuspensePage><ProjectDetails basePath="/coordinateur" /></SuspensePage>,
+          },
+          {
+            path: 'imputations',
+            element: <SuspensePage><SharedMesImputations basePath="/coordinateur" /></SuspensePage>,
+          },
+          {
+            path: 'objets',
+            element: <SuspensePage><ObjetsListPage basePath="/coordinateur" /></SuspensePage>,
           },
           {
             path: 'objets/:id',

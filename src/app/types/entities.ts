@@ -1,6 +1,6 @@
 // Entity types for SAP CAP Performance Management Platform
 
-export type UserRole = 'ADMIN' | 'MANAGER' | 'CONSULTANT_TECHNIQUE' | 'CONSULTANT_FONCTIONNEL';
+export type UserRole = 'ADMIN' | 'MANAGER' | 'CONSULTANT_TECHNIQUE' | 'CONSULTANT_FONCTIONNEL' | 'CHEF_DE_PROJET' | 'COORDINATEUR_DEV';
 
 export type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE' | 'CANCELLED';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
@@ -13,8 +13,12 @@ export type CertificationStatus = 'VALID' | 'EXPIRING_SOON' | 'EXPIRED';
 export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type DevType = 'Formulaire' | 'Report' | 'Enhancement' | 'Programme';
 
+export type TicketComplexite = 'Simple' | 'Moyen' | 'Complexe' | 'Très Complexe';
+export type TicketPriorite = 0 | 1 | 2 | 3;
+export type ImputationPeriodStatus = 'draft' | 'sent' | 'pending' | 'validated' | 'rejected';
+
 // ---------------------------------------------------------------------------
-// Objet – Grouping container for tickets, docs & SFDs inside a project
+// Objet – Grouping container for tickets & documentations inside a project
 // ---------------------------------------------------------------------------
 
 export interface Objet {
@@ -25,7 +29,7 @@ export interface Objet {
   createdAt: string;
 }
 
-export interface SFD {
+export interface Documentation {
   id: string;
   objetId: string;
   title: string;
@@ -188,6 +192,13 @@ export interface Ticket {
   updatedAt?: string;
   history: TicketEvent[];
   workSessions?: WorkSession[];
+  // Section 2 fields
+  chiffrage?: number;           // Estimated hours
+  complexite?: TicketComplexite;
+  priorite?: TicketPriorite;    // 0=Critique, 1=Haute, 2=Moyenne, 3=Basse
+  module?: string;              // SAP module (e.g. FI, CO, MM, SD, PP)
+  wricef: string;               // Auto-generated WRICEF code: {ProjectCode}-{Module}-{ObjetCode}-{Serial}
+  chiffrageJustification?: string; // Required when chiffrage exceeds abaque maxDays
 }
 
 export interface Notification {
@@ -228,6 +239,48 @@ export interface LeaveRequest {
   managerId: string;
   createdAt: string;
   reviewedAt?: string;
+}
+
+export interface ImputationPeriod {
+  id: string;
+  userId: string;
+  year: number;
+  month: number;           // 1-12
+  period: 1 | 2;           // 1 = 1st–15th, 2 = 16th–end
+  totalHours: number;
+  status: ImputationPeriodStatus;
+  sentAt?: string;
+  validatedBy?: string;
+  validatedAt?: string;
+  rejectionReason?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Abaque – Reference estimation grid agreed with the client
+// ---------------------------------------------------------------------------
+
+export interface AbaqueEntry {
+  id: string;
+  devType: DevType;
+  complexite: TicketComplexite;
+  priorite: TicketPriorite;
+  maxDays: number;
+  standardDays: number;
+  notes?: string;
+}
+
+export interface Abaque {
+  id: string;
+  projectId: string;
+  title: string;
+  version: string;
+  createdAt: string;
+  createdBy: string;
+  lastUpdatedAt: string;
+  lastUpdatedBy: string;
+  approvedByClient: boolean;
+  approvedAt?: string;
+  entries: AbaqueEntry[];
 }
 
 export interface KPI {

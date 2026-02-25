@@ -16,7 +16,9 @@ import {
   LeaveRequest,
   WorkSession,
   Objet,
-  SFD,
+  Documentation,
+  ImputationPeriod,
+  Abaque,
 } from '../types/entities';
 
 import {
@@ -33,7 +35,9 @@ import {
   mockLeaveRequests,
   mockWorkSessions,
   mockObjets,
-  mockSFDs,
+  mockDocumentations,
+  mockImputationPeriods,
+  mockAbaques,
 } from './mockData';
 
 // Configuration
@@ -813,6 +817,29 @@ export const WorkSessionsAPI = {
       method: 'POST',
     });
   },
+
+  async sendBatchToStraTIME(ids: string[]): Promise<WorkSession[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay(1500);
+      const results: WorkSession[] = [];
+      for (const id of ids) {
+        const index = mockWorkSessions.findIndex((ws) => ws.id === id);
+        if (index !== -1) {
+          mockWorkSessions[index] = {
+            ...mockWorkSessions[index],
+            sentToStraTIME: true,
+            sentAt: new Date().toISOString(),
+          };
+          results.push(mockWorkSessions[index]);
+        }
+      }
+      return results;
+    }
+    return await odataFetch<WorkSession[]>('/WorkSessions/sendBatch', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    });
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -897,58 +924,58 @@ export const ObjetsAPI = {
 };
 
 // ---------------------------------------------------------------------------
-// SFDs API
+// Documentations API
 // ---------------------------------------------------------------------------
 
-export const SFDsAPI = {
-  async getAll(): Promise<SFD[]> {
+export const DocumentationsAPI = {
+  async getAll(): Promise<Documentation[]> {
     if (USE_MOCK_DATA) {
       await mockDelay();
-      return [...mockSFDs];
+      return [...mockDocumentations];
     }
-    const response = await odataFetch<ODataResponse<SFD>>('/SFDs');
+    const response = await odataFetch<ODataResponse<Documentation>>('/Documentations');
     return response.value;
   },
 
-  async getByObjet(objetId: string): Promise<SFD[]> {
+  async getByObjet(objetId: string): Promise<Documentation[]> {
     if (USE_MOCK_DATA) {
       await mockDelay();
-      return mockSFDs.filter((s) => s.objetId === objetId);
+      return mockDocumentations.filter((d) => d.objetId === objetId);
     }
-    const response = await odataFetch<ODataResponse<SFD>>(
-      `/SFDs?$filter=objetId eq '${objetId}'`
+    const response = await odataFetch<ODataResponse<Documentation>>(
+      `/Documentations?$filter=objetId eq '${objetId}'`
     );
     return response.value;
   },
 
-  async create(sfd: Omit<SFD, 'id' | 'createdAt'>): Promise<SFD> {
+  async create(doc: Omit<Documentation, 'id' | 'createdAt'>): Promise<Documentation> {
     if (USE_MOCK_DATA) {
       await mockDelay();
-      const newSFD: SFD = {
-        ...sfd,
-        id: `sfd${Date.now()}`,
+      const newDoc: Documentation = {
+        ...doc,
+        id: `doc${Date.now()}`,
         createdAt: new Date().toISOString(),
       };
-      mockSFDs.push(newSFD);
-      return newSFD;
+      mockDocumentations.push(newDoc);
+      return newDoc;
     }
-    return await odataFetch<SFD>('/SFDs', {
+    return await odataFetch<Documentation>('/Documentations', {
       method: 'POST',
-      body: JSON.stringify(sfd),
+      body: JSON.stringify(doc),
     });
   },
 
-  async update(id: string, data: Partial<SFD>): Promise<SFD> {
+  async update(id: string, data: Partial<Documentation>): Promise<Documentation> {
     if (USE_MOCK_DATA) {
       await mockDelay();
-      const index = mockSFDs.findIndex((s) => s.id === id);
+      const index = mockDocumentations.findIndex((d) => d.id === id);
       if (index !== -1) {
-        mockSFDs[index] = { ...mockSFDs[index], ...data, updatedAt: new Date().toISOString() };
-        return mockSFDs[index];
+        mockDocumentations[index] = { ...mockDocumentations[index], ...data, updatedAt: new Date().toISOString() };
+        return mockDocumentations[index];
       }
-      throw new Error('SFD not found');
+      throw new Error('Documentation not found');
     }
-    return await odataFetch<SFD>(`/SFDs('${id}')`, {
+    return await odataFetch<Documentation>(`/Documentations('${id}')`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -957,14 +984,132 @@ export const SFDsAPI = {
   async delete(id: string): Promise<void> {
     if (USE_MOCK_DATA) {
       await mockDelay();
-      const index = mockSFDs.findIndex((s) => s.id === id);
+      const index = mockDocumentations.findIndex((d) => d.id === id);
       if (index !== -1) {
-        mockSFDs.splice(index, 1);
+        mockDocumentations.splice(index, 1);
       }
       return;
     }
-    await odataFetch<void>(`/SFDs('${id}')`, {
+    await odataFetch<void>(`/Documentations('${id}')`, {
       method: 'DELETE',
+    });
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Imputation Periods API
+// ---------------------------------------------------------------------------
+
+export const ImputationPeriodsAPI = {
+  async getAll(): Promise<ImputationPeriod[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return [...mockImputationPeriods];
+    }
+    const response = await odataFetch<ODataResponse<ImputationPeriod>>('/ImputationPeriods');
+    return response.value;
+  },
+
+  async getByUser(userId: string): Promise<ImputationPeriod[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return mockImputationPeriods.filter((ip) => ip.userId === userId);
+    }
+    const response = await odataFetch<ODataResponse<ImputationPeriod>>(
+      `/ImputationPeriods?$filter=userId eq '${userId}'`
+    );
+    return response.value;
+  },
+
+  async create(ip: Omit<ImputationPeriod, 'id'>): Promise<ImputationPeriod> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const created: ImputationPeriod = { ...ip, id: `ip${Date.now()}` };
+      mockImputationPeriods.push(created);
+      return created;
+    }
+    return await odataFetch<ImputationPeriod>('/ImputationPeriods', {
+      method: 'POST',
+      body: JSON.stringify(ip),
+    });
+  },
+
+  async update(id: string, data: Partial<ImputationPeriod>): Promise<ImputationPeriod> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const index = mockImputationPeriods.findIndex((ip) => ip.id === id);
+      if (index !== -1) {
+        mockImputationPeriods[index] = { ...mockImputationPeriods[index], ...data };
+        return mockImputationPeriods[index];
+      }
+      throw new Error('Imputation period not found');
+    }
+    return await odataFetch<ImputationPeriod>(`/ImputationPeriods('${id}')`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Abaques API
+// ---------------------------------------------------------------------------
+
+export const AbaquesAPI = {
+  async getAll(): Promise<Abaque[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return [...mockAbaques];
+    }
+    const response = await odataFetch<ODataResponse<Abaque>>('/Abaques');
+    return response.value;
+  },
+
+  async getByProject(projectId: string): Promise<Abaque[]> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return mockAbaques.filter((a) => a.projectId === projectId);
+    }
+    const response = await odataFetch<ODataResponse<Abaque>>(
+      `/Abaques?$filter=projectId eq '${projectId}'`
+    );
+    return response.value;
+  },
+
+  async getById(id: string): Promise<Abaque | null> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      return mockAbaques.find((a) => a.id === id) ?? null;
+    }
+    return await odataFetch<Abaque>(`/Abaques('${id}')`);
+  },
+
+  async create(abaque: Omit<Abaque, 'id'>): Promise<Abaque> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const created: Abaque = { ...abaque, id: `abq${Date.now()}` };
+      mockAbaques.push(created);
+      return created;
+    }
+    return await odataFetch<Abaque>('/Abaques', {
+      method: 'POST',
+      body: JSON.stringify(abaque),
+    });
+  },
+
+  async update(id: string, data: Partial<Abaque>): Promise<Abaque> {
+    if (USE_MOCK_DATA) {
+      await mockDelay();
+      const index = mockAbaques.findIndex((a) => a.id === id);
+      if (index !== -1) {
+        mockAbaques[index] = { ...mockAbaques[index], ...data, lastUpdatedAt: new Date().toISOString() };
+        return mockAbaques[index];
+      }
+      throw new Error('Abaque not found');
+    }
+    return await odataFetch<Abaque>(`/Abaques('${id}')`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
     });
   },
 };

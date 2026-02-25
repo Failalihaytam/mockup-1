@@ -165,7 +165,7 @@ Use the **"Switch User (Demo)"** button in the top bar to quickly test different
 
 The application includes realistic mock data:
 - **5 Users** (one per role)
-- **3 Projects** (S/4HANA Migration, Fiori Launchpad, Analytics Dashboard)
+- **3 Projects** (S/4HANA Migration, Fiori Launchpad, BI Reporting Platform)
 - **6 Tasks** with various statuses
 - **Timesheets, Evaluations, Deliverables, Tickets**
 - **Chart data** for dashboards

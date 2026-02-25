@@ -3,14 +3,14 @@ import { useParams, useNavigate } from 'react-router';
 import { PageHeader } from '../../components/common/PageHeader';
 import {
   ObjetsAPI,
-  SFDsAPI,
+  DocumentationsAPI,
   TicketsAPI,
   ProjectsAPI,
   UsersAPI,
 } from '../../services/odataClient';
-import { Objet, SFD, Ticket, Project, User, DevType } from '../../types/entities';
+import { Objet, Documentation, Ticket, Project, User, DevType } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
-import { ArrowLeft, FileText, FolderOpen, Layers, Plus, Pencil, Save, X } from 'lucide-react';
+import { ArrowLeft, FileText, Layers, Plus, Pencil, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -54,7 +54,7 @@ const devTypeColor: Record<DevType, string> = {
 // Tab type
 // ---------------------------------------------------------------------------
 
-type TabKey = 'tickets' | 'documentation' | 'sfds';
+type TabKey = 'tickets' | 'documentation';
 
 // ---------------------------------------------------------------------------
 // Component
@@ -68,21 +68,21 @@ export const ObjetDetail: React.FC = () => {
   const [objet, setObjet] = useState<Objet | null>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [sfds, setSfds] = useState<SFD[]>([]);
+  const [docs, setDocs] = useState<Documentation[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>('tickets');
 
-  // SFD editing
-  const [editingSFD, setEditingSFD] = useState<SFD | null>(null);
-  const [sfdContent, setSfdContent] = useState('');
-  const [sfdTitle, setSfdTitle] = useState('');
-  const [showCreateSFD, setShowCreateSFD] = useState(false);
-  const [newSFDTitle, setNewSFDTitle] = useState('');
-  const [newSFDContent, setNewSFDContent] = useState('');
+  // Documentation editing
+  const [editingDoc, setEditingDoc] = useState<Documentation | null>(null);
+  const [docContent, setDocContent] = useState('');
+  const [docTitle, setDocTitle] = useState('');
+  const [showCreateDoc, setShowCreateDoc] = useState(false);
+  const [newDocTitle, setNewDocTitle] = useState('');
+  const [newDocContent, setNewDocContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const canEditSFD = currentUser?.role === 'MANAGER' || currentUser?.role === 'CONSULTANT_FONCTIONNEL';
+  const canEditDoc = currentUser?.role === 'MANAGER' || currentUser?.role === 'CONSULTANT_FONCTIONNEL';
 
   useEffect(() => {
     if (!id) return;
@@ -92,15 +92,15 @@ export const ObjetDetail: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [objetData, allTickets, sfdData, userData] = await Promise.all([
+      const [objetData, allTickets, docData, userData] = await Promise.all([
         ObjetsAPI.getById(id!),
         TicketsAPI.getAll(),
-        SFDsAPI.getByObjet(id!),
+        DocumentationsAPI.getByObjet(id!),
         UsersAPI.getAll(),
       ]);
       setObjet(objetData);
       setTickets(allTickets.filter((t) => t.objetId === id));
-      setSfds(sfdData);
+      setDocs(docData);
       setUsers(userData);
 
       if (objetData) {
@@ -114,32 +114,32 @@ export const ObjetDetail: React.FC = () => {
 
   const userName = (uid?: string) => users.find((u) => u.id === uid)?.name ?? '-';
 
-  // SFD actions
-  const startEditSFD = (sfd: SFD) => {
-    setEditingSFD(sfd);
-    setSfdTitle(sfd.title);
-    setSfdContent(sfd.content);
+  // Documentation actions
+  const startEditDoc = (doc: Documentation) => {
+    setEditingDoc(doc);
+    setDocTitle(doc.title);
+    setDocContent(doc.content);
   };
 
-  const cancelEditSFD = () => {
-    setEditingSFD(null);
-    setSfdTitle('');
-    setSfdContent('');
+  const cancelEditDoc = () => {
+    setEditingDoc(null);
+    setDocTitle('');
+    setDocContent('');
   };
 
-  const saveSFD = async () => {
-    if (!editingSFD || !currentUser) return;
+  const saveDoc = async () => {
+    if (!editingDoc || !currentUser) return;
     try {
       setIsSaving(true);
-      const updated = await SFDsAPI.update(editingSFD.id, {
-        title: sfdTitle.trim(),
-        content: sfdContent,
-        version: editingSFD.version + 1,
+      const updated = await DocumentationsAPI.update(editingDoc.id, {
+        title: docTitle.trim(),
+        content: docContent,
+        version: editingDoc.version + 1,
         updatedBy: currentUser.id,
       });
-      setSfds((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-      cancelEditSFD();
-      toast.success('SFD mise à jour');
+      setDocs((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+      cancelEditDoc();
+      toast.success('Documentation mise à jour');
     } catch {
       toast.error('Erreur lors de la sauvegarde');
     } finally {
@@ -147,26 +147,26 @@ export const ObjetDetail: React.FC = () => {
     }
   };
 
-  const createSFD = async () => {
+  const createDoc = async () => {
     if (!currentUser || !objet) return;
-    if (!newSFDTitle.trim()) {
+    if (!newDocTitle.trim()) {
       toast.error('Le titre est requis');
       return;
     }
     try {
       setIsSaving(true);
-      const created = await SFDsAPI.create({
+      const created = await DocumentationsAPI.create({
         objetId: objet.id,
-        title: newSFDTitle.trim(),
-        content: newSFDContent,
+        title: newDocTitle.trim(),
+        content: newDocContent,
         version: 1,
         createdBy: currentUser.id,
       });
-      setSfds((prev) => [...prev, created]);
-      setShowCreateSFD(false);
-      setNewSFDTitle('');
-      setNewSFDContent('');
-      toast.success('SFD créée');
+      setDocs((prev) => [...prev, created]);
+      setShowCreateDoc(false);
+      setNewDocTitle('');
+      setNewDocContent('');
+      toast.success('Documentation créée');
     } catch {
       toast.error('Erreur lors de la création');
     } finally {
@@ -195,8 +195,7 @@ export const ObjetDetail: React.FC = () => {
 
   const tabs: { key: TabKey; label: string; icon: React.ElementType; count: number }[] = [
     { key: 'tickets', label: 'Tickets', icon: Layers, count: tickets.length },
-    { key: 'documentation', label: 'Documentation', icon: FileText, count: project?.documentation ? 1 : 0 },
-    { key: 'sfds', label: 'SFDs', icon: FolderOpen, count: sfds.length },
+    { key: 'documentation', label: 'Documentation', icon: FileText, count: docs.length },
   ];
 
   return (
@@ -258,79 +257,65 @@ export const ObjetDetail: React.FC = () => {
 
         {/* Documentation Tab */}
         {activeTab === 'documentation' && (
-          <div className="rounded-lg border bg-card p-6">
-            <h3 className="text-sm font-semibold mb-4">Documentation Projet</h3>
-            {project?.documentation ? (
-              <div className="prose dark:prose-invert max-w-none text-sm whitespace-pre-wrap">
-                {project.documentation}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Aucune documentation disponible.</p>
-            )}
-          </div>
-        )}
-
-        {/* SFDs Tab */}
-        {activeTab === 'sfds' && (
           <div className="space-y-4">
-            {canEditSFD && (
+            {canEditDoc && (
               <div className="flex justify-end">
-                <Button size="sm" onClick={() => setShowCreateSFD(true)}>
-                  <Plus className="h-4 w-4 mr-1" /> Nouvelle SFD
+                <Button size="sm" onClick={() => setShowCreateDoc(true)}>
+                  <Plus className="h-4 w-4 mr-1" /> Nouvelle Documentation
                 </Button>
               </div>
             )}
 
-            {sfds.length === 0 ? (
+            {docs.length === 0 ? (
               <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground">
-                Aucune SFD pour cet objet.
+                Aucune documentation pour cet objet.
               </div>
             ) : (
-              sfds.map((sfd) => (
-                <div key={sfd.id} className="rounded-lg border bg-card">
+              docs.map((doc) => (
+                <div key={doc.id} className="rounded-lg border bg-card">
                   <div className="px-4 py-3 border-b flex items-center justify-between">
                     <div>
-                      {editingSFD?.id === sfd.id ? (
+                      {editingDoc?.id === doc.id ? (
                         <Input
-                          value={sfdTitle}
-                          onChange={(e) => setSfdTitle(e.target.value)}
+                          value={docTitle}
+                          onChange={(e) => setDocTitle(e.target.value)}
                           className="max-w-md"
                         />
                       ) : (
-                        <h4 className="text-sm font-semibold">{sfd.title}</h4>
+                        <h4 className="text-sm font-semibold">{doc.title}</h4>
                       )}
                       <div className="flex gap-2 text-xs text-muted-foreground mt-0.5">
-                        <span>v{sfd.version}</span>
-                        <span>par {userName(sfd.createdBy)}</span>
-                        {sfd.updatedBy && <span>· modifié par {userName(sfd.updatedBy)}</span>}
+                        <span>v{doc.version}</span>
+                        <span>par {userName(doc.createdBy)}</span>
+                        {doc.updatedBy && <span>· modifié par {userName(doc.updatedBy)}</span>}
                       </div>
                     </div>
-                    {canEditSFD && (
-                      editingSFD?.id === sfd.id ? (
+                    {canEditDoc && (
+                      editingDoc?.id === doc.id ? (
                         <div className="flex gap-1">
-                          <Button size="sm" variant="outline" onClick={cancelEditSFD}><X className="h-3 w-3" /></Button>
-                          <Button size="sm" onClick={() => void saveSFD()} disabled={isSaving}>
+                          <Button size="sm" variant="outline" onClick={cancelEditDoc}><X className="h-3 w-3" /></Button>
+                          <Button size="sm" onClick={() => void saveDoc()} disabled={isSaving}>
                             <Save className="h-3 w-3 mr-1" /> {isSaving ? 'Saving...' : 'Sauvegarder'}
                           </Button>
                         </div>
                       ) : (
-                        <Button size="sm" variant="outline" onClick={() => startEditSFD(sfd)}>
+                        <Button size="sm" variant="outline" onClick={() => startEditDoc(doc)}>
                           <Pencil className="h-3 w-3 mr-1" /> Modifier
                         </Button>
                       )
                     )}
                   </div>
                   <div className="p-4">
-                    {editingSFD?.id === sfd.id ? (
+                    {editingDoc?.id === doc.id ? (
                       <Textarea
-                        value={sfdContent}
-                        onChange={(e) => setSfdContent(e.target.value)}
+                        value={docContent}
+                        onChange={(e) => setDocContent(e.target.value)}
                         rows={12}
                         className="font-mono text-xs"
                       />
                     ) : (
                       <div className="prose dark:prose-invert max-w-none text-sm whitespace-pre-wrap">
-                        {sfd.content}
+                        {doc.content}
                       </div>
                     )}
                   </div>
@@ -341,30 +326,30 @@ export const ObjetDetail: React.FC = () => {
         )}
       </div>
 
-      {/* Create SFD Dialog */}
-      <Dialog open={showCreateSFD} onOpenChange={setShowCreateSFD}>
+      {/* Create Documentation Dialog */}
+      <Dialog open={showCreateDoc} onOpenChange={setShowCreateDoc}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Nouvelle SFD</DialogTitle>
+            <DialogTitle>Nouvelle Documentation</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label>Titre *</Label>
-              <Input value={newSFDTitle} onChange={(e) => setNewSFDTitle(e.target.value)} />
+              <Input value={newDocTitle} onChange={(e) => setNewDocTitle(e.target.value)} />
             </div>
             <div>
               <Label>Contenu (Markdown)</Label>
               <Textarea
-                value={newSFDContent}
-                onChange={(e) => setNewSFDContent(e.target.value)}
+                value={newDocContent}
+                onChange={(e) => setNewDocContent(e.target.value)}
                 rows={10}
                 className="font-mono text-xs"
                 placeholder="## Objectif&#10;&#10;Description ici..."
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowCreateSFD(false)}>Annuler</Button>
-              <Button onClick={() => void createSFD()} disabled={isSaving}>
+              <Button variant="outline" onClick={() => setShowCreateDoc(false)}>Annuler</Button>
+              <Button onClick={() => void createDoc()} disabled={isSaving}>
                 {isSaving ? 'Création...' : 'Créer'}
               </Button>
             </div>

@@ -2,21 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { EvaluationsAPI, TasksAPI, UsersAPI } from '../../services/odataClient';
 import { Evaluation, Task, User } from '../../types/entities';
-import { SkillsRadarChart } from '../../components/charts/SkillsRadarChart';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
 
 export const TeamPerformance: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedConsultant, setSelectedConsultant] = useState<string>('NONE');
 
   useEffect(() => {
     void loadData();
@@ -107,40 +98,6 @@ export const TeamPerformance: React.FC = () => {
               {workloadBalance.toFixed(1)} tasks
             </div>
           </div>
-        </div>
-
-        {/* Radar de Compétences - Consultant Selector */}
-        <div className="bg-card border border-border rounded-lg p-5 space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <h3 className="text-lg font-semibold text-foreground">Radar de Compétences</h3>
-            <Select value={selectedConsultant} onValueChange={setSelectedConsultant}>
-              <SelectTrigger className="w-52">
-                <SelectValue placeholder="Select consultant" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="NONE">Select a consultant</SelectItem>
-                {users.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {selectedConsultant !== 'NONE' && (() => {
-            const userEvals = evaluations.filter((ev) => ev.userId === selectedConsultant);
-            if (!userEvals.length) {
-              return <p className="text-sm text-muted-foreground">No evaluations available for this consultant.</p>;
-            }
-            const avg = (field: keyof Evaluation['qualitativeGrid']) =>
-              userEvals.reduce((s, ev) => s + ev.qualitativeGrid[field], 0) / userEvals.length;
-            const radarData = [
-              { axis: 'Productivity', value: avg('productivity'), fullMark: 5 },
-              { axis: 'Quality', value: avg('quality'), fullMark: 5 },
-              { axis: 'Autonomy', value: avg('autonomy'), fullMark: 5 },
-              { axis: 'Collaboration', value: avg('collaboration'), fullMark: 5 },
-              { axis: 'Innovation', value: avg('innovation'), fullMark: 5 },
-            ];
-            return <SkillsRadarChart data={radarData} />;
-          })()}
         </div>
 
         <div className="bg-card border border-border rounded-lg overflow-x-auto">

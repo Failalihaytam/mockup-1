@@ -1,11 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { PageHeader } from '../../components/common/PageHeader';
 import { ProjectsAPI, TasksAPI, UsersAPI } from '../../services/odataClient';
 import { Project, Task, User } from '../../types/entities';
 import { useAuth } from '../../context/AuthContext';
 
-export const MyProjects: React.FC = () => {
+interface MyProjectsProps {
+  basePath?: string;
+}
+
+export const MyProjects: React.FC<MyProjectsProps> = ({ basePath = '/consultant-tech' }) => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -54,7 +60,7 @@ export const MyProjects: React.FC = () => {
         title="My Projects"
         subtitle="Read-only overview of your assigned projects and tasks"
         breadcrumbs={[
-          { label: 'Home', path: '/consultant-tech/dashboard' },
+          { label: 'Home', path: `${basePath}/dashboard` },
           { label: 'My Projects' },
         ]}
       />
@@ -69,7 +75,11 @@ export const MyProjects: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {projectsWithStats.map(({ project, manager, done, blocked, progress, projectTasks }) => (
-              <div key={project.id} className="bg-card border border-border rounded-lg p-5 space-y-4">
+              <div
+                key={project.id}
+                className="bg-card border border-border rounded-lg p-5 space-y-4 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
+                onClick={() => navigate(`${basePath}/projects/${project.id}`)}
+              >
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">{project.name}</h3>
                   <p className="text-sm text-muted-foreground mt-1">{project.description}</p>

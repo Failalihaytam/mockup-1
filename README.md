@@ -262,7 +262,7 @@ The application includes comprehensive mock data for development and testing. Al
 
 **Mock Data Includes:**
 - 5 users (one per role)
-- 3 projects (S/4HANA Migration, Fiori Launchpad, Analytics Dashboard)
+- 3 projects (S/4HANA Migration, Fiori Launchpad, BI Reporting Platform)
 - 6 tasks with various statuses and priorities
 - Timesheets, evaluations, deliverables, tickets, and notifications
 - Chart data for dashboards

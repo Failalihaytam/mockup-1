@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { AlertTriangle } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
@@ -6,127 +6,45 @@ import { KPICard } from '../../components/common/KPICard';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import {
-  getAllocationByProject,
-  getConsultantWorkload,
-  getProjectProgressTrend,
-  getTasksByStatus,
-} from '../../services/mockData';
-import {
+  AbaquesAPI,
   AllocationsAPI,
   EvaluationsAPI,
   TasksAPI,
+  TicketsAPI,
   UsersAPI,
 } from '../../services/odataClient';
-import { Allocation, Evaluation, Task, User } from '../../types/entities';
+import { Abaque, Allocation, Evaluation, Task, Ticket, User } from '../../types/entities';
 import { TopPerformersWidget } from '../../components/business/TopPerformersWidget';
-
-interface TrendData {
-  month: string;
-  progress: number;
-}
-
-interface StatusData {
-  status: string;
-  count: number;
-}
-
-interface WorkloadData {
-  name: string;
-  planned: number;
-  actual: number;
-}
-
-interface AllocationData {
-  name: string;
-  value: number;
-}
-
-const ProjectProgressTrendChart = lazy(() =>
-  import('../../components/charts/ProjectProgressTrendChart').then((module) => ({
-    default: module.ProjectProgressTrendChart,
-  }))
-);
-
-const TaskDistributionChart = lazy(() =>
-  import('../../components/charts/TaskDistributionChart').then((module) => ({
-    default: module.TaskDistributionChart,
-  }))
-);
-
-const WorkloadComparisonChart = lazy(() =>
-  import('../../components/charts/WorkloadComparisonChart').then((module) => ({
-    default: module.WorkloadComparisonChart,
-  }))
-);
-
-const AllocationPortfolioChart = lazy(() =>
-  import('../../components/charts/AllocationPortfolioChart').then((module) => ({
-    default: module.AllocationPortfolioChart,
-  }))
-);
-
-const piePalette = [
-  'var(--color-chart-1)',
-  'var(--color-chart-2)',
-  'var(--color-chart-3)',
-  'var(--color-chart-4)',
-  'var(--color-chart-5)',
-];
-
-const ChartCardFallback: React.FC = () => (
-  <Card className="border-border/80 bg-card">
-    <CardHeader>
-      <CardTitle className="text-lg">Loading chart...</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div className="h-[220px] rounded-md bg-surface-2 sm:h-[280px]" />
-    </CardContent>
-  </Card>
-);
 
 export const ManagerDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [progressTrend, setProgressTrend] = useState<TrendData[]>([]);
-  const [tasksByStatus, setTasksByStatus] = useState<StatusData[]>([]);
-  const [consultantWorkload, setConsultantWorkload] = useState<WorkloadData[]>([]);
-  const [allocationData, setAllocationData] = useState<AllocationData[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [allocations, setAllocations] = useState<Allocation[]>([]);
+  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
+  const [allAbaques, setAllAbaques] = useState<Abaque[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
       setLoadError(null);
-      setProgressTrend(
-        getProjectProgressTrend().map((entry) => ({ month: entry.date, progress: entry.progress }))
-      );
-      setTasksByStatus(
-        getTasksByStatus().map((entry) => ({ status: entry.status, count: entry.count }))
-      );
-      setConsultantWorkload(
-        getConsultantWorkload().map((entry) => ({
-          name: entry.name,
-          planned: entry.planned,
-          actual: entry.actual,
-        }))
-      );
-      setAllocationData(
-        getAllocationByProject().map((entry) => ({ name: entry.project, value: entry.allocation }))
-      );
       
-      const [fetchedTasks, fetchedUsers, fetchedEvaluations, fetchedAllocations] = await Promise.all([
+      const [fetchedTasks, fetchedUsers, fetchedEvaluations, fetchedAllocations, fetchedTickets, fetchedAbaques] = await Promise.all([
         TasksAPI.getAll(),
         UsersAPI.getAll(),
         EvaluationsAPI.getAll(),
         AllocationsAPI.getAll(),
+        TicketsAPI.getAll(),
+        AbaquesAPI.getAll(),
       ]);
 
       setTasks(fetchedTasks);
       setUsers(fetchedUsers);
       setEvaluations(fetchedEvaluations);
       setAllocations(fetchedAllocations);
+      setAllTickets(fetchedTickets);
+      setAllAbaques(fetchedAbaques);
     } catch (error) {
       setLoadError('Unable to load dashboard data. Some metrics may be outdated.');
     }
@@ -182,6 +100,32 @@ export const ManagerDashboard: React.FC = () => {
     };
   }, [tasks]);
 
+  // ---------------------------------------------------------------------------
+  // Abaque conformity metrics
+  // ---------------------------------------------------------------------------
+  const abaqueMetrics = useMemo(() => {
+    let conformes = 0;
+    let depassementsCritiques = 0;
+    let total = 0;
+
+    allTickets.forEach((ticket) => {
+      if (!ticket.chiffrage || !ticket.devType || !ticket.complexite) return;
+      const approved = allAbaques.find((a) => a.projectId === ticket.projectId && a.approvedByClient);
+      if (!approved) return;
+      const entry = approved.entries.find(
+        (e) => e.devType === ticket.devType && e.complexite === ticket.complexite && e.priorite === ticket.priorite,
+      );
+      if (!entry) return;
+      total++;
+      const days = ticket.chiffrage / 8;
+      if (days <= entry.standardDays) conformes++;
+      if (days > entry.maxDays) depassementsCritiques++;
+    });
+
+    const rate = total > 0 ? Math.round((conformes / total) * 100) : 100;
+    return { rate, conformes, total, depassementsCritiques };
+  }, [allTickets, allAbaques]);
+
   return (
     <div className="min-h-screen bg-transparent">
       <PageHeader
@@ -205,7 +149,7 @@ export const ManagerDashboard: React.FC = () => {
           </Card>
         )}
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <KPICard
             title="TACE"
             value={tace}
@@ -240,33 +184,26 @@ export const ManagerDashboard: React.FC = () => {
             icon="warning"
             state={productivityMetrics.criticalIssues > 0 ? 'Error' : 'Positive'}
           />
+          <KPICard
+            title="Conformité Abaque"
+            value={abaqueMetrics.rate}
+            unit="%"
+            subtitle={`${abaqueMetrics.conformes}/${abaqueMetrics.total} tickets conformes`}
+            icon="accept"
+            state={abaqueMetrics.rate >= 80 ? 'Positive' : abaqueMetrics.rate >= 60 ? 'Warning' : 'Error'}
+            progress={abaqueMetrics.rate}
+          />
+          <KPICard
+            title="Dépassements Critiques"
+            value={abaqueMetrics.depassementsCritiques}
+            subtitle="Tickets > max abaque"
+            icon="alert"
+            state={abaqueMetrics.depassementsCritiques === 0 ? 'Positive' : 'Error'}
+          />
         </section>
 
-        <div className="grid items-start gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
-              <Suspense fallback={<ChartCardFallback />}>
-                <ProjectProgressTrendChart data={progressTrend} />
-              </Suspense>
-
-              <Suspense fallback={<ChartCardFallback />}>
-                <TaskDistributionChart data={tasksByStatus} palette={piePalette} />
-              </Suspense>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
-              <Suspense fallback={<ChartCardFallback />}>
-                <WorkloadComparisonChart data={consultantWorkload} />
-              </Suspense>
-
-              <Suspense fallback={<ChartCardFallback />}>
-                <AllocationPortfolioChart data={allocationData} palette={piePalette} />
-              </Suspense>
-            </div>
-          </div>
-
-          <aside className="space-y-4 sm:space-y-6 xl:sticky xl:top-20">
-            <TopPerformersWidget users={users} evaluations={evaluations} />
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-3">
+          <TopPerformersWidget users={users} evaluations={evaluations} />
 
             <Card className="border-border/80 bg-card">
               <CardHeader>
@@ -314,7 +251,6 @@ export const ManagerDashboard: React.FC = () => {
                 </Button>
               </CardContent>
             </Card>
-          </aside>
         </div>
       </div>
     </div>
