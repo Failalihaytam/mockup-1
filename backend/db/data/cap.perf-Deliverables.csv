@@ -1,0 +1,10 @@
+id;project_id;task_id;type;name;url;fileRef;validationStatus;functionalComment;createdAt
+d1;p1;t1;Document;Analyse données maîtres MM;;;APPROVED;Analyse complète et détaillée;2026-01-18T16:00:00Z
+d2;p1;t2;Code;Programme migration ETL v0.3;;;PENDING;;2026-02-15T14:00:00Z
+d3;p2;t3;Configuration;Config Fiori Launchpad;;;PENDING;;2026-02-20T10:00:00Z
+d4;p3;t5;Document;Modèle données BW/4HANA;;;APPROVED;Modèle validé par équipe BI;2026-02-08T16:00:00Z
+d5;p1;t1;Spreadsheet;Mapping champs ECC → S/4;;;APPROVED;;2026-01-15T11:00:00Z
+d6;p1;t2;Code;Module conversion UoM;;;CHANGES_REQUESTED;Ajouter gestion unités spécifiques client;2026-02-10T09:00:00Z
+d7;p2;t3;Document;Guide utilisateur Launchpad;;;PENDING;;2026-02-18T15:00:00Z
+d8;p3;t6;Code;Dashboard ventes v0.1;;;PENDING;;2026-02-19T10:00:00Z
+d9;p3;t5;Code;CDS Views extraction GL;;;APPROVED;Extraction conforme au cahier des charges;2026-02-07T14:00:00Z

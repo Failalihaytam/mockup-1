@@ -43,32 +43,38 @@ export const Login: React.FC = () => {
 
   const quickRoles = [
     {
-      email: 'jean.dupont@company.com',
+      email: 'jean.dupont@cap-consulting.fr',
+      password: 'Admin@2026',
       role: 'Administrator',
       icon: ShieldCheck,
     },
     {
-      email: 'marie.martin@company.com',
+      email: 'marie.martin@cap-consulting.fr',
+      password: 'Manager@2026',
       role: 'Manager',
       icon: Briefcase,
     },
     {
-      email: 'pierre.dubois@company.com',
+      email: 'pierre.dubois@cap-consulting.fr',
+      password: 'Consultant@2026',
       role: 'Technical Consultant',
       icon: Wrench,
     },
     {
-      email: 'sophie.bernard@company.com',
+      email: 'sophie.bernard@cap-consulting.fr',
+      password: 'Consultant@2026',
       role: 'Functional Consultant',
       icon: FileSearch,
     },
     {
-      email: 'claire.lefebvre@company.com',
+      email: 'claire.lefebvre@cap-consulting.fr',
+      password: 'ChefProjet@2026',
       role: 'Chef de Projet',
       icon: FolderKanban,
     },
     {
-      email: 'thomas.girard@company.com',
+      email: 'thomas.girard@cap-consulting.fr',
+      password: 'Coordinateur@2026',
       role: 'Coordinateur Dev',
       icon: Users,
     },
@@ -173,9 +179,9 @@ export const Login: React.FC = () => {
                       onClick={() => {
                         if (loading) return;
                         setEmail(role.email);
-                        setPassword('demo');
+                        setPassword(role.password);
                         toast.info(`Logging as ${role.role}`);
-                        void handleLogin(role.email, 'demo');
+                        void handleLogin(role.email, role.password);
                       }}
                       className="group w-full rounded-lg border border-border/80 bg-surface-2 p-3 text-left transition-colors hover:border-primary/55 hover:bg-accent/45 disabled:opacity-60"
                     >

@@ -1,0 +1,8 @@
+id;user_id;type;title;message;read;createdAt
+n1;u3;ticket_assigned;Nouveau ticket assigné;Le ticket TK-001 vous a été assigné;false;2026-02-20T09:00:00Z
+n2;u5;ticket_assigned;Nouveau ticket assigné;Le ticket TK-002 vous a été assigné;true;2026-02-19T14:00:00Z
+n3;u3;deadline_warning;Échéance proche;Le ticket TK-007 arrive à échéance dans 3 jours;false;2026-02-20T08:00:00Z
+n4;u2;status_change;Ticket résolu;Le ticket TK-006 a été marqué comme résolu;true;2026-02-15T10:00:00Z
+n5;u4;validation_needed;Validation requise;Le livrable Programme migration ETL v0.3 est en attente de validation;false;2026-02-15T14:30:00Z
+n6;u7;ticket_assigned;Nouveau ticket assigné;Le ticket TK-017 Interface IDocs vous a été assigné;false;2026-02-12T10:30:00Z
+n7;u3;comment_added;Nouveau commentaire;Marie Martin a commenté le ticket TK-007;true;2026-02-21T16:00:00Z

@@ -1,0 +1,205 @@
+id;abaque_id;devType;complexite;priorite;standardDays;maxDays;notes
+abq-p1-v1-e1;abq-p1-v1;Formulaire;Simple;0;2;3;
+abq-p1-v1-e2;abq-p1-v1;Formulaire;Simple;1;2;3;
+abq-p1-v1-e4;abq-p1-v1;Formulaire;Simple;3;1;2;
+abq-p1-v1-e6;abq-p1-v1;Formulaire;Moyen;1;4;6;
+abq-p1-v1-e7;abq-p1-v1;Formulaire;Moyen;2;3;5;
+abq-p1-v1-e8;abq-p1-v1;Formulaire;Moyen;3;3;5;
+abq-p1-v1-e9;abq-p1-v1;Formulaire;Complexe;0;7;11;
+abq-p1-v1-e10;abq-p1-v1;Formulaire;Complexe;1;7;11;
+abq-p1-v1-e11;abq-p1-v1;Formulaire;Complexe;2;6;9;
+abq-p1-v1-e13;abq-p1-v1;Formulaire;Très Complexe;0;13;20;Revue architecturale obligatoire
+abq-p1-v1-e15;abq-p1-v1;Formulaire;Très Complexe;2;12;18;Revue architecturale obligatoire
+abq-p1-v1-e16;abq-p1-v1;Formulaire;Très Complexe;3;12;18;Revue architecturale obligatoire
+abq-p1-v1-e17;abq-p1-v1;Report;Simple;0;2;3;
+abq-p1-v1-e18;abq-p1-v1;Report;Simple;1;1;2;
+abq-p1-v1-e19;abq-p1-v1;Report;Simple;2;1;2;
+abq-p1-v1-e20;abq-p1-v1;Report;Simple;3;1;2;
+abq-p1-v1-e21;abq-p1-v1;Report;Moyen;0;3;5;
+abq-p1-v1-e22;abq-p1-v1;Report;Moyen;1;3;5;
+abq-p1-v1-e24;abq-p1-v1;Report;Moyen;3;2;3;
+abq-p1-v1-e26;abq-p1-v1;Report;Complexe;1;5;8;
+abq-p1-v1-e27;abq-p1-v1;Report;Complexe;2;5;8;
+abq-p1-v1-e28;abq-p1-v1;Report;Complexe;3;5;8;
+abq-p1-v1-e29;abq-p1-v1;Report;Très Complexe;0;11;17;Revue architecturale obligatoire
+abq-p1-v1-e30;abq-p1-v1;Report;Très Complexe;1;10;15;Revue architecturale obligatoire
+abq-p1-v1-e31;abq-p1-v1;Report;Très Complexe;2;10;15;Revue architecturale obligatoire
+abq-p1-v1-e33;abq-p1-v1;Enhancement;Simple;0;2;3;
+abq-p1-v1-e35;abq-p1-v1;Enhancement;Simple;2;1;2;
+abq-p1-v1-e36;abq-p1-v1;Enhancement;Simple;3;1;2;
+abq-p1-v1-e37;abq-p1-v1;Enhancement;Moyen;0;5;8;
+abq-p1-v1-e38;abq-p1-v1;Enhancement;Moyen;1;4;6;
+abq-p1-v1-e39;abq-p1-v1;Enhancement;Moyen;2;4;6;
+abq-p1-v1-e40;abq-p1-v1;Enhancement;Moyen;3;4;6;
+abq-p1-v1-e41;abq-p1-v1;Enhancement;Complexe;0;8;12;
+abq-p1-v1-e42;abq-p1-v1;Enhancement;Complexe;1;8;12;
+abq-p1-v1-e44;abq-p1-v1;Enhancement;Complexe;3;7;11;
+abq-p1-v1-e46;abq-p1-v1;Enhancement;Très Complexe;1;15;23;Revue architecturale obligatoire
+abq-p1-v1-e47;abq-p1-v1;Enhancement;Très Complexe;2;14;21;Revue architecturale obligatoire
+abq-p1-v1-e48;abq-p1-v1;Enhancement;Très Complexe;3;14;21;Revue architecturale obligatoire
+abq-p1-v1-e49;abq-p1-v1;Programme;Simple;0;3;5;
+abq-p1-v1-e50;abq-p1-v1;Programme;Simple;1;2;3;
+abq-p1-v1-e51;abq-p1-v1;Programme;Simple;2;2;3;
+abq-p1-v1-e53;abq-p1-v1;Programme;Moyen;0;6;9;
+abq-p1-v1-e55;abq-p1-v1;Programme;Moyen;2;5;8;
+abq-p1-v1-e56;abq-p1-v1;Programme;Moyen;3;5;8;
+abq-p1-v1-e57;abq-p1-v1;Programme;Complexe;0;10;15;
+abq-p1-v1-e58;abq-p1-v1;Programme;Complexe;1;10;15;
+abq-p1-v1-e59;abq-p1-v1;Programme;Complexe;2;9;14;
+abq-p1-v1-e60;abq-p1-v1;Programme;Complexe;3;9;14;
+abq-p1-v1-e61;abq-p1-v1;Programme;Très Complexe;0;19;29;Revue architecturale obligatoire
+abq-p1-v1-e62;abq-p1-v1;Programme;Très Complexe;1;19;29;Revue architecturale obligatoire
+abq-p1-v1-e64;abq-p1-v1;Programme;Très Complexe;3;18;27;Revue architecturale obligatoire
+abq-p1-v2-e1;abq-p1-v2;Formulaire;Simple;0;2;3;
+abq-p1-v2-e2;abq-p1-v2;Formulaire;Simple;1;2;3;
+abq-p1-v2-e4;abq-p1-v2;Formulaire;Simple;3;1;2;
+abq-p1-v2-e6;abq-p1-v2;Formulaire;Moyen;1;4;6;
+abq-p1-v2-e7;abq-p1-v2;Formulaire;Moyen;2;3;5;
+abq-p1-v2-e8;abq-p1-v2;Formulaire;Moyen;3;3;5;
+abq-p1-v2-e9;abq-p1-v2;Formulaire;Complexe;0;7;11;
+abq-p1-v2-e10;abq-p1-v2;Formulaire;Complexe;1;7;11;
+abq-p1-v2-e11;abq-p1-v2;Formulaire;Complexe;2;6;9;
+abq-p1-v2-e13;abq-p1-v2;Formulaire;Très Complexe;0;13;20;Revue architecturale obligatoire
+abq-p1-v2-e15;abq-p1-v2;Formulaire;Très Complexe;2;12;18;Revue architecturale obligatoire
+abq-p1-v2-e16;abq-p1-v2;Formulaire;Très Complexe;3;12;18;Revue architecturale obligatoire
+abq-p1-v2-e17;abq-p1-v2;Report;Simple;0;2;3;
+abq-p1-v2-e18;abq-p1-v2;Report;Simple;1;1;2;
+abq-p1-v2-e19;abq-p1-v2;Report;Simple;2;1;2;
+abq-p1-v2-e20;abq-p1-v2;Report;Simple;3;1;2;
+abq-p1-v2-e21;abq-p1-v2;Report;Moyen;0;3;5;
+abq-p1-v2-e22;abq-p1-v2;Report;Moyen;1;3;5;
+abq-p1-v2-e24;abq-p1-v2;Report;Moyen;3;2;3;
+abq-p1-v2-e26;abq-p1-v2;Report;Complexe;1;5;8;
+abq-p1-v2-e27;abq-p1-v2;Report;Complexe;2;5;8;
+abq-p1-v2-e28;abq-p1-v2;Report;Complexe;3;5;8;
+abq-p1-v2-e29;abq-p1-v2;Report;Très Complexe;0;11;17;Revue architecturale obligatoire
+abq-p1-v2-e30;abq-p1-v2;Report;Très Complexe;1;10;15;Revue architecturale obligatoire
+abq-p1-v2-e31;abq-p1-v2;Report;Très Complexe;2;10;15;Revue architecturale obligatoire
+abq-p1-v2-e33;abq-p1-v2;Enhancement;Simple;0;2;3;
+abq-p1-v2-e35;abq-p1-v2;Enhancement;Simple;2;1;2;
+abq-p1-v2-e36;abq-p1-v2;Enhancement;Simple;3;1;2;
+abq-p1-v2-e37;abq-p1-v2;Enhancement;Moyen;0;5;8;
+abq-p1-v2-e38;abq-p1-v2;Enhancement;Moyen;1;4;6;
+abq-p1-v2-e39;abq-p1-v2;Enhancement;Moyen;2;4;6;
+abq-p1-v2-e40;abq-p1-v2;Enhancement;Moyen;3;4;6;
+abq-p1-v2-e41;abq-p1-v2;Enhancement;Complexe;0;8;12;
+abq-p1-v2-e42;abq-p1-v2;Enhancement;Complexe;1;8;12;
+abq-p1-v2-e44;abq-p1-v2;Enhancement;Complexe;3;7;11;
+abq-p1-v2-e46;abq-p1-v2;Enhancement;Très Complexe;1;15;23;Revue architecturale obligatoire
+abq-p1-v2-e47;abq-p1-v2;Enhancement;Très Complexe;2;14;21;Revue architecturale obligatoire
+abq-p1-v2-e48;abq-p1-v2;Enhancement;Très Complexe;3;14;21;Revue architecturale obligatoire
+abq-p1-v2-e49;abq-p1-v2;Programme;Simple;0;3;5;
+abq-p1-v2-e50;abq-p1-v2;Programme;Simple;1;2;3;
+abq-p1-v2-e51;abq-p1-v2;Programme;Simple;2;2;3;
+abq-p1-v2-e53;abq-p1-v2;Programme;Moyen;0;6;9;
+abq-p1-v2-e55;abq-p1-v2;Programme;Moyen;2;5;8;
+abq-p1-v2-e56;abq-p1-v2;Programme;Moyen;3;5;8;
+abq-p1-v2-e57;abq-p1-v2;Programme;Complexe;0;10;15;
+abq-p1-v2-e58;abq-p1-v2;Programme;Complexe;1;10;15;
+abq-p1-v2-e59;abq-p1-v2;Programme;Complexe;2;9;14;
+abq-p1-v2-e60;abq-p1-v2;Programme;Complexe;3;9;14;
+abq-p1-v2-e61;abq-p1-v2;Programme;Très Complexe;0;19;29;Revue architecturale obligatoire
+abq-p1-v2-e62;abq-p1-v2;Programme;Très Complexe;1;19;29;Revue architecturale obligatoire
+abq-p1-v2-e64;abq-p1-v2;Programme;Très Complexe;3;18;27;Revue architecturale obligatoire
+abq-p2-v1-e1;abq-p2-v1;Formulaire;Simple;0;2;3;
+abq-p2-v1-e2;abq-p2-v1;Formulaire;Simple;1;2;3;
+abq-p2-v1-e4;abq-p2-v1;Formulaire;Simple;3;1;2;
+abq-p2-v1-e6;abq-p2-v1;Formulaire;Moyen;1;4;6;
+abq-p2-v1-e7;abq-p2-v1;Formulaire;Moyen;2;3;5;
+abq-p2-v1-e8;abq-p2-v1;Formulaire;Moyen;3;3;5;
+abq-p2-v1-e9;abq-p2-v1;Formulaire;Complexe;0;7;11;
+abq-p2-v1-e10;abq-p2-v1;Formulaire;Complexe;1;7;11;
+abq-p2-v1-e11;abq-p2-v1;Formulaire;Complexe;2;6;9;
+abq-p2-v1-e13;abq-p2-v1;Formulaire;Très Complexe;0;13;20;Revue architecturale obligatoire
+abq-p2-v1-e15;abq-p2-v1;Formulaire;Très Complexe;2;12;18;Revue architecturale obligatoire
+abq-p2-v1-e16;abq-p2-v1;Formulaire;Très Complexe;3;12;18;Revue architecturale obligatoire
+abq-p2-v1-e17;abq-p2-v1;Report;Simple;0;2;3;
+abq-p2-v1-e18;abq-p2-v1;Report;Simple;1;1;2;
+abq-p2-v1-e19;abq-p2-v1;Report;Simple;2;1;2;
+abq-p2-v1-e20;abq-p2-v1;Report;Simple;3;1;2;
+abq-p2-v1-e21;abq-p2-v1;Report;Moyen;0;3;5;
+abq-p2-v1-e22;abq-p2-v1;Report;Moyen;1;3;5;
+abq-p2-v1-e24;abq-p2-v1;Report;Moyen;3;2;3;
+abq-p2-v1-e26;abq-p2-v1;Report;Complexe;1;5;8;
+abq-p2-v1-e27;abq-p2-v1;Report;Complexe;2;5;8;
+abq-p2-v1-e28;abq-p2-v1;Report;Complexe;3;5;8;
+abq-p2-v1-e29;abq-p2-v1;Report;Très Complexe;0;11;17;Revue architecturale obligatoire
+abq-p2-v1-e30;abq-p2-v1;Report;Très Complexe;1;10;15;Revue architecturale obligatoire
+abq-p2-v1-e31;abq-p2-v1;Report;Très Complexe;2;10;15;Revue architecturale obligatoire
+abq-p2-v1-e33;abq-p2-v1;Enhancement;Simple;0;2;3;
+abq-p2-v1-e35;abq-p2-v1;Enhancement;Simple;2;1;2;
+abq-p2-v1-e36;abq-p2-v1;Enhancement;Simple;3;1;2;
+abq-p2-v1-e37;abq-p2-v1;Enhancement;Moyen;0;5;8;
+abq-p2-v1-e38;abq-p2-v1;Enhancement;Moyen;1;4;6;
+abq-p2-v1-e39;abq-p2-v1;Enhancement;Moyen;2;4;6;
+abq-p2-v1-e40;abq-p2-v1;Enhancement;Moyen;3;4;6;
+abq-p2-v1-e41;abq-p2-v1;Enhancement;Complexe;0;8;12;
+abq-p2-v1-e42;abq-p2-v1;Enhancement;Complexe;1;8;12;
+abq-p2-v1-e44;abq-p2-v1;Enhancement;Complexe;3;7;11;
+abq-p2-v1-e46;abq-p2-v1;Enhancement;Très Complexe;1;15;23;Revue architecturale obligatoire
+abq-p2-v1-e47;abq-p2-v1;Enhancement;Très Complexe;2;14;21;Revue architecturale obligatoire
+abq-p2-v1-e48;abq-p2-v1;Enhancement;Très Complexe;3;14;21;Revue architecturale obligatoire
+abq-p2-v1-e49;abq-p2-v1;Programme;Simple;0;3;5;
+abq-p2-v1-e50;abq-p2-v1;Programme;Simple;1;2;3;
+abq-p2-v1-e51;abq-p2-v1;Programme;Simple;2;2;3;
+abq-p2-v1-e53;abq-p2-v1;Programme;Moyen;0;6;9;
+abq-p2-v1-e55;abq-p2-v1;Programme;Moyen;2;5;8;
+abq-p2-v1-e56;abq-p2-v1;Programme;Moyen;3;5;8;
+abq-p2-v1-e57;abq-p2-v1;Programme;Complexe;0;10;15;
+abq-p2-v1-e58;abq-p2-v1;Programme;Complexe;1;10;15;
+abq-p2-v1-e59;abq-p2-v1;Programme;Complexe;2;9;14;
+abq-p2-v1-e60;abq-p2-v1;Programme;Complexe;3;9;14;
+abq-p2-v1-e61;abq-p2-v1;Programme;Très Complexe;0;19;29;Revue architecturale obligatoire
+abq-p2-v1-e62;abq-p2-v1;Programme;Très Complexe;1;19;29;Revue architecturale obligatoire
+abq-p2-v1-e64;abq-p2-v1;Programme;Très Complexe;3;18;27;Revue architecturale obligatoire
+abq-p3-v1-e1;abq-p3-v1;Formulaire;Simple;0;2;3;
+abq-p3-v1-e2;abq-p3-v1;Formulaire;Simple;1;2;3;
+abq-p3-v1-e4;abq-p3-v1;Formulaire;Simple;3;1;2;
+abq-p3-v1-e6;abq-p3-v1;Formulaire;Moyen;1;4;6;
+abq-p3-v1-e7;abq-p3-v1;Formulaire;Moyen;2;3;5;
+abq-p3-v1-e8;abq-p3-v1;Formulaire;Moyen;3;3;5;
+abq-p3-v1-e9;abq-p3-v1;Formulaire;Complexe;0;7;11;
+abq-p3-v1-e10;abq-p3-v1;Formulaire;Complexe;1;7;11;
+abq-p3-v1-e11;abq-p3-v1;Formulaire;Complexe;2;6;9;
+abq-p3-v1-e13;abq-p3-v1;Formulaire;Très Complexe;0;13;20;Revue architecturale obligatoire
+abq-p3-v1-e15;abq-p3-v1;Formulaire;Très Complexe;2;12;18;Revue architecturale obligatoire
+abq-p3-v1-e16;abq-p3-v1;Formulaire;Très Complexe;3;12;18;Revue architecturale obligatoire
+abq-p3-v1-e17;abq-p3-v1;Report;Simple;0;2;3;
+abq-p3-v1-e18;abq-p3-v1;Report;Simple;1;1;2;
+abq-p3-v1-e19;abq-p3-v1;Report;Simple;2;1;2;
+abq-p3-v1-e20;abq-p3-v1;Report;Simple;3;1;2;
+abq-p3-v1-e21;abq-p3-v1;Report;Moyen;0;3;5;
+abq-p3-v1-e22;abq-p3-v1;Report;Moyen;1;3;5;
+abq-p3-v1-e24;abq-p3-v1;Report;Moyen;3;2;3;
+abq-p3-v1-e26;abq-p3-v1;Report;Complexe;1;5;8;
+abq-p3-v1-e27;abq-p3-v1;Report;Complexe;2;5;8;
+abq-p3-v1-e28;abq-p3-v1;Report;Complexe;3;5;8;
+abq-p3-v1-e29;abq-p3-v1;Report;Très Complexe;0;11;17;Revue architecturale obligatoire
+abq-p3-v1-e30;abq-p3-v1;Report;Très Complexe;1;10;15;Revue architecturale obligatoire
+abq-p3-v1-e31;abq-p3-v1;Report;Très Complexe;2;10;15;Revue architecturale obligatoire
+abq-p3-v1-e33;abq-p3-v1;Enhancement;Simple;0;2;3;
+abq-p3-v1-e35;abq-p3-v1;Enhancement;Simple;2;1;2;
+abq-p3-v1-e36;abq-p3-v1;Enhancement;Simple;3;1;2;
+abq-p3-v1-e37;abq-p3-v1;Enhancement;Moyen;0;5;8;
+abq-p3-v1-e38;abq-p3-v1;Enhancement;Moyen;1;4;6;
+abq-p3-v1-e39;abq-p3-v1;Enhancement;Moyen;2;4;6;
+abq-p3-v1-e40;abq-p3-v1;Enhancement;Moyen;3;4;6;
+abq-p3-v1-e41;abq-p3-v1;Enhancement;Complexe;0;8;12;
+abq-p3-v1-e42;abq-p3-v1;Enhancement;Complexe;1;8;12;
+abq-p3-v1-e44;abq-p3-v1;Enhancement;Complexe;3;7;11;
+abq-p3-v1-e46;abq-p3-v1;Enhancement;Très Complexe;1;15;23;Revue architecturale obligatoire
+abq-p3-v1-e47;abq-p3-v1;Enhancement;Très Complexe;2;14;21;Revue architecturale obligatoire
+abq-p3-v1-e48;abq-p3-v1;Enhancement;Très Complexe;3;14;21;Revue architecturale obligatoire
+abq-p3-v1-e49;abq-p3-v1;Programme;Simple;0;3;5;
+abq-p3-v1-e50;abq-p3-v1;Programme;Simple;1;2;3;
+abq-p3-v1-e51;abq-p3-v1;Programme;Simple;2;2;3;
+abq-p3-v1-e53;abq-p3-v1;Programme;Moyen;0;6;9;
+abq-p3-v1-e55;abq-p3-v1;Programme;Moyen;2;5;8;
+abq-p3-v1-e56;abq-p3-v1;Programme;Moyen;3;5;8;
+abq-p3-v1-e57;abq-p3-v1;Programme;Complexe;0;10;15;
+abq-p3-v1-e58;abq-p3-v1;Programme;Complexe;1;10;15;
+abq-p3-v1-e59;abq-p3-v1;Programme;Complexe;2;9;14;
+abq-p3-v1-e60;abq-p3-v1;Programme;Complexe;3;9;14;
+abq-p3-v1-e61;abq-p3-v1;Programme;Très Complexe;0;19;29;Revue architecturale obligatoire
+abq-p3-v1-e62;abq-p3-v1;Programme;Très Complexe;1;19;29;Revue architecturale obligatoire
+abq-p3-v1-e64;abq-p3-v1;Programme;Très Complexe;3;18;27;Revue architecturale obligatoire

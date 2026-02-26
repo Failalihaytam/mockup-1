@@ -1,0 +1,4775 @@
+{
+  "namespace": "cap.perf",
+  "definitions": {
+    "cap.perf.UserRole": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 30,
+      "enum": {
+        "ADMIN": {},
+        "MANAGER": {},
+        "CONSULTANT_TECHNIQUE": {},
+        "CONSULTANT_FONCTIONNEL": {},
+        "CHEF_DE_PROJET": {},
+        "COORDINATEUR_DEV": {}
+      }
+    },
+    "cap.perf.TaskStatus": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 20,
+      "enum": {
+        "TO_DO": {},
+        "IN_PROGRESS": {},
+        "BLOCKED": {},
+        "DONE": {},
+        "CANCELLED": {}
+      }
+    },
+    "cap.perf.Priority": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 10,
+      "enum": {
+        "LOW": {},
+        "MEDIUM": {},
+        "HIGH": {},
+        "CRITICAL": {}
+      }
+    },
+    "cap.perf.ProjectStatus": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 15,
+      "enum": {
+        "PLANNED": {},
+        "ACTIVE": {},
+        "ON_HOLD": {},
+        "COMPLETED": {},
+        "CANCELLED": {}
+      }
+    },
+    "cap.perf.RiskLevel": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 10,
+      "enum": {
+        "NONE": {},
+        "LOW": {},
+        "MEDIUM": {},
+        "HIGH": {},
+        "CRITICAL": {}
+      }
+    },
+    "cap.perf.ValidationStatus": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 20,
+      "enum": {
+        "PENDING": {},
+        "APPROVED": {},
+        "CHANGES_REQUESTED": {}
+      }
+    },
+    "cap.perf.TicketStatus": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 20,
+      "enum": {
+        "OPEN": {},
+        "IN_PROGRESS": {},
+        "WAITING_FEEDBACK": {},
+        "RESOLVED": {},
+        "CLOSED": {}
+      }
+    },
+    "cap.perf.Complexity": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 10,
+      "enum": {
+        "LOW": {},
+        "MEDIUM": {},
+        "HIGH": {},
+        "CRITICAL": {}
+      }
+    },
+    "cap.perf.CertificationStatus": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 15,
+      "enum": {
+        "VALID": {},
+        "EXPIRING_SOON": {},
+        "EXPIRED": {}
+      }
+    },
+    "cap.perf.LeaveStatus": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 10,
+      "enum": {
+        "PENDING": {},
+        "APPROVED": {},
+        "REJECTED": {}
+      }
+    },
+    "cap.perf.DevType": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 15,
+      "enum": {
+        "Formulaire": {},
+        "Report": {},
+        "Enhancement": {},
+        "Programme": {}
+      }
+    },
+    "cap.perf.TicketComplexite": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 20,
+      "enum": {
+        "Simple": {},
+        "Moyen": {},
+        "Complexe": {},
+        "Très Complexe": {}
+      }
+    },
+    "cap.perf.TicketPriorite": {
+      "kind": "type",
+      "type": "cds.Integer",
+      "enum": {
+        "Critique": {
+          "val": 0
+        },
+        "Haute": {
+          "val": 1
+        },
+        "Moyenne": {
+          "val": 2
+        },
+        "Basse": {
+          "val": 3
+        }
+      }
+    },
+    "cap.perf.ImputationPeriodStatus": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 15,
+      "enum": {
+        "draft": {},
+        "sent": {},
+        "pending": {},
+        "validated": {},
+        "rejected": {}
+      }
+    },
+    "cap.perf.ActivityEventType": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 25,
+      "enum": {
+        "status_change": {},
+        "assignee_change": {},
+        "message_sent": {},
+        "work_session_logged": {},
+        "chiffrage_updated": {},
+        "comment_added": {},
+        "ticket_created": {},
+        "priority_change": {},
+        "straTIME_sent": {},
+        "abaque_exceeded": {}
+      }
+    },
+    "cap.perf.TicketEventAction": {
+      "kind": "type",
+      "type": "cds.String",
+      "length": 20,
+      "enum": {
+        "CREATED": {},
+        "STATUS_CHANGE": {},
+        "ASSIGNED": {},
+        "COMMENT": {},
+        "PRIORITY_CHANGE": {}
+      }
+    },
+    "cap.perf.QualitativeGrid": {
+      "kind": "type",
+      "elements": {
+        "productivity": {
+          "type": "cds.Integer"
+        },
+        "quality": {
+          "type": "cds.Integer"
+        },
+        "autonomy": {
+          "type": "cds.Integer"
+        },
+        "collaboration": {
+          "type": "cds.Integer"
+        },
+        "innovation": {
+          "type": "cds.Integer"
+        }
+      }
+    },
+    "cap.perf.Users": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "email": {
+          "type": "cds.String",
+          "length": 150
+        },
+        "role": {
+          "type": "cap.perf.UserRole",
+          "length": 30
+        },
+        "active": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": true
+          }
+        },
+        "availabilityPercent": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 100
+          }
+        },
+        "teamId": {
+          "type": "cds.String",
+          "length": 36
+        },
+        "avatarUrl": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "skills": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "cap.perf.UserSkills",
+          "on": [
+            {
+              "ref": [
+                "skills",
+                "user"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        },
+        "certifications": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "cap.perf.Certifications",
+          "on": [
+            {
+              "ref": [
+                "certifications",
+                "user"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "cap.perf.UserSkills": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "skill": {
+          "type": "cds.String",
+          "length": 100
+        }
+      }
+    },
+    "cap.perf.Certifications": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "issuingBody": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "dateObtained": {
+          "type": "cds.Date"
+        },
+        "expiryDate": {
+          "type": "cds.Date"
+        },
+        "status": {
+          "type": "cap.perf.CertificationStatus",
+          "length": 15
+        }
+      }
+    },
+    "cap.perf.Projects": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "code": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "manager": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "startDate": {
+          "type": "cds.Date"
+        },
+        "endDate": {
+          "type": "cds.Date"
+        },
+        "status": {
+          "type": "cap.perf.ProjectStatus",
+          "length": 15
+        },
+        "priority": {
+          "type": "cap.perf.Priority",
+          "length": 10
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "progress": {
+          "type": "cds.Integer"
+        },
+        "budget": {
+          "type": "cds.Decimal",
+          "precision": 15,
+          "scale": 2
+        },
+        "complexity": {
+          "type": "cap.perf.Complexity",
+          "length": 10
+        },
+        "documentation": {
+          "type": "cds.String",
+          "length": 5000
+        },
+        "techKeywords": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "cap.perf.ProjectKeywords",
+          "on": [
+            {
+              "ref": [
+                "techKeywords",
+                "project"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "cap.perf.ProjectKeywords": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "cap.perf.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "keyword": {
+          "type": "cds.String",
+          "length": 50
+        }
+      }
+    },
+    "cap.perf.Objets": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "cap.perf.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "code": {
+          "type": "cds.String",
+          "length": 20
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "module": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "devType": {
+          "type": "cap.perf.DevType",
+          "length": 15
+        },
+        "complexite": {
+          "type": "cap.perf.TicketComplexite",
+          "length": 20
+        },
+        "priorite": {
+          "type": "cap.perf.TicketPriorite"
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "cap.perf.Documentations": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "objet": {
+          "type": "cds.Association",
+          "target": "cap.perf.Objets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "content": {
+          "type": "cds.LargeString"
+        },
+        "version": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 1
+          }
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "updatedBy": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "updatedAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "cap.perf.Tasks": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "cap.perf.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "status": {
+          "type": "cap.perf.TaskStatus",
+          "length": 20
+        },
+        "priority": {
+          "type": "cap.perf.Priority",
+          "length": 10
+        },
+        "assignee": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "plannedStart": {
+          "type": "cds.Date"
+        },
+        "plannedEnd": {
+          "type": "cds.Date"
+        },
+        "realStart": {
+          "type": "cds.Date"
+        },
+        "realEnd": {
+          "type": "cds.Date"
+        },
+        "progressPercent": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 0
+          }
+        },
+        "estimatedHours": {
+          "type": "cds.Decimal",
+          "precision": 8,
+          "scale": 2
+        },
+        "actualHours": {
+          "type": "cds.Decimal",
+          "precision": 8,
+          "scale": 2
+        },
+        "isCritical": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "riskLevel": {
+          "type": "cap.perf.RiskLevel",
+          "length": 10
+        },
+        "comments": {
+          "type": "cds.String",
+          "length": 2000
+        }
+      }
+    },
+    "cap.perf.Timesheets": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "date": {
+          "type": "cds.Date"
+        },
+        "hours": {
+          "type": "cds.Decimal",
+          "precision": 5,
+          "scale": 2
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "cap.perf.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "task": {
+          "type": "cds.Association",
+          "target": "cap.perf.Tasks",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "comment": {
+          "type": "cds.String",
+          "length": 500
+        }
+      }
+    },
+    "cap.perf.Evaluations": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "evaluator": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "cap.perf.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "period": {
+          "type": "cds.String",
+          "length": 20
+        },
+        "score": {
+          "type": "cds.Decimal",
+          "precision": 4,
+          "scale": 2
+        },
+        "qualitativeGrid": {
+          "type": "cap.perf.QualitativeGrid"
+        },
+        "feedback": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "cap.perf.Deliverables": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "cap.perf.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "task": {
+          "type": "cds.Association",
+          "target": "cap.perf.Tasks",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "type": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "url": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "fileRef": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "validationStatus": {
+          "type": "cap.perf.ValidationStatus",
+          "length": 20
+        },
+        "functionalComment": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "cap.perf.Tickets": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "cap.perf.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "objet": {
+          "type": "cds.Association",
+          "target": "cap.perf.Objets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "assignedTo": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "status": {
+          "type": "cap.perf.TicketStatus",
+          "length": 20
+        },
+        "priority": {
+          "type": "cap.perf.Priority",
+          "length": 10
+        },
+        "devType": {
+          "type": "cap.perf.DevType",
+          "length": 15
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 300
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 5000
+        },
+        "dueDate": {
+          "type": "cds.Date"
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "updatedAt": {
+          "type": "cds.Timestamp"
+        },
+        "chiffrage": {
+          "type": "cds.Decimal",
+          "precision": 8,
+          "scale": 2
+        },
+        "complexite": {
+          "type": "cap.perf.TicketComplexite",
+          "length": 20
+        },
+        "priorite": {
+          "type": "cap.perf.TicketPriorite"
+        },
+        "module": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "wricef": {
+          "type": "cds.String",
+          "length": 30
+        },
+        "chiffrageJustification": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "history": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "cap.perf.TicketEvents",
+          "on": [
+            {
+              "ref": [
+                "history",
+                "ticket"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        },
+        "messages": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "cap.perf.TicketMessages",
+          "on": [
+            {
+              "ref": [
+                "messages",
+                "ticket"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        },
+        "activityFeed": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "cap.perf.ActivityEvents",
+          "on": [
+            {
+              "ref": [
+                "activityFeed",
+                "ticket"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "cap.perf.TicketEvents": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "cap.perf.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "timestamp": {
+          "type": "cds.Timestamp"
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "action": {
+          "type": "cap.perf.TicketEventAction",
+          "length": 20
+        },
+        "fromValue": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "toValue": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "comment": {
+          "type": "cds.String",
+          "length": 1000
+        }
+      }
+    },
+    "cap.perf.TicketMessages": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "cap.perf.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "sender": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "senderName": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "senderRole": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "content": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "sentAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "cap.perf.ActivityEvents": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "cap.perf.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "type": {
+          "type": "cap.perf.ActivityEventType",
+          "length": 25
+        },
+        "actor": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "actorName": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "actorRole": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "metadata": {
+          "type": "cds.LargeString"
+        },
+        "occurredAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "cap.perf.WorkSessions": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "consultant": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "cap.perf.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "cap.perf.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "date": {
+          "type": "cds.Date"
+        },
+        "hours": {
+          "type": "cds.Decimal",
+          "precision": 5,
+          "scale": 2
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "sentToStraTIME": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "sentAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "cap.perf.Notifications": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "type": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "message": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "read": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "cap.perf.ReferenceData": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "type": {
+          "type": "cds.String",
+          "length": 30
+        },
+        "code": {
+          "type": "cds.String",
+          "length": 30
+        },
+        "label": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "active": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": true
+          }
+        },
+        "orderIndex": {
+          "type": "cds.Integer"
+        }
+      }
+    },
+    "cap.perf.Allocations": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "cap.perf.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "allocationPercent": {
+          "type": "cds.Integer"
+        },
+        "startDate": {
+          "type": "cds.Date"
+        },
+        "endDate": {
+          "type": "cds.Date"
+        }
+      }
+    },
+    "cap.perf.LeaveRequests": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "consultant": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "startDate": {
+          "type": "cds.Date"
+        },
+        "endDate": {
+          "type": "cds.Date"
+        },
+        "reason": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "status": {
+          "type": "cap.perf.LeaveStatus",
+          "length": 10
+        },
+        "manager": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "reviewedAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "cap.perf.ImputationPeriods": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "year": {
+          "type": "cds.Integer"
+        },
+        "month": {
+          "type": "cds.Integer"
+        },
+        "period": {
+          "type": "cds.Integer"
+        },
+        "totalHours": {
+          "type": "cds.Decimal",
+          "precision": 6,
+          "scale": 2
+        },
+        "status": {
+          "type": "cap.perf.ImputationPeriodStatus",
+          "length": 15
+        },
+        "sentAt": {
+          "type": "cds.Timestamp"
+        },
+        "validatedBy": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "validatedAt": {
+          "type": "cds.Timestamp"
+        },
+        "rejectionReason": {
+          "type": "cds.String",
+          "length": 500
+        }
+      }
+    },
+    "cap.perf.Abaques": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "cap.perf.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "version": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "lastUpdatedAt": {
+          "type": "cds.Timestamp"
+        },
+        "lastUpdatedBy": {
+          "type": "cds.Association",
+          "target": "cap.perf.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "approvedByClient": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "approvedAt": {
+          "type": "cds.Timestamp"
+        },
+        "entries": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "cap.perf.AbaqueEntries",
+          "on": [
+            {
+              "ref": [
+                "entries",
+                "abaque"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "cap.perf.AbaqueEntries": {
+      "kind": "entity",
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "abaque": {
+          "type": "cds.Association",
+          "target": "cap.perf.Abaques",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "devType": {
+          "type": "cap.perf.DevType",
+          "length": 15
+        },
+        "complexite": {
+          "type": "cap.perf.TicketComplexite",
+          "length": 20
+        },
+        "priorite": {
+          "type": "cap.perf.TicketPriorite"
+        },
+        "standardDays": {
+          "type": "cds.Integer"
+        },
+        "maxDays": {
+          "type": "cds.Integer"
+        },
+        "notes": {
+          "type": "cds.String",
+          "length": 500
+        }
+      }
+    },
+    "AdminService": {
+      "@source": "srv/admin-service.cds",
+      "kind": "service",
+      "@path": "/api/admin"
+    },
+    "AdminService.Users": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Users"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "email": {
+          "type": "cds.String",
+          "length": 150
+        },
+        "role": {
+          "type": "cap.perf.UserRole",
+          "length": 30
+        },
+        "active": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": true
+          }
+        },
+        "availabilityPercent": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 100
+          }
+        },
+        "teamId": {
+          "type": "cds.String",
+          "length": 36
+        },
+        "avatarUrl": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "skills": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "AdminService.UserSkills",
+          "on": [
+            {
+              "ref": [
+                "skills",
+                "user"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        },
+        "certifications": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "AdminService.Certifications",
+          "on": [
+            {
+              "ref": [
+                "certifications",
+                "user"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "AdminService.UserSkills": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.UserSkills"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "skill": {
+          "type": "cds.String",
+          "length": 100
+        }
+      }
+    },
+    "AdminService.Certifications": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Certifications"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "issuingBody": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "dateObtained": {
+          "type": "cds.Date"
+        },
+        "expiryDate": {
+          "type": "cds.Date"
+        },
+        "status": {
+          "type": "cap.perf.CertificationStatus",
+          "length": 15
+        }
+      }
+    },
+    "AdminService.Projects": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Projects"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "code": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "manager": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "startDate": {
+          "type": "cds.Date"
+        },
+        "endDate": {
+          "type": "cds.Date"
+        },
+        "status": {
+          "type": "cap.perf.ProjectStatus",
+          "length": 15
+        },
+        "priority": {
+          "type": "cap.perf.Priority",
+          "length": 10
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "progress": {
+          "type": "cds.Integer"
+        },
+        "budget": {
+          "type": "cds.Decimal",
+          "precision": 15,
+          "scale": 2
+        },
+        "complexity": {
+          "type": "cap.perf.Complexity",
+          "length": 10
+        },
+        "documentation": {
+          "type": "cds.String",
+          "length": 5000
+        },
+        "techKeywords": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "AdminService.ProjectKeywords",
+          "on": [
+            {
+              "ref": [
+                "techKeywords",
+                "project"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "AdminService.ProjectKeywords": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.ProjectKeywords"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "AdminService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "keyword": {
+          "type": "cds.String",
+          "length": 50
+        }
+      }
+    },
+    "AdminService.Objets": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Objets"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "AdminService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "code": {
+          "type": "cds.String",
+          "length": 20
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "module": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "devType": {
+          "type": "cap.perf.DevType",
+          "length": 15
+        },
+        "complexite": {
+          "type": "cap.perf.TicketComplexite",
+          "length": 20
+        },
+        "priorite": {
+          "type": "cap.perf.TicketPriorite"
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "AdminService.Documentations": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Documentations"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "objet": {
+          "type": "cds.Association",
+          "target": "AdminService.Objets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "content": {
+          "type": "cds.LargeString"
+        },
+        "version": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 1
+          }
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "updatedBy": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "updatedAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "AdminService.Tasks": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Tasks"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "AdminService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "status": {
+          "type": "cap.perf.TaskStatus",
+          "length": 20
+        },
+        "priority": {
+          "type": "cap.perf.Priority",
+          "length": 10
+        },
+        "assignee": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "plannedStart": {
+          "type": "cds.Date"
+        },
+        "plannedEnd": {
+          "type": "cds.Date"
+        },
+        "realStart": {
+          "type": "cds.Date"
+        },
+        "realEnd": {
+          "type": "cds.Date"
+        },
+        "progressPercent": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 0
+          }
+        },
+        "estimatedHours": {
+          "type": "cds.Decimal",
+          "precision": 8,
+          "scale": 2
+        },
+        "actualHours": {
+          "type": "cds.Decimal",
+          "precision": 8,
+          "scale": 2
+        },
+        "isCritical": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "riskLevel": {
+          "type": "cap.perf.RiskLevel",
+          "length": 10
+        },
+        "comments": {
+          "type": "cds.String",
+          "length": 2000
+        }
+      }
+    },
+    "AdminService.Timesheets": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Timesheets"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "date": {
+          "type": "cds.Date"
+        },
+        "hours": {
+          "type": "cds.Decimal",
+          "precision": 5,
+          "scale": 2
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "AdminService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "task": {
+          "type": "cds.Association",
+          "target": "AdminService.Tasks",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "comment": {
+          "type": "cds.String",
+          "length": 500
+        }
+      }
+    },
+    "AdminService.Evaluations": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Evaluations"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "evaluator": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "AdminService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "period": {
+          "type": "cds.String",
+          "length": 20
+        },
+        "score": {
+          "type": "cds.Decimal",
+          "precision": 4,
+          "scale": 2
+        },
+        "qualitativeGrid": {
+          "type": "cap.perf.QualitativeGrid"
+        },
+        "feedback": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "AdminService.Deliverables": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Deliverables"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "AdminService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "task": {
+          "type": "cds.Association",
+          "target": "AdminService.Tasks",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "type": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "url": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "fileRef": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "validationStatus": {
+          "type": "cap.perf.ValidationStatus",
+          "length": 20
+        },
+        "functionalComment": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "AdminService.Tickets": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Tickets"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "AdminService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "objet": {
+          "type": "cds.Association",
+          "target": "AdminService.Objets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "assignedTo": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "status": {
+          "type": "cap.perf.TicketStatus",
+          "length": 20
+        },
+        "priority": {
+          "type": "cap.perf.Priority",
+          "length": 10
+        },
+        "devType": {
+          "type": "cap.perf.DevType",
+          "length": 15
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 300
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 5000
+        },
+        "dueDate": {
+          "type": "cds.Date"
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "updatedAt": {
+          "type": "cds.Timestamp"
+        },
+        "chiffrage": {
+          "type": "cds.Decimal",
+          "precision": 8,
+          "scale": 2
+        },
+        "complexite": {
+          "type": "cap.perf.TicketComplexite",
+          "length": 20
+        },
+        "priorite": {
+          "type": "cap.perf.TicketPriorite"
+        },
+        "module": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "wricef": {
+          "type": "cds.String",
+          "length": 30
+        },
+        "chiffrageJustification": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "history": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "AdminService.TicketEvents",
+          "on": [
+            {
+              "ref": [
+                "history",
+                "ticket"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        },
+        "messages": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "AdminService.TicketMessages",
+          "on": [
+            {
+              "ref": [
+                "messages",
+                "ticket"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        },
+        "activityFeed": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "AdminService.ActivityEvents",
+          "on": [
+            {
+              "ref": [
+                "activityFeed",
+                "ticket"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "AdminService.TicketEvents": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.TicketEvents"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "AdminService.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "timestamp": {
+          "type": "cds.Timestamp"
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "action": {
+          "type": "cap.perf.TicketEventAction",
+          "length": 20
+        },
+        "fromValue": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "toValue": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "comment": {
+          "type": "cds.String",
+          "length": 1000
+        }
+      }
+    },
+    "AdminService.TicketMessages": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.TicketMessages"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "AdminService.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "sender": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "senderName": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "senderRole": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "content": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "sentAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "AdminService.ActivityEvents": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.ActivityEvents"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "AdminService.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "type": {
+          "type": "cap.perf.ActivityEventType",
+          "length": 25
+        },
+        "actor": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "actorName": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "actorRole": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "metadata": {
+          "type": "cds.LargeString"
+        },
+        "occurredAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "AdminService.WorkSessions": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.WorkSessions"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "consultant": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "AdminService.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "AdminService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "date": {
+          "type": "cds.Date"
+        },
+        "hours": {
+          "type": "cds.Decimal",
+          "precision": 5,
+          "scale": 2
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "sentToStraTIME": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "sentAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "AdminService.Notifications": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Notifications"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "type": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "message": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "read": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "AdminService.ReferenceData": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.ReferenceData"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "type": {
+          "type": "cds.String",
+          "length": 30
+        },
+        "code": {
+          "type": "cds.String",
+          "length": 30
+        },
+        "label": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "active": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": true
+          }
+        },
+        "orderIndex": {
+          "type": "cds.Integer"
+        }
+      }
+    },
+    "AdminService.Allocations": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Allocations"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "AdminService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "allocationPercent": {
+          "type": "cds.Integer"
+        },
+        "startDate": {
+          "type": "cds.Date"
+        },
+        "endDate": {
+          "type": "cds.Date"
+        }
+      }
+    },
+    "AdminService.LeaveRequests": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.LeaveRequests"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "consultant": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "startDate": {
+          "type": "cds.Date"
+        },
+        "endDate": {
+          "type": "cds.Date"
+        },
+        "reason": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "status": {
+          "type": "cap.perf.LeaveStatus",
+          "length": 10
+        },
+        "manager": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "reviewedAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "AdminService.ImputationPeriods": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.ImputationPeriods"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "year": {
+          "type": "cds.Integer"
+        },
+        "month": {
+          "type": "cds.Integer"
+        },
+        "period": {
+          "type": "cds.Integer"
+        },
+        "totalHours": {
+          "type": "cds.Decimal",
+          "precision": 6,
+          "scale": 2
+        },
+        "status": {
+          "type": "cap.perf.ImputationPeriodStatus",
+          "length": 15
+        },
+        "sentAt": {
+          "type": "cds.Timestamp"
+        },
+        "validatedBy": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "validatedAt": {
+          "type": "cds.Timestamp"
+        },
+        "rejectionReason": {
+          "type": "cds.String",
+          "length": 500
+        }
+      }
+    },
+    "AdminService.Abaques": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Abaques"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "AdminService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "version": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "lastUpdatedAt": {
+          "type": "cds.Timestamp"
+        },
+        "lastUpdatedBy": {
+          "type": "cds.Association",
+          "target": "AdminService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "approvedByClient": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "approvedAt": {
+          "type": "cds.Timestamp"
+        },
+        "entries": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "AdminService.AbaqueEntries",
+          "on": [
+            {
+              "ref": [
+                "entries",
+                "abaque"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "AdminService.AbaqueEntries": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.AbaqueEntries"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "abaque": {
+          "type": "cds.Association",
+          "target": "AdminService.Abaques",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "devType": {
+          "type": "cap.perf.DevType",
+          "length": 15
+        },
+        "complexite": {
+          "type": "cap.perf.TicketComplexite",
+          "length": 20
+        },
+        "priorite": {
+          "type": "cap.perf.TicketPriorite"
+        },
+        "standardDays": {
+          "type": "cds.Integer"
+        },
+        "maxDays": {
+          "type": "cds.Integer"
+        },
+        "notes": {
+          "type": "cds.String",
+          "length": 500
+        }
+      }
+    },
+    "ProjectService": {
+      "@source": "srv/project-service.cds",
+      "kind": "service",
+      "@path": "/api/project"
+    },
+    "ProjectService.Tickets": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Tickets"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "ProjectService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "objet": {
+          "type": "cds.Association",
+          "target": "ProjectService.Objets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "assignedTo": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "status": {
+          "type": "cap.perf.TicketStatus",
+          "length": 20
+        },
+        "priority": {
+          "type": "cap.perf.Priority",
+          "length": 10
+        },
+        "devType": {
+          "type": "cap.perf.DevType",
+          "length": 15
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 300
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 5000
+        },
+        "dueDate": {
+          "type": "cds.Date"
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "updatedAt": {
+          "type": "cds.Timestamp"
+        },
+        "chiffrage": {
+          "type": "cds.Decimal",
+          "precision": 8,
+          "scale": 2
+        },
+        "complexite": {
+          "type": "cap.perf.TicketComplexite",
+          "length": 20
+        },
+        "priorite": {
+          "type": "cap.perf.TicketPriorite"
+        },
+        "module": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "wricef": {
+          "type": "cds.String",
+          "length": 30
+        },
+        "chiffrageJustification": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "history": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "ProjectService.TicketEvents",
+          "on": [
+            {
+              "ref": [
+                "history",
+                "ticket"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        },
+        "messages": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "ProjectService.TicketMessages",
+          "on": [
+            {
+              "ref": [
+                "messages",
+                "ticket"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        },
+        "activityFeed": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "ProjectService.ActivityEvents",
+          "on": [
+            {
+              "ref": [
+                "activityFeed",
+                "ticket"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ProjectService.TicketEvents": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.TicketEvents"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "ProjectService.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "timestamp": {
+          "type": "cds.Timestamp"
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "action": {
+          "type": "cap.perf.TicketEventAction",
+          "length": 20
+        },
+        "fromValue": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "toValue": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "comment": {
+          "type": "cds.String",
+          "length": 1000
+        }
+      }
+    },
+    "ProjectService.TicketMessages": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.TicketMessages"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "ProjectService.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "sender": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "senderName": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "senderRole": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "content": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "sentAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "ProjectService.ActivityEvents": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.ActivityEvents"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "ProjectService.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "type": {
+          "type": "cap.perf.ActivityEventType",
+          "length": 25
+        },
+        "actor": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "actorName": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "actorRole": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "metadata": {
+          "type": "cds.LargeString"
+        },
+        "occurredAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "ProjectService.WorkSessions": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.WorkSessions"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "consultant": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "ticket": {
+          "type": "cds.Association",
+          "target": "ProjectService.Tickets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "ProjectService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "date": {
+          "type": "cds.Date"
+        },
+        "hours": {
+          "type": "cds.Decimal",
+          "precision": 5,
+          "scale": 2
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "sentToStraTIME": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "sentAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "ProjectService.Notifications": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Notifications"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "type": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "message": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "read": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "ProjectService.Documentations": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Documentations"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "objet": {
+          "type": "cds.Association",
+          "target": "ProjectService.Objets",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "content": {
+          "type": "cds.LargeString"
+        },
+        "version": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 1
+          }
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "updatedBy": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "updatedAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "ProjectService.ImputationPeriods": {
+      "kind": "entity",
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.ImputationPeriods"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "year": {
+          "type": "cds.Integer"
+        },
+        "month": {
+          "type": "cds.Integer"
+        },
+        "period": {
+          "type": "cds.Integer"
+        },
+        "totalHours": {
+          "type": "cds.Decimal",
+          "precision": 6,
+          "scale": 2
+        },
+        "status": {
+          "type": "cap.perf.ImputationPeriodStatus",
+          "length": 15
+        },
+        "sentAt": {
+          "type": "cds.Timestamp"
+        },
+        "validatedBy": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "validatedAt": {
+          "type": "cds.Timestamp"
+        },
+        "rejectionReason": {
+          "type": "cds.String",
+          "length": 500
+        }
+      }
+    },
+    "ProjectService.Users": {
+      "kind": "entity",
+      "@readonly": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Users"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "email": {
+          "type": "cds.String",
+          "length": 150
+        },
+        "role": {
+          "type": "cap.perf.UserRole",
+          "length": 30
+        },
+        "active": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": true
+          }
+        },
+        "availabilityPercent": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 100
+          }
+        },
+        "teamId": {
+          "type": "cds.String",
+          "length": 36
+        },
+        "avatarUrl": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "skills": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "ProjectService.UserSkills",
+          "on": [
+            {
+              "ref": [
+                "skills",
+                "user"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        },
+        "certifications": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "ProjectService.Certifications",
+          "on": [
+            {
+              "ref": [
+                "certifications",
+                "user"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ProjectService.Projects": {
+      "kind": "entity",
+      "@readonly": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Projects"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "code": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "manager": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "startDate": {
+          "type": "cds.Date"
+        },
+        "endDate": {
+          "type": "cds.Date"
+        },
+        "status": {
+          "type": "cap.perf.ProjectStatus",
+          "length": 15
+        },
+        "priority": {
+          "type": "cap.perf.Priority",
+          "length": 10
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "progress": {
+          "type": "cds.Integer"
+        },
+        "budget": {
+          "type": "cds.Decimal",
+          "precision": 15,
+          "scale": 2
+        },
+        "complexity": {
+          "type": "cap.perf.Complexity",
+          "length": 10
+        },
+        "documentation": {
+          "type": "cds.String",
+          "length": 5000
+        },
+        "techKeywords": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "ProjectService.ProjectKeywords",
+          "on": [
+            {
+              "ref": [
+                "techKeywords",
+                "project"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ProjectService.Objets": {
+      "kind": "entity",
+      "@readonly": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Objets"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "ProjectService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "code": {
+          "type": "cds.String",
+          "length": 20
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "module": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "devType": {
+          "type": "cap.perf.DevType",
+          "length": 15
+        },
+        "complexite": {
+          "type": "cap.perf.TicketComplexite",
+          "length": 20
+        },
+        "priorite": {
+          "type": "cap.perf.TicketPriorite"
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ProjectService.Tasks": {
+      "kind": "entity",
+      "@readonly": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Tasks"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "ProjectService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 2000
+        },
+        "status": {
+          "type": "cap.perf.TaskStatus",
+          "length": 20
+        },
+        "priority": {
+          "type": "cap.perf.Priority",
+          "length": 10
+        },
+        "assignee": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "plannedStart": {
+          "type": "cds.Date"
+        },
+        "plannedEnd": {
+          "type": "cds.Date"
+        },
+        "realStart": {
+          "type": "cds.Date"
+        },
+        "realEnd": {
+          "type": "cds.Date"
+        },
+        "progressPercent": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 0
+          }
+        },
+        "estimatedHours": {
+          "type": "cds.Decimal",
+          "precision": 8,
+          "scale": 2
+        },
+        "actualHours": {
+          "type": "cds.Decimal",
+          "precision": 8,
+          "scale": 2
+        },
+        "isCritical": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "riskLevel": {
+          "type": "cap.perf.RiskLevel",
+          "length": 10
+        },
+        "comments": {
+          "type": "cds.String",
+          "length": 2000
+        }
+      }
+    },
+    "ProjectService.Allocations": {
+      "kind": "entity",
+      "@readonly": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Allocations"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "ProjectService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "allocationPercent": {
+          "type": "cds.Integer"
+        },
+        "startDate": {
+          "type": "cds.Date"
+        },
+        "endDate": {
+          "type": "cds.Date"
+        }
+      }
+    },
+    "ProjectService.LeaveRequests": {
+      "kind": "entity",
+      "@readonly": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.LeaveRequests"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "consultant": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "startDate": {
+          "type": "cds.Date"
+        },
+        "endDate": {
+          "type": "cds.Date"
+        },
+        "reason": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "status": {
+          "type": "cap.perf.LeaveStatus",
+          "length": 10
+        },
+        "manager": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "reviewedAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "ProjectService.Abaques": {
+      "kind": "entity",
+      "@readonly": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Abaques"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "ProjectService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "title": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "version": {
+          "type": "cds.String",
+          "length": 10
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        },
+        "createdBy": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "lastUpdatedAt": {
+          "type": "cds.Timestamp"
+        },
+        "lastUpdatedBy": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "approvedByClient": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "approvedAt": {
+          "type": "cds.Timestamp"
+        },
+        "entries": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "ProjectService.AbaqueEntries",
+          "on": [
+            {
+              "ref": [
+                "entries",
+                "abaque"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$self"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ProjectService.AbaqueEntries": {
+      "kind": "entity",
+      "@readonly": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.AbaqueEntries"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "abaque": {
+          "type": "cds.Association",
+          "target": "ProjectService.Abaques",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "devType": {
+          "type": "cap.perf.DevType",
+          "length": 15
+        },
+        "complexite": {
+          "type": "cap.perf.TicketComplexite",
+          "length": 20
+        },
+        "priorite": {
+          "type": "cap.perf.TicketPriorite"
+        },
+        "standardDays": {
+          "type": "cds.Integer"
+        },
+        "maxDays": {
+          "type": "cds.Integer"
+        },
+        "notes": {
+          "type": "cds.String",
+          "length": 500
+        }
+      }
+    },
+    "ProjectService.Deliverables": {
+      "kind": "entity",
+      "@readonly": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Deliverables"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "ProjectService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "task": {
+          "type": "cds.Association",
+          "target": "ProjectService.Tasks",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "type": {
+          "type": "cds.String",
+          "length": 50
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "url": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "fileRef": {
+          "type": "cds.String",
+          "length": 500
+        },
+        "validationStatus": {
+          "type": "cap.perf.ValidationStatus",
+          "length": 20
+        },
+        "functionalComment": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "createdAt": {
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "ProjectService.ReferenceData": {
+      "kind": "entity",
+      "@readonly": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.ReferenceData"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "type": {
+          "type": "cds.String",
+          "length": 30
+        },
+        "code": {
+          "type": "cds.String",
+          "length": 30
+        },
+        "label": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "active": {
+          "type": "cds.Boolean",
+          "default": {
+            "val": true
+          }
+        },
+        "orderIndex": {
+          "type": "cds.Integer"
+        }
+      }
+    },
+    "ProjectService.changeTicketStatus": {
+      "kind": "action",
+      "params": {
+        "ticketId": {
+          "type": "cds.String",
+          "length": 36
+        },
+        "newStatus": {
+          "type": "cap.perf.TicketStatus",
+          "length": 20
+        },
+        "comment": {
+          "type": "cds.String",
+          "length": 1000
+        }
+      },
+      "returns": {
+        "type": "ProjectService.Tickets"
+      }
+    },
+    "ProjectService.assignTicket": {
+      "kind": "action",
+      "params": {
+        "ticketId": {
+          "type": "cds.String",
+          "length": 36
+        },
+        "assigneeId": {
+          "type": "cds.String",
+          "length": 36
+        }
+      },
+      "returns": {
+        "type": "ProjectService.Tickets"
+      }
+    },
+    "ProjectService.logWorkSession": {
+      "kind": "action",
+      "params": {
+        "ticketId": {
+          "type": "cds.String",
+          "length": 36
+        },
+        "hours": {
+          "type": "cds.Decimal",
+          "precision": 5,
+          "scale": 2
+        },
+        "description": {
+          "type": "cds.String",
+          "length": 1000
+        },
+        "date": {
+          "type": "cds.Date"
+        }
+      },
+      "returns": {
+        "type": "ProjectService.WorkSessions"
+      }
+    },
+    "ProjectService.sendToStraTIME": {
+      "kind": "action",
+      "params": {
+        "sessionIds": {
+          "items": {
+            "type": "cds.String",
+            "length": 36
+          }
+        }
+      },
+      "returns": {
+        "items": {
+          "type": "ProjectService.WorkSessions"
+        }
+      }
+    },
+    "ProjectService.getTicketActivity": {
+      "kind": "function",
+      "params": {
+        "ticketId": {
+          "type": "cds.String",
+          "length": 36
+        }
+      },
+      "returns": {
+        "items": {
+          "type": "ProjectService.ActivityEvents"
+        }
+      }
+    },
+    "ProjectService.getProjectKPIs": {
+      "kind": "function",
+      "params": {
+        "projectId": {
+          "type": "cds.String",
+          "length": 36
+        }
+      },
+      "returns": {
+        "elements": {
+          "totalTickets": {
+            "type": "cds.Integer"
+          },
+          "openTickets": {
+            "type": "cds.Integer"
+          },
+          "resolvedTickets": {
+            "type": "cds.Integer"
+          },
+          "closedTickets": {
+            "type": "cds.Integer"
+          },
+          "totalHours": {
+            "type": "cds.Decimal",
+            "precision": 10,
+            "scale": 2
+          },
+          "avgResolution": {
+            "type": "cds.Decimal",
+            "precision": 8,
+            "scale": 2
+          }
+        }
+      }
+    },
+    "cds.outbox.Messages": {
+      "kind": "entity",
+      "elements": {
+        "ID": {
+          "key": true,
+          "type": "cds.UUID"
+        },
+        "timestamp": {
+          "type": "cds.Timestamp"
+        },
+        "target": {
+          "type": "cds.String"
+        },
+        "msg": {
+          "type": "cds.LargeString"
+        },
+        "attempts": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 0
+          }
+        },
+        "partition": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 0
+          }
+        },
+        "lastError": {
+          "type": "cds.LargeString"
+        },
+        "lastAttemptTimestamp": {
+          "type": "cds.Timestamp"
+        },
+        "status": {
+          "type": "cds.String",
+          "length": 23
+        },
+        "task": {
+          "type": "cds.String",
+          "length": 255
+        },
+        "appid": {
+          "type": "cds.String",
+          "length": 255
+        }
+      }
+    },
+    "ProjectService.UserSkills": {
+      "kind": "entity",
+      "@cds.autoexposed": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.UserSkills"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "skill": {
+          "type": "cds.String",
+          "length": 100
+        }
+      }
+    },
+    "ProjectService.Certifications": {
+      "kind": "entity",
+      "@cds.autoexposed": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.Certifications"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 36
+        },
+        "user": {
+          "type": "cds.Association",
+          "target": "ProjectService.Users",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "name": {
+          "type": "cds.String",
+          "length": 200
+        },
+        "issuingBody": {
+          "type": "cds.String",
+          "length": 100
+        },
+        "dateObtained": {
+          "type": "cds.Date"
+        },
+        "expiryDate": {
+          "type": "cds.Date"
+        },
+        "status": {
+          "type": "cap.perf.CertificationStatus",
+          "length": 15
+        }
+      }
+    },
+    "ProjectService.ProjectKeywords": {
+      "kind": "entity",
+      "@cds.autoexposed": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "cap.perf.ProjectKeywords"
+          ]
+        }
+      },
+      "elements": {
+        "id": {
+          "key": true,
+          "type": "cds.String",
+          "length": 50
+        },
+        "project": {
+          "type": "cds.Association",
+          "target": "ProjectService.Projects",
+          "keys": [
+            {
+              "ref": [
+                "id"
+              ]
+            }
+          ]
+        },
+        "keyword": {
+          "type": "cds.String",
+          "length": 50
+        }
+      }
+    }
+  },
+  "meta": {
+    "creator": "CDS Compiler v6.7.3",
+    "flavor": "inferred"
+  },
+  "$version": "2.0"
+}

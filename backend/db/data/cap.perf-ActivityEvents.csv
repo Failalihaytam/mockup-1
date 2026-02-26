@@ -1,0 +1,25 @@
+id;ticket_id;type;actor_id;actorName;actorRole;description;metadata;occurredAt
+ae-1;tk1;ticket_created;u4;Sophie Bernard;CONSULTANT_FONCTIONNEL;Ticket créé;;2026-01-15T09:00:00Z
+ae-2;tk1;assignee_change;u2;Marie Martin;MANAGER;Assigné à Pierre Dubois;"{""from"":null,""to"":""u3""}";2026-01-15T09:30:00Z
+ae-3;tk1;status_change;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;Statut changé : OPEN → IN_PROGRESS;"{""from"":""OPEN"",""to"":""IN_PROGRESS""}";2026-02-01T08:00:00Z
+ae-4;tk1;work_session_logged;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;Session de travail : 3.5h;"{""hours"":3.5}";2026-02-19T18:00:00Z
+ae-5;tk1;chiffrage_updated;u4;Sophie Bernard;CONSULTANT_FONCTIONNEL;Chiffrage mis à jour : 5 jours;"{""chiffrage"":5}";2026-02-20T14:30:00Z
+ae-6;tk2;ticket_created;u4;Sophie Bernard;CONSULTANT_FONCTIONNEL;Ticket créé;;2026-01-18T11:00:00Z
+ae-7;tk2;status_change;u5;Luc Moreau;CONSULTANT_TECHNIQUE;Statut changé : OPEN → IN_PROGRESS;"{""from"":""OPEN"",""to"":""IN_PROGRESS""}";2026-01-25T08:00:00Z
+ae-8;tk2;status_change;u5;Luc Moreau;CONSULTANT_TECHNIQUE;Statut changé : IN_PROGRESS → WAITING_FEEDBACK;"{""from"":""IN_PROGRESS"",""to"":""WAITING_FEEDBACK""}";2026-02-18T16:00:00Z
+ae-9;tk3;ticket_created;u4;Sophie Bernard;CONSULTANT_FONCTIONNEL;Ticket créé;;2026-01-20T10:00:00Z
+ae-10;tk3;status_change;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;Statut changé : OPEN → IN_PROGRESS;"{""from"":""OPEN"",""to"":""IN_PROGRESS""}";2026-02-03T09:00:00Z
+ae-11;tk3;work_session_logged;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;Session de travail : 4h;"{""hours"":4}";2026-02-10T18:00:00Z
+ae-12;tk5;ticket_created;u4;Sophie Bernard;CONSULTANT_FONCTIONNEL;Ticket créé;;2026-02-05T14:00:00Z
+ae-13;tk5;status_change;u5;Luc Moreau;CONSULTANT_TECHNIQUE;Statut changé : OPEN → IN_PROGRESS;"{""from"":""OPEN"",""to"":""IN_PROGRESS""}";2026-02-10T08:00:00Z
+ae-14;tk7;ticket_created;u4;Sophie Bernard;CONSULTANT_FONCTIONNEL;Ticket créé;;2026-01-22T09:00:00Z
+ae-15;tk7;priority_change;u2;Marie Martin;MANAGER;Priorité changée : HIGH → CRITICAL;"{""from"":""HIGH"",""to"":""CRITICAL""}";2026-01-23T10:00:00Z
+ae-16;tk7;status_change;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;Statut changé : OPEN → IN_PROGRESS;"{""from"":""OPEN"",""to"":""IN_PROGRESS""}";2026-02-01T08:00:00Z
+ae-17;tk9;ticket_created;u4;Sophie Bernard;CONSULTANT_FONCTIONNEL;Ticket créé;;2026-01-28T09:00:00Z
+ae-18;tk9;status_change;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;Statut changé : IN_PROGRESS → RESOLVED;"{""from"":""IN_PROGRESS"",""to"":""RESOLVED""}";2026-02-22T16:00:00Z
+ae-19;tk10;ticket_created;u4;Sophie Bernard;CONSULTANT_FONCTIONNEL;Ticket créé;;2026-02-03T11:00:00Z
+ae-20;tk10;status_change;u5;Luc Moreau;CONSULTANT_TECHNIQUE;Statut changé : OPEN → IN_PROGRESS;"{""from"":""OPEN"",""to"":""IN_PROGRESS""}";2026-02-07T08:00:00Z
+ae-21;tk14;ticket_created;u4;Sophie Bernard;CONSULTANT_FONCTIONNEL;Ticket créé;;2026-02-01T10:00:00Z
+ae-22;tk14;status_change;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;Statut changé : OPEN → IN_PROGRESS;"{""from"":""OPEN"",""to"":""IN_PROGRESS""}";2026-02-10T08:00:00Z
+ae-23;tk20;ticket_created;u2;Marie Martin;MANAGER;Ticket créé;;2026-02-10T08:00:00Z
+ae-24;tk20;status_change;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;Statut changé : OPEN → IN_PROGRESS;"{""from"":""OPEN"",""to"":""IN_PROGRESS""}";2026-02-15T09:00:00Z

@@ -1,0 +1,4 @@
+id;type;code;label;active;orderIndex
+r1;TASK_STATUS;IN_PROGRESS;En cours;true;2
+r2;PRIORITY;HIGH;Haute;true;3
+r3;PROJECT_TYPE;MIGRATION;Migration;true;1

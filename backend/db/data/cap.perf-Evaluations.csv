@@ -1,0 +1,2 @@
+id;user_id;evaluator_id;project_id;period;score;qualitativeGrid_productivity;qualitativeGrid_quality;qualitativeGrid_autonomy;qualitativeGrid_collaboration;qualitativeGrid_innovation;feedback;createdAt
+e1;u3;u2;p1;2026-Q1;4.2;4;5;4;4;4;Excellent travail sur la migration. Très bon niveau technique ABAP et proactivité.;2026-02-15T10:00:00Z

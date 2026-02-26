@@ -1,0 +1,29 @@
+id;user_id;skill
+sk-u1-1;u1;SAP Basis
+sk-u1-2;u1;Security
+sk-u1-3;u1;ABAP
+sk-u2-1;u2;Project Management
+sk-u2-2;u2;SAP MM
+sk-u2-3;u2;Agile
+sk-u3-1;u3;ABAP
+sk-u3-2;u3;Fiori
+sk-u3-3;u3;CDS Views
+sk-u3-4;u3;OData
+sk-u3-5;u3;RAP
+sk-u4-1;u4;SAP FI/CO
+sk-u4-2;u4;MM
+sk-u4-3;u4;S/4HANA Configuration
+sk-u4-4;u4;Business Process
+sk-u5-1;u5;UI5
+sk-u5-2;u5;JavaScript
+sk-u5-3;u5;TypeScript
+sk-u5-4;u5;Fiori Elements
+sk-u6-1;u6;SAP Activate
+sk-u6-2;u6;PPM
+sk-u6-3;u6;JIRA
+sk-u6-4;u6;Risk Management
+sk-u7-1;u7;ABAP OO
+sk-u7-2;u7;Git
+sk-u7-3;u7;Code Review
+sk-u7-4;u7;CI/CD
+sk-u7-5;u7;ADT

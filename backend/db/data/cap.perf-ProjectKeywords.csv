@@ -1,0 +1,16 @@
+id;project_id;keyword
+kw-p1-1;p1;S/4HANA
+kw-p1-2;p1;ABAP
+kw-p1-3;p1;Migration
+kw-p1-4;p1;Fiori
+kw-p1-5;p1;CDS
+kw-p2-1;p2;Fiori
+kw-p2-2;p2;UI5
+kw-p2-3;p2;Launchpad
+kw-p2-4;p2;Workflow
+kw-p2-5;p2;SAP Build
+kw-p3-1;p3;BW/4HANA
+kw-p3-2;p3;CDS Views
+kw-p3-3;p3;SAC
+kw-p3-4;p3;Analytics
+kw-p3-5;p3;OData

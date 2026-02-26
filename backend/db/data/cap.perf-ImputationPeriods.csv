@@ -1,0 +1,8 @@
+id;user_id;year;month;period;totalHours;status;sentAt;validatedBy_id;validatedAt;rejectionReason
+ip1;u3;2026;1;1;32;validated;2026-01-16T09:00:00Z;u6;2026-01-17T10:00:00Z;
+ip2;u3;2026;1;2;28;validated;2026-02-01T08:30:00Z;u6;2026-02-02T11:00:00Z;
+ip3;u5;2026;1;1;35;validated;2026-01-16T10:00:00Z;u6;2026-01-17T11:00:00Z;
+ip4;u5;2026;1;2;30;validated;2026-02-01T09:00:00Z;u6;2026-02-02T14:00:00Z;
+ip5;u3;2026;2;1;4.75;sent;2026-02-16T09:00:00Z;;;
+ip6;u5;2026;2;1;4;sent;2026-02-16T10:00:00Z;;;
+ip7;u7;2026;2;1;10;sent;2026-02-16T11:00:00Z;;;

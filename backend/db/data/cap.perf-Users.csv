@@ -1,0 +1,8 @@
+id;name;email;password;role;active;availabilityPercent;teamId;avatarUrl
+u1;Jean Dupont;jean.dupont@cap-consulting.fr;Admin@2026;ADMIN;true;100;;
+u2;Marie Martin;marie.martin@cap-consulting.fr;Manager@2026;MANAGER;true;100;;
+u3;Pierre Dubois;pierre.dubois@cap-consulting.fr;Consultant@2026;CONSULTANT_TECHNIQUE;true;90;;
+u4;Sophie Bernard;sophie.bernard@cap-consulting.fr;Consultant@2026;CONSULTANT_FONCTIONNEL;true;85;;
+u5;Luc Moreau;luc.moreau@cap-consulting.fr;Consultant@2026;CONSULTANT_TECHNIQUE;true;80;;
+u6;Claire Lefebvre;claire.lefebvre@cap-consulting.fr;ChefProjet@2026;CHEF_DE_PROJET;true;100;;
+u7;Thomas Girard;thomas.girard@cap-consulting.fr;Coordinateur@2026;COORDINATEUR_DEV;true;100;;

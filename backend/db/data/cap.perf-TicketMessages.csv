@@ -1,0 +1,12 @@
+id;ticket_id;sender_id;senderName;senderRole;content;sentAt
+msg-tk1-1;tk1;u4;Sophie Bernard;CONSULTANT_FONCTIONNEL;J'ai finalisé la SFD pour la migration MM. Pierre, peux-tu valider la faisabilité technique ?;2026-01-16T09:00:00Z
+msg-tk1-2;tk1;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;SFD validée. Je commence le développement ABAP cette semaine.;2026-01-16T14:00:00Z
+msg-tk2-1;tk2;u5;Luc Moreau;CONSULTANT_TECHNIQUE;Rapport prêt. En attente de validation du format par le contrôle de gestion.;2026-02-18T10:00:00Z
+msg-tk3-1;tk3;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;La tuile Fiori est en cours. Le backend OData fonctionne, UI en construction.;2026-02-15T11:00:00Z
+msg-tk5-1;tk5;u5;Luc Moreau;CONSULTANT_TECHNIQUE;Le composant filtres avancés est terminé. Je passe aux tests.;2026-02-20T09:00:00Z
+msg-tk7-1;tk7;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;Le batch input fonctionne en environnement de test. Besoin de validation données réelles.;2026-02-19T15:00:00Z
+msg-tk9-1;tk9;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;Formulaire congés terminé et testé. En attente de validation fonctionnelle.;2026-02-20T16:00:00Z
+msg-tk10-1;tk10;u5;Luc Moreau;CONSULTANT_TECHNIQUE;Extension manager en cours. Les tuiles KPI sont fonctionnelles.;2026-02-18T10:00:00Z
+msg-tk14-1;tk14;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;Push notifications implémentées via SAP BTP. Tests en cours.;2026-02-19T14:00:00Z
+msg-tk15-1;tk15;u5;Luc Moreau;CONSULTANT_TECHNIQUE;Formulaire d'évaluation prêt. En attente retour utilisateur final.;2026-02-19T16:00:00Z
+msg-tk20-1;tk20;u3;Pierre Dubois;CONSULTANT_TECHNIQUE;L'intégration Work Zone est complexe. J'ai besoin d'un accès sub-account BTP.;2026-02-20T08:00:00Z

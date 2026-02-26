@@ -1,0 +1,13 @@
+id;user_id;name;issuingBody;dateObtained;expiryDate;status
+c1;u1;SAP Certified Technology Associate;SAP;2025-03-15;2027-03-15;VALID
+c2;u1;ITIL Foundation;Axelos;2024-06-01;2026-06-01;VALID
+c3;u2;PMP;PMI;2024-01-10;2027-01-10;VALID
+c4;u2;SAP Certified Application Associate – MM;SAP;2025-05-20;2027-05-20;VALID
+c5;u3;SAP Certified Development Associate – ABAP;SAP;2025-09-01;2027-09-01;VALID
+c6;u3;SAP Certified Development Specialist – Fiori;SAP;2025-11-01;2027-11-01;VALID
+c7;u3;AWS Cloud Practitioner;AWS;2024-04-15;2026-04-15;EXPIRING_SOON
+c8;u4;SAP Certified Application Associate – FI;SAP;2025-07-01;2027-07-01;VALID
+c9;u4;SAP Certified Application Associate – S/4HANA;SAP;2025-08-20;2027-08-20;VALID
+c10;u5;SAP Certified Development Associate – UI5;SAP;2025-06-01;2027-06-01;VALID
+c11;u6;PRINCE2 Practitioner;AXELOS;2024-09-01;2026-09-01;VALID
+c12;u7;SAP Certified Development Associate – ABAP;SAP;2025-01-15;2027-01-15;VALID

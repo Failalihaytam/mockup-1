@@ -1,0 +1,5 @@
+id;project_id;title;version;createdAt;createdBy_id;lastUpdatedAt;lastUpdatedBy_id;approvedByClient;approvedAt
+abq-p1-v1;p1;Abaque S/4HANA – Initial;v1.0;2026-01-05T10:00:00Z;u4;2026-01-10T14:00:00Z;u2;true;2026-01-12T09:00:00Z
+abq-p1-v2;p1;Abaque S/4HANA – Révision Sprint 2;v1.1;2026-02-01T10:00:00Z;u2;2026-02-05T16:00:00Z;u2;false;
+abq-p2-v1;p2;Abaque Fiori Launchpad;v1.0;2026-02-03T10:00:00Z;u4;2026-02-03T10:00:00Z;u4;true;2026-02-04T11:00:00Z
+abq-p3-v1;p3;Abaque BI Reporting Platform;v1.0;2026-01-20T08:00:00Z;u4;2026-01-22T10:00:00Z;u2;true;2026-01-25T09:00:00Z

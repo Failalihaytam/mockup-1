@@ -1,0 +1,4 @@
+id;code;name;manager_id;startDate;endDate;status;priority;description;progress;budget;complexity;documentation
+p1;SAPS;SAP S/4HANA Migration;u2;2026-01-01;2026-06-30;ACTIVE;HIGH;Migration complète ECC → S/4HANA avec conversion données et adaptation processus métier;35;450000;HIGH;
+p2;FIOR;Fiori Launchpad Deployment;u2;2026-02-01;2026-05-31;ACTIVE;MEDIUM;Déploiement du Fiori Launchpad avec tuiles personnalisées et workflows;20;180000;MEDIUM;
+p3;BIRP;BI Reporting Platform;u2;2026-01-15;2026-07-31;ACTIVE;HIGH;Plateforme de reporting BI avec dashboards temps réel et extraction SAP;45;320000;HIGH;

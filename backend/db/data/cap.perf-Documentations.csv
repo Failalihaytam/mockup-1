@@ -1,0 +1,28 @@
+id;objet_id;title;content;version;createdBy_id;updatedBy_id;createdAt;updatedAt
+sfd1;obj1;SFD – Migration données maîtres MM;"# Spécification Fonctionnelle
+## Contexte
+Migration des données maîtres articles...";2;u4;u4;2026-01-12T09:00:00Z;2026-01-20T14:00:00Z
+sfd2;obj2;SFD – Rapport contrôle factures;"# Spécification Fonctionnelle
+## Contexte
+Rapport de contrôle automatisé des factures...";1;u4;;2026-01-14T10:00:00Z;
+sfd3;obj3;SFD – Tuile Fiori approbation PO;"# Spécification Fonctionnelle
+## Contexte
+Création tuile Fiori Launchpad pour approbation PO...";1;u4;;2026-01-16T09:00:00Z;
+sfd4;obj4;SFD – Page Fiori My Inbox;"# Spécification Fonctionnelle
+## Contexte
+Amélioration My Inbox avec filtres avancés...";1;u4;;2026-01-18T14:00:00Z;
+sfd5;obj5;SFD – CDS View Extraction GL;"# Spécification Fonctionnelle
+## Contexte
+CDS Views pour extraction données GL vers plateforme BI";1;u4;;2026-01-20T08:00:00Z;
+sfd6;obj1b;SFD – Batch Input modification prix;"# Spécification Fonctionnelle
+## Contexte
+Programme batch pour mise à jour massive des prix...";1;u4;;2026-01-22T09:00:00Z;
+sfd7;obj3b;SFD – Formulaire congés Fiori;"# Spécification Fonctionnelle
+## Contexte
+Formulaire Fiori de saisie des demandes de congés...";1;u4;;2026-01-28T10:00:00Z;
+sfd8;obj5b;SFD – KPI Dashboard temps réel;"# Spécification Fonctionnelle
+## Contexte
+Dashboard KPIs avec rafraîchissement temps réel...";1;u2;;2026-02-01T08:00:00Z;
+sfd9;obj5d;SFD – Pipeline ETL données ventes;"# Spécification Fonctionnelle
+## Contexte
+Pipeline ETL extraction données SD vers BI...";1;u2;;2026-02-05T09:00:00Z;

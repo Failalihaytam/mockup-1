@@ -1,0 +1,19 @@
+id;project_id;code;name;description;module;devType;complexite;priorite;createdAt;createdBy_id
+obj1;p1;MM-001;Gestion Articles MM;;MM;Formulaire;Complexe;1;2026-01-10T09:00:00Z;u4
+obj2;p1;MM-002;Rapports Contrôle Factures;;MM;Report;Moyen;2;2026-01-12T10:00:00Z;u4
+obj1b;p1;MM-003;Batch Input Prix;;MM;Enhancement;Complexe;0;2026-01-15T09:00:00Z;u4
+obj1c;p1;MM-004;Stock Valorisé Multi-Sté;;MM;Report;Moyen;2;2026-01-18T10:00:00Z;u2
+obj1d;p1;MM-005;Anomalies Migration;;MM;Report;Simple;3;2026-01-20T09:00:00Z;u4
+obj1e;p1;SD-001;Interface IDocs;;SD;Enhancement;Complexe;2;2026-01-22T10:00:00Z;u2
+obj3;p2;FI-001;Tuile Approbation PO;;FI;Enhancement;Complexe;1;2026-01-14T09:00:00Z;u4
+obj4;p2;BC-001;My Inbox Améliorée;;BC;Formulaire;Complexe;2;2026-01-16T10:00:00Z;u4
+obj3b;p2;HR-001;Congés Fiori;;HR;Formulaire;Simple;1;2026-01-20T09:00:00Z;u4
+obj3c;p2;BC-002;Extension Launchpad Manager;;BC;Enhancement;Complexe;2;2026-01-25T11:00:00Z;u4
+obj3d;p2;BC-003;Push Notification Workflow;;BC;Enhancement;Complexe;1;2026-01-28T10:00:00Z;u4
+obj3e;p2;MM-001;Éval Fournisseur Fiori;;MM;Formulaire;Moyen;2;2026-02-01T14:00:00Z;u4
+obj5;p3;FI-001;Extraction GL CDS;;FI;Programme;Moyen;0;2026-01-18T08:00:00Z;u4
+obj5b;p3;CO-001;KPI Dashboard;;CO;Programme;Très Complexe;1;2026-01-20T08:00:00Z;u2
+obj5c;p3;HR-001;Extraction RH BI;;HR;Report;Moyen;2;2026-01-22T10:00:00Z;u2
+obj5d;p3;SD-001;Pipeline ETL Ventes;;SD;Programme;Très Complexe;0;2026-01-25T08:00:00Z;u2
+obj5e;p3;FI-002;Consolidation Mensuelle;;FI;Report;Complexe;1;2026-01-28T09:00:00Z;u4
+obj5f;p3;CO-002;Drill-down Centres de Coûts;;CO;Report;Complexe;1;2026-01-30T08:00:00Z;u2

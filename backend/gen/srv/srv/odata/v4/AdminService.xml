@@ -1,0 +1,1168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+    <edmx:Include Alias="Common" Namespace="com.sap.vocabularies.Common.v1"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml">
+    <edmx:Include Alias="Core" Namespace="Org.OData.Core.V1"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Validation.V1.xml">
+    <edmx:Include Alias="Validation" Namespace="Org.OData.Validation.V1"/>
+  </edmx:Reference>
+  <edmx:DataServices>
+    <Schema Namespace="AdminService" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+      <Annotation Term="Core.Links">
+        <Collection>
+          <Record>
+            <PropertyValue Property="rel" String="author"/>
+            <PropertyValue Property="href" String="https://cap.cloud.sap"/>
+          </Record>
+        </Collection>
+      </Annotation>
+      <EntityContainer Name="EntityContainer">
+        <EntitySet Name="Users" EntityType="AdminService.Users">
+          <NavigationPropertyBinding Path="skills" Target="UserSkills"/>
+          <NavigationPropertyBinding Path="certifications" Target="Certifications"/>
+        </EntitySet>
+        <EntitySet Name="UserSkills" EntityType="AdminService.UserSkills">
+          <NavigationPropertyBinding Path="user" Target="Users"/>
+        </EntitySet>
+        <EntitySet Name="Certifications" EntityType="AdminService.Certifications">
+          <NavigationPropertyBinding Path="user" Target="Users"/>
+        </EntitySet>
+        <EntitySet Name="Projects" EntityType="AdminService.Projects">
+          <NavigationPropertyBinding Path="manager" Target="Users"/>
+          <NavigationPropertyBinding Path="techKeywords" Target="ProjectKeywords"/>
+        </EntitySet>
+        <EntitySet Name="ProjectKeywords" EntityType="AdminService.ProjectKeywords">
+          <NavigationPropertyBinding Path="project" Target="Projects"/>
+        </EntitySet>
+        <EntitySet Name="Objets" EntityType="AdminService.Objets">
+          <NavigationPropertyBinding Path="project" Target="Projects"/>
+          <NavigationPropertyBinding Path="createdBy" Target="Users"/>
+        </EntitySet>
+        <EntitySet Name="Documentations" EntityType="AdminService.Documentations">
+          <NavigationPropertyBinding Path="objet" Target="Objets"/>
+          <NavigationPropertyBinding Path="createdBy" Target="Users"/>
+          <NavigationPropertyBinding Path="updatedBy" Target="Users"/>
+        </EntitySet>
+        <EntitySet Name="Tasks" EntityType="AdminService.Tasks">
+          <NavigationPropertyBinding Path="project" Target="Projects"/>
+          <NavigationPropertyBinding Path="assignee" Target="Users"/>
+        </EntitySet>
+        <EntitySet Name="Timesheets" EntityType="AdminService.Timesheets">
+          <NavigationPropertyBinding Path="user" Target="Users"/>
+          <NavigationPropertyBinding Path="project" Target="Projects"/>
+          <NavigationPropertyBinding Path="task" Target="Tasks"/>
+        </EntitySet>
+        <EntitySet Name="Evaluations" EntityType="AdminService.Evaluations">
+          <NavigationPropertyBinding Path="user" Target="Users"/>
+          <NavigationPropertyBinding Path="evaluator" Target="Users"/>
+          <NavigationPropertyBinding Path="project" Target="Projects"/>
+        </EntitySet>
+        <EntitySet Name="Deliverables" EntityType="AdminService.Deliverables">
+          <NavigationPropertyBinding Path="project" Target="Projects"/>
+          <NavigationPropertyBinding Path="task" Target="Tasks"/>
+        </EntitySet>
+        <EntitySet Name="Tickets" EntityType="AdminService.Tickets">
+          <NavigationPropertyBinding Path="project" Target="Projects"/>
+          <NavigationPropertyBinding Path="objet" Target="Objets"/>
+          <NavigationPropertyBinding Path="createdBy" Target="Users"/>
+          <NavigationPropertyBinding Path="assignedTo" Target="Users"/>
+          <NavigationPropertyBinding Path="history" Target="TicketEvents"/>
+          <NavigationPropertyBinding Path="messages" Target="TicketMessages"/>
+          <NavigationPropertyBinding Path="activityFeed" Target="ActivityEvents"/>
+        </EntitySet>
+        <EntitySet Name="TicketEvents" EntityType="AdminService.TicketEvents">
+          <NavigationPropertyBinding Path="ticket" Target="Tickets"/>
+          <NavigationPropertyBinding Path="user" Target="Users"/>
+        </EntitySet>
+        <EntitySet Name="TicketMessages" EntityType="AdminService.TicketMessages">
+          <NavigationPropertyBinding Path="ticket" Target="Tickets"/>
+          <NavigationPropertyBinding Path="sender" Target="Users"/>
+        </EntitySet>
+        <EntitySet Name="ActivityEvents" EntityType="AdminService.ActivityEvents">
+          <NavigationPropertyBinding Path="ticket" Target="Tickets"/>
+          <NavigationPropertyBinding Path="actor" Target="Users"/>
+        </EntitySet>
+        <EntitySet Name="WorkSessions" EntityType="AdminService.WorkSessions">
+          <NavigationPropertyBinding Path="consultant" Target="Users"/>
+          <NavigationPropertyBinding Path="ticket" Target="Tickets"/>
+          <NavigationPropertyBinding Path="project" Target="Projects"/>
+        </EntitySet>
+        <EntitySet Name="Notifications" EntityType="AdminService.Notifications">
+          <NavigationPropertyBinding Path="user" Target="Users"/>
+        </EntitySet>
+        <EntitySet Name="ReferenceData" EntityType="AdminService.ReferenceData"/>
+        <EntitySet Name="Allocations" EntityType="AdminService.Allocations">
+          <NavigationPropertyBinding Path="user" Target="Users"/>
+          <NavigationPropertyBinding Path="project" Target="Projects"/>
+        </EntitySet>
+        <EntitySet Name="LeaveRequests" EntityType="AdminService.LeaveRequests">
+          <NavigationPropertyBinding Path="consultant" Target="Users"/>
+          <NavigationPropertyBinding Path="manager" Target="Users"/>
+        </EntitySet>
+        <EntitySet Name="ImputationPeriods" EntityType="AdminService.ImputationPeriods">
+          <NavigationPropertyBinding Path="user" Target="Users"/>
+          <NavigationPropertyBinding Path="validatedBy" Target="Users"/>
+        </EntitySet>
+        <EntitySet Name="Abaques" EntityType="AdminService.Abaques">
+          <NavigationPropertyBinding Path="project" Target="Projects"/>
+          <NavigationPropertyBinding Path="createdBy" Target="Users"/>
+          <NavigationPropertyBinding Path="lastUpdatedBy" Target="Users"/>
+          <NavigationPropertyBinding Path="entries" Target="AbaqueEntries"/>
+        </EntitySet>
+        <EntitySet Name="AbaqueEntries" EntityType="AdminService.AbaqueEntries">
+          <NavigationPropertyBinding Path="abaque" Target="Abaques"/>
+        </EntitySet>
+      </EntityContainer>
+      <EntityType Name="Users">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <Property Name="name" Type="Edm.String" MaxLength="100"/>
+        <Property Name="email" Type="Edm.String" MaxLength="150"/>
+        <Property Name="role" Type="Edm.String" MaxLength="30"/>
+        <Property Name="active" Type="Edm.Boolean" DefaultValue="true"/>
+        <Property Name="availabilityPercent" Type="Edm.Int32" DefaultValue="100"/>
+        <Property Name="teamId" Type="Edm.String" MaxLength="36"/>
+        <Property Name="avatarUrl" Type="Edm.String" MaxLength="500"/>
+        <NavigationProperty Name="skills" Type="Collection(AdminService.UserSkills)" Partner="user">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="certifications" Type="Collection(AdminService.Certifications)" Partner="user">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="UserSkills">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="50" Nullable="false"/>
+        <NavigationProperty Name="user" Type="AdminService.Users" Partner="skills">
+          <ReferentialConstraint Property="user_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="user_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="skill" Type="Edm.String" MaxLength="100"/>
+      </EntityType>
+      <EntityType Name="Certifications">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="user" Type="AdminService.Users" Partner="certifications">
+          <ReferentialConstraint Property="user_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="user_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="name" Type="Edm.String" MaxLength="200"/>
+        <Property Name="issuingBody" Type="Edm.String" MaxLength="100"/>
+        <Property Name="dateObtained" Type="Edm.Date"/>
+        <Property Name="expiryDate" Type="Edm.Date"/>
+        <Property Name="status" Type="Edm.String" MaxLength="15"/>
+      </EntityType>
+      <EntityType Name="Projects">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <Property Name="code" Type="Edm.String" MaxLength="10"/>
+        <Property Name="name" Type="Edm.String" MaxLength="200"/>
+        <NavigationProperty Name="manager" Type="AdminService.Users">
+          <ReferentialConstraint Property="manager_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="manager_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="startDate" Type="Edm.Date"/>
+        <Property Name="endDate" Type="Edm.Date"/>
+        <Property Name="status" Type="Edm.String" MaxLength="15"/>
+        <Property Name="priority" Type="Edm.String" MaxLength="10"/>
+        <Property Name="description" Type="Edm.String" MaxLength="2000"/>
+        <Property Name="progress" Type="Edm.Int32"/>
+        <Property Name="budget" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="complexity" Type="Edm.String" MaxLength="10"/>
+        <Property Name="documentation" Type="Edm.String" MaxLength="5000"/>
+        <NavigationProperty Name="techKeywords" Type="Collection(AdminService.ProjectKeywords)" Partner="project">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="ProjectKeywords">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="50" Nullable="false"/>
+        <NavigationProperty Name="project" Type="AdminService.Projects" Partner="techKeywords">
+          <ReferentialConstraint Property="project_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="project_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="keyword" Type="Edm.String" MaxLength="50"/>
+      </EntityType>
+      <EntityType Name="Objets">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="project" Type="AdminService.Projects">
+          <ReferentialConstraint Property="project_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="project_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="code" Type="Edm.String" MaxLength="20"/>
+        <Property Name="name" Type="Edm.String" MaxLength="200"/>
+        <Property Name="description" Type="Edm.String" MaxLength="2000"/>
+        <Property Name="module" Type="Edm.String" MaxLength="10"/>
+        <Property Name="devType" Type="Edm.String" MaxLength="15"/>
+        <Property Name="complexite" Type="Edm.String" MaxLength="20"/>
+        <Property Name="priorite" Type="Edm.Int32"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <NavigationProperty Name="createdBy" Type="AdminService.Users">
+          <ReferentialConstraint Property="createdBy_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="createdBy_id" Type="Edm.String" MaxLength="36"/>
+      </EntityType>
+      <EntityType Name="Documentations">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="objet" Type="AdminService.Objets">
+          <ReferentialConstraint Property="objet_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="objet_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="title" Type="Edm.String" MaxLength="200"/>
+        <Property Name="content" Type="Edm.String"/>
+        <Property Name="version" Type="Edm.Int32" DefaultValue="1"/>
+        <NavigationProperty Name="createdBy" Type="AdminService.Users">
+          <ReferentialConstraint Property="createdBy_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="createdBy_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="updatedBy" Type="AdminService.Users">
+          <ReferentialConstraint Property="updatedBy_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="updatedBy_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="updatedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+      </EntityType>
+      <EntityType Name="Tasks">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="project" Type="AdminService.Projects">
+          <ReferentialConstraint Property="project_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="project_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="title" Type="Edm.String" MaxLength="200"/>
+        <Property Name="description" Type="Edm.String" MaxLength="2000"/>
+        <Property Name="status" Type="Edm.String" MaxLength="20"/>
+        <Property Name="priority" Type="Edm.String" MaxLength="10"/>
+        <NavigationProperty Name="assignee" Type="AdminService.Users">
+          <ReferentialConstraint Property="assignee_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="assignee_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="plannedStart" Type="Edm.Date"/>
+        <Property Name="plannedEnd" Type="Edm.Date"/>
+        <Property Name="realStart" Type="Edm.Date"/>
+        <Property Name="realEnd" Type="Edm.Date"/>
+        <Property Name="progressPercent" Type="Edm.Int32" DefaultValue="0"/>
+        <Property Name="estimatedHours" Type="Edm.Decimal" Precision="8" Scale="2"/>
+        <Property Name="actualHours" Type="Edm.Decimal" Precision="8" Scale="2"/>
+        <Property Name="isCritical" Type="Edm.Boolean" DefaultValue="false"/>
+        <Property Name="riskLevel" Type="Edm.String" MaxLength="10"/>
+        <Property Name="comments" Type="Edm.String" MaxLength="2000"/>
+      </EntityType>
+      <EntityType Name="Timesheets">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="user" Type="AdminService.Users">
+          <ReferentialConstraint Property="user_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="user_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="date" Type="Edm.Date"/>
+        <Property Name="hours" Type="Edm.Decimal" Precision="5" Scale="2"/>
+        <NavigationProperty Name="project" Type="AdminService.Projects">
+          <ReferentialConstraint Property="project_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="project_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="task" Type="AdminService.Tasks">
+          <ReferentialConstraint Property="task_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="task_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="comment" Type="Edm.String" MaxLength="500"/>
+      </EntityType>
+      <EntityType Name="Evaluations">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="user" Type="AdminService.Users">
+          <ReferentialConstraint Property="user_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="user_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="evaluator" Type="AdminService.Users">
+          <ReferentialConstraint Property="evaluator_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="evaluator_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="project" Type="AdminService.Projects">
+          <ReferentialConstraint Property="project_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="project_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="period" Type="Edm.String" MaxLength="20"/>
+        <Property Name="score" Type="Edm.Decimal" Precision="4" Scale="2"/>
+        <Property Name="qualitativeGrid_productivity" Type="Edm.Int32"/>
+        <Property Name="qualitativeGrid_quality" Type="Edm.Int32"/>
+        <Property Name="qualitativeGrid_autonomy" Type="Edm.Int32"/>
+        <Property Name="qualitativeGrid_collaboration" Type="Edm.Int32"/>
+        <Property Name="qualitativeGrid_innovation" Type="Edm.Int32"/>
+        <Property Name="feedback" Type="Edm.String" MaxLength="2000"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+      </EntityType>
+      <EntityType Name="Deliverables">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="project" Type="AdminService.Projects">
+          <ReferentialConstraint Property="project_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="project_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="task" Type="AdminService.Tasks">
+          <ReferentialConstraint Property="task_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="task_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="type" Type="Edm.String" MaxLength="50"/>
+        <Property Name="name" Type="Edm.String" MaxLength="200"/>
+        <Property Name="url" Type="Edm.String" MaxLength="500"/>
+        <Property Name="fileRef" Type="Edm.String" MaxLength="500"/>
+        <Property Name="validationStatus" Type="Edm.String" MaxLength="20"/>
+        <Property Name="functionalComment" Type="Edm.String" MaxLength="1000"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+      </EntityType>
+      <EntityType Name="Tickets">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="project" Type="AdminService.Projects">
+          <ReferentialConstraint Property="project_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="project_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="objet" Type="AdminService.Objets">
+          <ReferentialConstraint Property="objet_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="objet_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="createdBy" Type="AdminService.Users">
+          <ReferentialConstraint Property="createdBy_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="createdBy_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="assignedTo" Type="AdminService.Users">
+          <ReferentialConstraint Property="assignedTo_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="assignedTo_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="status" Type="Edm.String" MaxLength="20"/>
+        <Property Name="priority" Type="Edm.String" MaxLength="10"/>
+        <Property Name="devType" Type="Edm.String" MaxLength="15"/>
+        <Property Name="title" Type="Edm.String" MaxLength="300"/>
+        <Property Name="description" Type="Edm.String" MaxLength="5000"/>
+        <Property Name="dueDate" Type="Edm.Date"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="updatedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="chiffrage" Type="Edm.Decimal" Precision="8" Scale="2"/>
+        <Property Name="complexite" Type="Edm.String" MaxLength="20"/>
+        <Property Name="priorite" Type="Edm.Int32"/>
+        <Property Name="module" Type="Edm.String" MaxLength="10"/>
+        <Property Name="wricef" Type="Edm.String" MaxLength="30"/>
+        <Property Name="chiffrageJustification" Type="Edm.String" MaxLength="1000"/>
+        <NavigationProperty Name="history" Type="Collection(AdminService.TicketEvents)" Partner="ticket">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="messages" Type="Collection(AdminService.TicketMessages)" Partner="ticket">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="activityFeed" Type="Collection(AdminService.ActivityEvents)" Partner="ticket">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="TicketEvents">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="50" Nullable="false"/>
+        <NavigationProperty Name="ticket" Type="AdminService.Tickets" Partner="history">
+          <ReferentialConstraint Property="ticket_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="ticket_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="timestamp" Type="Edm.DateTimeOffset" Precision="7"/>
+        <NavigationProperty Name="user" Type="AdminService.Users">
+          <ReferentialConstraint Property="user_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="user_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="action" Type="Edm.String" MaxLength="20"/>
+        <Property Name="fromValue" Type="Edm.String" MaxLength="200"/>
+        <Property Name="toValue" Type="Edm.String" MaxLength="200"/>
+        <Property Name="comment" Type="Edm.String" MaxLength="1000"/>
+      </EntityType>
+      <EntityType Name="TicketMessages">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="50" Nullable="false"/>
+        <NavigationProperty Name="ticket" Type="AdminService.Tickets" Partner="messages">
+          <ReferentialConstraint Property="ticket_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="ticket_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="sender" Type="AdminService.Users">
+          <ReferentialConstraint Property="sender_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="sender_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="senderName" Type="Edm.String" MaxLength="100"/>
+        <Property Name="senderRole" Type="Edm.String" MaxLength="50"/>
+        <Property Name="content" Type="Edm.String" MaxLength="2000"/>
+        <Property Name="sentAt" Type="Edm.DateTimeOffset" Precision="7"/>
+      </EntityType>
+      <EntityType Name="ActivityEvents">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="50" Nullable="false"/>
+        <NavigationProperty Name="ticket" Type="AdminService.Tickets" Partner="activityFeed">
+          <ReferentialConstraint Property="ticket_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="ticket_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="type" Type="Edm.String" MaxLength="25"/>
+        <NavigationProperty Name="actor" Type="AdminService.Users">
+          <ReferentialConstraint Property="actor_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="actor_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="actorName" Type="Edm.String" MaxLength="100"/>
+        <Property Name="actorRole" Type="Edm.String" MaxLength="50"/>
+        <Property Name="description" Type="Edm.String" MaxLength="1000"/>
+        <Property Name="metadata" Type="Edm.String"/>
+        <Property Name="occurredAt" Type="Edm.DateTimeOffset" Precision="7"/>
+      </EntityType>
+      <EntityType Name="WorkSessions">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="consultant" Type="AdminService.Users">
+          <ReferentialConstraint Property="consultant_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="consultant_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="ticket" Type="AdminService.Tickets">
+          <ReferentialConstraint Property="ticket_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="ticket_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="project" Type="AdminService.Projects">
+          <ReferentialConstraint Property="project_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="project_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="date" Type="Edm.Date"/>
+        <Property Name="hours" Type="Edm.Decimal" Precision="5" Scale="2"/>
+        <Property Name="description" Type="Edm.String" MaxLength="1000"/>
+        <Property Name="sentToStraTIME" Type="Edm.Boolean" DefaultValue="false"/>
+        <Property Name="sentAt" Type="Edm.DateTimeOffset" Precision="7"/>
+      </EntityType>
+      <EntityType Name="Notifications">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="user" Type="AdminService.Users">
+          <ReferentialConstraint Property="user_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="user_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="type" Type="Edm.String" MaxLength="50"/>
+        <Property Name="title" Type="Edm.String" MaxLength="200"/>
+        <Property Name="message" Type="Edm.String" MaxLength="1000"/>
+        <Property Name="read" Type="Edm.Boolean" DefaultValue="false"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+      </EntityType>
+      <EntityType Name="ReferenceData">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <Property Name="type" Type="Edm.String" MaxLength="30"/>
+        <Property Name="code" Type="Edm.String" MaxLength="30"/>
+        <Property Name="label" Type="Edm.String" MaxLength="100"/>
+        <Property Name="active" Type="Edm.Boolean" DefaultValue="true"/>
+        <Property Name="orderIndex" Type="Edm.Int32"/>
+      </EntityType>
+      <EntityType Name="Allocations">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="user" Type="AdminService.Users">
+          <ReferentialConstraint Property="user_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="user_id" Type="Edm.String" MaxLength="36"/>
+        <NavigationProperty Name="project" Type="AdminService.Projects">
+          <ReferentialConstraint Property="project_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="project_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="allocationPercent" Type="Edm.Int32"/>
+        <Property Name="startDate" Type="Edm.Date"/>
+        <Property Name="endDate" Type="Edm.Date"/>
+      </EntityType>
+      <EntityType Name="LeaveRequests">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="consultant" Type="AdminService.Users">
+          <ReferentialConstraint Property="consultant_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="consultant_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="startDate" Type="Edm.Date"/>
+        <Property Name="endDate" Type="Edm.Date"/>
+        <Property Name="reason" Type="Edm.String" MaxLength="500"/>
+        <Property Name="status" Type="Edm.String" MaxLength="10"/>
+        <NavigationProperty Name="manager" Type="AdminService.Users">
+          <ReferentialConstraint Property="manager_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="manager_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="reviewedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+      </EntityType>
+      <EntityType Name="ImputationPeriods">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="user" Type="AdminService.Users">
+          <ReferentialConstraint Property="user_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="user_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="year" Type="Edm.Int32"/>
+        <Property Name="month" Type="Edm.Int32"/>
+        <Property Name="period" Type="Edm.Int32"/>
+        <Property Name="totalHours" Type="Edm.Decimal" Precision="6" Scale="2"/>
+        <Property Name="status" Type="Edm.String" MaxLength="15"/>
+        <Property Name="sentAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <NavigationProperty Name="validatedBy" Type="AdminService.Users">
+          <ReferentialConstraint Property="validatedBy_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="validatedBy_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="validatedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="rejectionReason" Type="Edm.String" MaxLength="500"/>
+      </EntityType>
+      <EntityType Name="Abaques">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="36" Nullable="false"/>
+        <NavigationProperty Name="project" Type="AdminService.Projects">
+          <ReferentialConstraint Property="project_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="project_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="title" Type="Edm.String" MaxLength="200"/>
+        <Property Name="version" Type="Edm.String" MaxLength="10"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <NavigationProperty Name="createdBy" Type="AdminService.Users">
+          <ReferentialConstraint Property="createdBy_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="createdBy_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="lastUpdatedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <NavigationProperty Name="lastUpdatedBy" Type="AdminService.Users">
+          <ReferentialConstraint Property="lastUpdatedBy_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="lastUpdatedBy_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="approvedByClient" Type="Edm.Boolean" DefaultValue="false"/>
+        <Property Name="approvedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <NavigationProperty Name="entries" Type="Collection(AdminService.AbaqueEntries)" Partner="abaque">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="AbaqueEntries">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="id" Type="Edm.String" MaxLength="50" Nullable="false"/>
+        <NavigationProperty Name="abaque" Type="AdminService.Abaques" Partner="entries">
+          <ReferentialConstraint Property="abaque_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="abaque_id" Type="Edm.String" MaxLength="36"/>
+        <Property Name="devType" Type="Edm.String" MaxLength="15"/>
+        <Property Name="complexite" Type="Edm.String" MaxLength="20"/>
+        <Property Name="priorite" Type="Edm.Int32"/>
+        <Property Name="standardDays" Type="Edm.Int32"/>
+        <Property Name="maxDays" Type="Edm.Int32"/>
+        <Property Name="notes" Type="Edm.String" MaxLength="500"/>
+      </EntityType>
+      <Annotations Target="AdminService.Users/role">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="ADMIN"/>
+              <PropertyValue Property="Value" String="ADMIN"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="MANAGER"/>
+              <PropertyValue Property="Value" String="MANAGER"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CONSULTANT_TECHNIQUE"/>
+              <PropertyValue Property="Value" String="CONSULTANT_TECHNIQUE"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CONSULTANT_FONCTIONNEL"/>
+              <PropertyValue Property="Value" String="CONSULTANT_FONCTIONNEL"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CHEF_DE_PROJET"/>
+              <PropertyValue Property="Value" String="CHEF_DE_PROJET"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="COORDINATEUR_DEV"/>
+              <PropertyValue Property="Value" String="COORDINATEUR_DEV"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Certifications/status">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="VALID"/>
+              <PropertyValue Property="Value" String="VALID"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="EXPIRING_SOON"/>
+              <PropertyValue Property="Value" String="EXPIRING_SOON"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="EXPIRED"/>
+              <PropertyValue Property="Value" String="EXPIRED"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Projects/status">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="PLANNED"/>
+              <PropertyValue Property="Value" String="PLANNED"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="ACTIVE"/>
+              <PropertyValue Property="Value" String="ACTIVE"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="ON_HOLD"/>
+              <PropertyValue Property="Value" String="ON_HOLD"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="COMPLETED"/>
+              <PropertyValue Property="Value" String="COMPLETED"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CANCELLED"/>
+              <PropertyValue Property="Value" String="CANCELLED"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Projects/priority">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="LOW"/>
+              <PropertyValue Property="Value" String="LOW"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="MEDIUM"/>
+              <PropertyValue Property="Value" String="MEDIUM"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="HIGH"/>
+              <PropertyValue Property="Value" String="HIGH"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CRITICAL"/>
+              <PropertyValue Property="Value" String="CRITICAL"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Projects/complexity">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="LOW"/>
+              <PropertyValue Property="Value" String="LOW"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="MEDIUM"/>
+              <PropertyValue Property="Value" String="MEDIUM"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="HIGH"/>
+              <PropertyValue Property="Value" String="HIGH"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CRITICAL"/>
+              <PropertyValue Property="Value" String="CRITICAL"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Objets/devType">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Formulaire"/>
+              <PropertyValue Property="Value" String="Formulaire"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Report"/>
+              <PropertyValue Property="Value" String="Report"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Enhancement"/>
+              <PropertyValue Property="Value" String="Enhancement"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Programme"/>
+              <PropertyValue Property="Value" String="Programme"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Objets/complexite">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Simple"/>
+              <PropertyValue Property="Value" String="Simple"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Moyen"/>
+              <PropertyValue Property="Value" String="Moyen"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Complexe"/>
+              <PropertyValue Property="Value" String="Complexe"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Très Complexe"/>
+              <PropertyValue Property="Value" String="Très Complexe"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Objets/priorite">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Critique"/>
+              <PropertyValue Property="Value" Int="0"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Haute"/>
+              <PropertyValue Property="Value" Int="1"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Moyenne"/>
+              <PropertyValue Property="Value" Int="2"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Basse"/>
+              <PropertyValue Property="Value" Int="3"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Tasks/status">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="TO_DO"/>
+              <PropertyValue Property="Value" String="TO_DO"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="IN_PROGRESS"/>
+              <PropertyValue Property="Value" String="IN_PROGRESS"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="BLOCKED"/>
+              <PropertyValue Property="Value" String="BLOCKED"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="DONE"/>
+              <PropertyValue Property="Value" String="DONE"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CANCELLED"/>
+              <PropertyValue Property="Value" String="CANCELLED"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Tasks/priority">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="LOW"/>
+              <PropertyValue Property="Value" String="LOW"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="MEDIUM"/>
+              <PropertyValue Property="Value" String="MEDIUM"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="HIGH"/>
+              <PropertyValue Property="Value" String="HIGH"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CRITICAL"/>
+              <PropertyValue Property="Value" String="CRITICAL"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Tasks/riskLevel">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="NONE"/>
+              <PropertyValue Property="Value" String="NONE"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="LOW"/>
+              <PropertyValue Property="Value" String="LOW"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="MEDIUM"/>
+              <PropertyValue Property="Value" String="MEDIUM"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="HIGH"/>
+              <PropertyValue Property="Value" String="HIGH"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CRITICAL"/>
+              <PropertyValue Property="Value" String="CRITICAL"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Deliverables/validationStatus">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="PENDING"/>
+              <PropertyValue Property="Value" String="PENDING"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="APPROVED"/>
+              <PropertyValue Property="Value" String="APPROVED"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CHANGES_REQUESTED"/>
+              <PropertyValue Property="Value" String="CHANGES_REQUESTED"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Tickets/status">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="OPEN"/>
+              <PropertyValue Property="Value" String="OPEN"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="IN_PROGRESS"/>
+              <PropertyValue Property="Value" String="IN_PROGRESS"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="WAITING_FEEDBACK"/>
+              <PropertyValue Property="Value" String="WAITING_FEEDBACK"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="RESOLVED"/>
+              <PropertyValue Property="Value" String="RESOLVED"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CLOSED"/>
+              <PropertyValue Property="Value" String="CLOSED"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Tickets/priority">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="LOW"/>
+              <PropertyValue Property="Value" String="LOW"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="MEDIUM"/>
+              <PropertyValue Property="Value" String="MEDIUM"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="HIGH"/>
+              <PropertyValue Property="Value" String="HIGH"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CRITICAL"/>
+              <PropertyValue Property="Value" String="CRITICAL"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Tickets/devType">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Formulaire"/>
+              <PropertyValue Property="Value" String="Formulaire"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Report"/>
+              <PropertyValue Property="Value" String="Report"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Enhancement"/>
+              <PropertyValue Property="Value" String="Enhancement"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Programme"/>
+              <PropertyValue Property="Value" String="Programme"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Tickets/complexite">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Simple"/>
+              <PropertyValue Property="Value" String="Simple"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Moyen"/>
+              <PropertyValue Property="Value" String="Moyen"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Complexe"/>
+              <PropertyValue Property="Value" String="Complexe"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Très Complexe"/>
+              <PropertyValue Property="Value" String="Très Complexe"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.Tickets/priorite">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Critique"/>
+              <PropertyValue Property="Value" Int="0"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Haute"/>
+              <PropertyValue Property="Value" Int="1"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Moyenne"/>
+              <PropertyValue Property="Value" Int="2"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Basse"/>
+              <PropertyValue Property="Value" Int="3"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.TicketEvents/action">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CREATED"/>
+              <PropertyValue Property="Value" String="CREATED"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="STATUS_CHANGE"/>
+              <PropertyValue Property="Value" String="STATUS_CHANGE"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="ASSIGNED"/>
+              <PropertyValue Property="Value" String="ASSIGNED"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="COMMENT"/>
+              <PropertyValue Property="Value" String="COMMENT"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="PRIORITY_CHANGE"/>
+              <PropertyValue Property="Value" String="PRIORITY_CHANGE"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.ActivityEvents/type">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="status_change"/>
+              <PropertyValue Property="Value" String="status_change"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="assignee_change"/>
+              <PropertyValue Property="Value" String="assignee_change"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="message_sent"/>
+              <PropertyValue Property="Value" String="message_sent"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="work_session_logged"/>
+              <PropertyValue Property="Value" String="work_session_logged"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="chiffrage_updated"/>
+              <PropertyValue Property="Value" String="chiffrage_updated"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="comment_added"/>
+              <PropertyValue Property="Value" String="comment_added"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="ticket_created"/>
+              <PropertyValue Property="Value" String="ticket_created"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="priority_change"/>
+              <PropertyValue Property="Value" String="priority_change"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="straTIME_sent"/>
+              <PropertyValue Property="Value" String="straTIME_sent"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="abaque_exceeded"/>
+              <PropertyValue Property="Value" String="abaque_exceeded"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.LeaveRequests/status">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="PENDING"/>
+              <PropertyValue Property="Value" String="PENDING"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="APPROVED"/>
+              <PropertyValue Property="Value" String="APPROVED"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="REJECTED"/>
+              <PropertyValue Property="Value" String="REJECTED"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.ImputationPeriods/status">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="draft"/>
+              <PropertyValue Property="Value" String="draft"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="sent"/>
+              <PropertyValue Property="Value" String="sent"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="pending"/>
+              <PropertyValue Property="Value" String="pending"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="validated"/>
+              <PropertyValue Property="Value" String="validated"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="rejected"/>
+              <PropertyValue Property="Value" String="rejected"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.AbaqueEntries/devType">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Formulaire"/>
+              <PropertyValue Property="Value" String="Formulaire"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Report"/>
+              <PropertyValue Property="Value" String="Report"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Enhancement"/>
+              <PropertyValue Property="Value" String="Enhancement"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Programme"/>
+              <PropertyValue Property="Value" String="Programme"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.AbaqueEntries/complexite">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Simple"/>
+              <PropertyValue Property="Value" String="Simple"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Moyen"/>
+              <PropertyValue Property="Value" String="Moyen"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Complexe"/>
+              <PropertyValue Property="Value" String="Complexe"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Très Complexe"/>
+              <PropertyValue Property="Value" String="Très Complexe"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AdminService.AbaqueEntries/priorite">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Critique"/>
+              <PropertyValue Property="Value" Int="0"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Haute"/>
+              <PropertyValue Property="Value" Int="1"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Moyenne"/>
+              <PropertyValue Property="Value" Int="2"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="Basse"/>
+              <PropertyValue Property="Value" Int="3"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

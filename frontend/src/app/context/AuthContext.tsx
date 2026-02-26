@@ -79,18 +79,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string) => {
-    // In a real application, this would authenticate with the backend
-    // For now, we'll just find the user by email
-    const users = await UsersAPI.getAll();
-    const user = users.find((u) => u.email === email);
-
-    if (user) {
-      setCurrentUser(user);
-      setIsAuthenticated(true);
-      localStorage.setItem('currentUserId', user.id);
-    } else {
-      throw new Error('Invalid credentials');
-    }
+    const user = await UsersAPI.login(email, password);
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    localStorage.setItem('currentUserId', user.id);
   };
 
   const logout = () => {

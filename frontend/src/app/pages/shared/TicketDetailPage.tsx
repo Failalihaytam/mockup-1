@@ -44,6 +44,9 @@ import {
   Copy,
   Send,
   Activity,
+  Play,
+  Pause,
+  TimerReset,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -212,6 +215,11 @@ export const TicketDetailPage: React.FC = () => {
   // Status dropdown
   const [showStatusDrop, setShowStatusDrop] = useState(false);
 
+  // Live timer
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [timerPaused, setTimerPaused] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // ---------------------------------------------------------------------------
   // Load data
   // ---------------------------------------------------------------------------
@@ -254,6 +262,70 @@ export const TicketDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Derive inProgressSince from history
+  // ---------------------------------------------------------------------------
+
+  const inProgressSince = useMemo(() => {
+    if (!ticket || ticket.status !== 'IN_PROGRESS') return null;
+    // Look for the most recent STATUS_CHANGE to IN_PROGRESS
+    const events = [...(ticket.history || [])]
+      .filter((h) => h.action === 'STATUS_CHANGE' && h.toValue === 'IN_PROGRESS')
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    if (events.length > 0) return new Date(events[0].timestamp);
+    // Fallback: if ticket was created as IN_PROGRESS, use createdAt
+    return new Date(ticket.createdAt);
+  }, [ticket]);
+
+  // ---------------------------------------------------------------------------
+  // Live timer effect
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    // Clear any existing interval
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (!inProgressSince || timerPaused) {
+      // Not in progress or paused — reset if not in progress
+      if (!inProgressSince) setElapsedSeconds(0);
+      return;
+    }
+
+    // Compute initial elapsed
+    const calcElapsed = () => Math.max(0, Math.floor((Date.now() - inProgressSince.getTime()) / 1000));
+    setElapsedSeconds(calcElapsed());
+
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(calcElapsed());
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [inProgressSince, timerPaused]);
+
+  const formatTimer = (totalSec: number): string => {
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const imputeTimerHours = () => {
+    if (elapsedSeconds < 60) {
+      toast.error('Le temps écoulé est inférieur à 1 minute');
+      return;
+    }
+    const hours = Math.round((elapsedSeconds / 3600) * 4) / 4; // Round to nearest 0.25
+    setWsDate(new Date().toISOString().slice(0, 10));
+    setWsHours(String(Math.max(0.25, hours)));
+    setWsDesc(`Session de travail (timer : ${formatTimer(elapsedSeconds)})`);
+    setShowLogForm(true);
   };
 
   // ---------------------------------------------------------------------------
@@ -322,8 +394,16 @@ export const TicketDetailPage: React.FC = () => {
   // Actions
   // ---------------------------------------------------------------------------
 
+  /** Sync activityFeed state + ref from an API-returned ticket */
+  const syncFeed = (t: Ticket) => {
+    const feed = t.activityFeed ?? [];
+    setActivityFeed(feed);
+    activityFeedRef.current = feed;
+  };
+
+  /** Standalone activity add — persists via its own awaited PATCH */
   const addActivity = useCallback(
-    (
+    async (
       type: ActivityEvent['type'],
       description: string,
       metadata?: Record<string, unknown>,
@@ -340,20 +420,24 @@ export const TicketDetailPage: React.FC = () => {
         metadata,
         occurredAt: new Date().toISOString(),
       };
-      setActivityFeed((prev) => {
-        const updated = [evt, ...prev];
-        activityFeedRef.current = updated;
-        return updated;
-      });
-      // Persist using ref (always has the latest feed, not stale closure)
-      void TicketsAPI.update(ticket.id, { activityFeed: activityFeedRef.current });
+      const newFeed = [evt, ...activityFeedRef.current];
+      activityFeedRef.current = newFeed;
+      setActivityFeed(newFeed);
+      try {
+        const updated = await TicketsAPI.update(ticket.id, {
+          activityFeed: newFeed,
+        });
+        syncFeed(updated);
+      } catch (err) {
+        console.error('Failed to persist activity feed:', err);
+      }
     },
     [currentUser, ticket],
   );
 
   const changeStatus = async (newStatus: TicketStatus) => {
     if (!currentUser || !ticket) return;
-    const event: TicketEvent = {
+    const histEvent: TicketEvent = {
       id: `te${Date.now()}`,
       timestamp: new Date().toISOString(),
       userId: currentUser.id,
@@ -361,18 +445,27 @@ export const TicketDetailPage: React.FC = () => {
       fromValue: ticket.status,
       toValue: newStatus,
     };
+    const actEvt: ActivityEvent = {
+      id: `ae${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      ticketId: ticket.id,
+      type: 'status_change',
+      actorId: currentUser.id,
+      actorName: currentUser.name,
+      actorRole: currentUser.role,
+      description: `${currentUser.name} a changé le statut de ${statusLabel[ticket.status]} → ${statusLabel[newStatus]}`,
+      metadata: { from: ticket.status, to: newStatus },
+      occurredAt: new Date().toISOString(),
+    };
+    const newFeed = [actEvt, ...activityFeedRef.current];
     try {
       const updated = await TicketsAPI.update(ticket.id, {
         status: newStatus,
-        history: [...(ticket.history || []), event],
+        history: [...(ticket.history || []), histEvent],
+        activityFeed: newFeed,
       });
       setTicket(updated);
+      syncFeed(updated);
       setShowStatusDrop(false);
-      addActivity(
-        'status_change',
-        `${currentUser.name} a changé le statut de ${statusLabel[ticket.status]} → ${statusLabel[newStatus]}`,
-        { from: ticket.status, to: newStatus },
-      );
       toast.success(`Statut → ${statusLabel[newStatus]}`);
     } catch {
       toast.error('Erreur lors du changement de statut');
@@ -381,7 +474,7 @@ export const TicketDetailPage: React.FC = () => {
 
   const reassign = async (userId: string) => {
     if (!currentUser || !ticket) return;
-    const event: TicketEvent = {
+    const histEvent: TicketEvent = {
       id: `te${Date.now()}`,
       timestamp: new Date().toISOString(),
       userId: currentUser.id,
@@ -389,18 +482,27 @@ export const TicketDetailPage: React.FC = () => {
       fromValue: ticket.assignedTo,
       toValue: userId,
     };
+    const assigneeName = userName(userId);
+    const actEvt: ActivityEvent = {
+      id: `ae${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      ticketId: ticket.id,
+      type: 'assignee_change',
+      actorId: currentUser.id,
+      actorName: currentUser.name,
+      actorRole: currentUser.role,
+      description: `${currentUser.name} a réassigné le ticket à ${assigneeName}`,
+      metadata: { from: ticket.assignedTo, to: userId },
+      occurredAt: new Date().toISOString(),
+    };
+    const newFeed = [actEvt, ...activityFeedRef.current];
     try {
       const updated = await TicketsAPI.update(ticket.id, {
         assignedTo: userId,
-        history: [...(ticket.history || []), event],
+        history: [...(ticket.history || []), histEvent],
+        activityFeed: newFeed,
       });
       setTicket(updated);
-      const assigneeName = userName(userId);
-      addActivity(
-        'assignee_change',
-        `${currentUser.name} a réassigné le ticket à ${assigneeName}`,
-        { from: ticket.assignedTo, to: userId },
-      );
+      syncFeed(updated);
       toast.success(`Assigné à ${assigneeName}`);
     } catch {
       toast.error('Erreur lors de la réassignation');
@@ -446,16 +548,40 @@ export const TicketDetailPage: React.FC = () => {
       setWsHours('');
       setWsDesc('');
 
-      addActivity(
-        'work_session_logged',
-        `${currentUser.name} a loggué ${formatHours(created.hours)} de travail`,
-        { hours: created.hours, date: created.date },
-      );
-      addActivity(
-        'straTIME_sent',
-        `Imputations envoyées à StraTIME par ${currentUser.name} — ${formatHours(created.hours)}`,
-        { hours: created.hours },
-      );
+      // Build both activity events and persist in a single PATCH
+      const evt1: ActivityEvent = {
+        id: `ae${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        ticketId: ticket.id,
+        type: 'work_session_logged',
+        actorId: currentUser.id,
+        actorName: currentUser.name,
+        actorRole: currentUser.role,
+        description: `${currentUser.name} a loggué ${formatHours(created.hours)} de travail`,
+        metadata: { hours: created.hours, date: created.date },
+        occurredAt: new Date().toISOString(),
+      };
+      const evt2: ActivityEvent = {
+        id: `ae${Date.now() + 1}-${Math.random().toString(36).slice(2, 6)}`,
+        ticketId: ticket.id,
+        type: 'straTIME_sent',
+        actorId: currentUser.id,
+        actorName: currentUser.name,
+        actorRole: currentUser.role,
+        description: `Imputations envoyées à StraTIME par ${currentUser.name} — ${formatHours(created.hours)}`,
+        metadata: { hours: created.hours },
+        occurredAt: new Date().toISOString(),
+      };
+      const newFeed = [evt2, evt1, ...activityFeedRef.current];
+      activityFeedRef.current = newFeed;
+      setActivityFeed(newFeed);
+      try {
+        const feedUpdated = await TicketsAPI.update(ticket.id, {
+          activityFeed: newFeed,
+        });
+        syncFeed(feedUpdated);
+      } catch (err) {
+        console.error('Failed to persist activity feed:', err);
+      }
       toast.success(`${formatHours(created.hours)} envoyées à StraTIME`);
     } catch {
       toast.error('Erreur');
@@ -831,6 +957,51 @@ export const TicketDetailPage: React.FC = () => {
                     </span>{' '}
                     {ticket.chiffrageJustification}
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Live Timer for IN_PROGRESS tickets */}
+            {ticket.status === 'IN_PROGRESS' && canLogWork(role) && (
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Clock className="h-4 w-4 text-primary" />
+                      <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    </div>
+                    <span className="text-sm font-semibold">Timer en cours</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      title={timerPaused ? 'Reprendre' : 'Pause'}
+                      onClick={() => setTimerPaused((p) => !p)}
+                    >
+                      {timerPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className={`font-mono text-2xl font-bold tabular-nums tracking-wider ${
+                    timerPaused ? 'text-muted-foreground' : 'text-primary'
+                  }`}>
+                    {formatTimer(elapsedSeconds)}
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={imputeTimerHours}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Send className="h-3 w-3 mr-1" /> Imputer
+                  </Button>
+                </div>
+                {inProgressSince && (
+                  <p className="text-[10px] text-muted-foreground">
+                    En cours depuis {inProgressSince.toLocaleString('fr-FR')}
+                  </p>
                 )}
               </div>
             )}

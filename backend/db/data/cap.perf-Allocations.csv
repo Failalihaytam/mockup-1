@@ -1,0 +1,4 @@
+id;user_id;project_id;allocationPercent;startDate;endDate
+a1;u3;p1;50;2026-01-01;2026-06-30
+a2;u3;p2;30;2026-02-01;2026-05-31
+a3;u5;p2;40;2026-02-01;2026-05-31

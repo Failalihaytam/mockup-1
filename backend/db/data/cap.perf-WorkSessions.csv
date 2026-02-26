@@ -1,0 +1,60 @@
+id;consultant_id;ticket_id;project_id;date;hours;description;sentToStraTIME;sentAt
+ws1;u3;tk3;p2;2026-02-10;4;Backend OData service pour tuile approbation PO;true;2026-02-10T18:00:00Z
+ws2;u3;tk3;p2;2026-02-14;3.5;UI5 frontend tuile avec statuts visuels;true;2026-02-14T18:00:00Z
+ws3;u3;tk3;p2;2026-02-19;2;Tests intégration avec workflow SAP;false;
+ws4;u5;tk2;p1;2026-02-12;3;Requête ALV rapport contrôle factures;true;2026-02-12T18:00:00Z
+ws5;u5;tk2;p1;2026-02-17;2.5;Formatage et totaux rapport factures;true;2026-02-17T18:00:00Z
+ws5b;u5;tk2;p1;2026-02-18;1.5;Corrections mineures et envoi pour validation;false;
+ws6;u3;tk1;p1;2026-02-03;4;Mapping champs ECC → S/4HANA pour articles;true;2026-02-03T18:00:00Z
+ws9;u3;tk1;p1;2026-02-19;3.5;Programme ABAP extraction données maîtres;false;
+ws7;u5;tk5;p2;2026-02-10;3;Layout page My Inbox avec composants Fiori;true;2026-02-10T18:00:00Z
+ws10;u5;tk5;p2;2026-02-20;2.5;Filtres avancés et barre de recherche;false;
+ws10b;u5;tk5;p2;2026-02-22;2;Tests composant filtres et corrections responsive;false;
+ws8;u3;tk6;p1;2026-02-13;2;Module conversion UoM — développement et tests;true;2026-02-13T18:00:00Z
+ws11;u3;tk7;p1;2026-02-05;4;Analyse structure batch input et mapping champs prix;true;2026-02-05T18:00:00Z
+ws11b;u3;tk7;p1;2026-02-21;3;Programme batch input — traitement erreurs et logs;false;
+ws12;u5;tk8;p1;2026-02-07;2;Analyse requirements rapport stock multi-sociétés;true;2026-02-07T18:00:00Z
+ws13;u5;tk8;p1;2026-02-14;3;Prototype requête ALV multi-sociétés;true;2026-02-14T18:00:00Z
+ws14;u3;tk9;p2;2026-02-07;2;Analyse requirements formulaire congés Fiori;true;2026-02-07T18:00:00Z
+ws15;u3;tk9;p2;2026-02-14;3;Développement formulaire avec validation hiérarchique;true;2026-02-14T18:00:00Z
+ws16;u3;tk9;p2;2026-02-20;1.5;Tests et corrections finales formulaire congés;true;2026-02-20T18:00:00Z
+ws17;u5;tk10;p2;2026-02-10;2.5;Configuration tuiles KPI rôle manager;true;2026-02-10T18:00:00Z
+ws18;u5;tk10;p2;2026-02-18;3;Intégration données temps réel pour tuiles manager;false;
+ws19;u5;tk11;p3;2026-02-10;4;Architecture KPI dashboard et modèle données;true;2026-02-10T18:00:00Z
+ws20;u5;tk11;p3;2026-02-17;3.5;Composants graphiques et widgets KPI;true;2026-02-17T18:00:00Z
+ws21;u5;tk11;p3;2026-02-22;3;Rafraîchissement auto et gestion cache;false;
+ws22;u3;tk12;p3;2026-02-12;3;Query extraction données RH vers BW;true;2026-02-12T18:00:00Z
+ws23;u3;tk12;p3;2026-02-19;2;Transformation données et mapping champs BI;false;
+ws24;u3;tk14;p2;2026-02-10;3;Architecture notification push via BTP;true;2026-02-10T18:00:00Z
+ws25;u3;tk14;p2;2026-02-17;4;Implémentation service notification avec templates;true;2026-02-17T18:00:00Z
+ws26;u3;tk14;p2;2026-02-19;2;Tests push notifications multi-devices;false;
+ws27;u3;tk14;p2;2026-02-21;1.5;Corrections et retry mechanism;false;
+ws28;u5;tk15;p2;2026-02-10;2.5;Layout formulaire évaluation fournisseur;true;2026-02-10T18:00:00Z
+ws29;u5;tk15;p2;2026-02-17;3;Logique validation et scoring fournisseur;true;2026-02-17T18:00:00Z
+ws30;u5;tk15;p2;2026-02-20;1.5;Tests et soumission pour review;false;
+ws31;u3;tk16;p3;2026-02-12;4;Architecture pipeline ETL données ventes;true;2026-02-12T18:00:00Z
+ws32;u3;tk16;p3;2026-02-22;5;Développement extracteurs et transformations SD;false;
+ws33;u7;tk18;p3;2026-02-10;3;Structure rapport consolidation mensuelle;true;2026-02-10T18:00:00Z
+ws34;u7;tk18;p3;2026-02-17;4;Requêtes données FI multi-sociétés;true;2026-02-17T18:00:00Z
+ws35;u7;tk18;p3;2026-02-21;2.5;Mise en page et graphiques consolidation;false;
+ws36;u7;tk19;p1;2026-02-03;2;Analyse données temporaires à purger;true;2026-02-03T18:00:00Z
+ws37;u7;tk19;p1;2026-02-10;3;Développement job batch avec scheduling;true;2026-02-10T18:00:00Z
+ws38;u3;tk4;p3;2026-02-22;2;Investigating CDS fiscal year association bug;false;
+ws39;u3;tk4;p3;2026-02-24;1.5;Found root cause — association key misaligned on period boundaries;false;
+ws40;u5;tk21;p3;2026-01-30;3;Hierarchy data model for drill-down;true;2026-01-30T18:00:00Z
+ws41;u5;tk21;p3;2026-02-04;4;Drill-down navigation with breadcrumbs;true;2026-02-04T18:00:00Z
+ws42;u5;tk21;p3;2026-02-10;3;Sparkline trend charts per cost center;true;2026-02-10T18:00:00Z
+ws43;u7;tk22;p3;2026-02-03;4;SLT replication setup for core tables;true;2026-02-03T18:00:00Z
+ws44;u7;tk22;p3;2026-02-07;4;Delta extraction and error handling configuration;true;2026-02-07T18:00:00Z
+ws45;u7;tk22;p3;2026-02-13;3;Performance tuning — achieved 2-3 min latency;true;2026-02-13T18:00:00Z
+ws46;u7;tk22;p3;2026-02-17;2;Final load testing and documentation;true;2026-02-17T18:00:00Z
+ws47;u5;tk23;p3;2026-02-23;2.5;URL serialization of filter state parameters;false;
+ws48;u3;tk24;p3;2026-02-14;1.5;SheetJS library integration;true;2026-02-14T18:00:00Z
+ws49;u3;tk24;p3;2026-02-20;2;Export formatting and testing across all 5 reports;true;2026-02-20T18:00:00Z
+ws50;u3;tk26;p3;2026-02-02;3;CDS views for actual/budget/forecast P&L data;true;2026-02-02T18:00:00Z
+ws51;u3;tk26;p3;2026-02-06;4;Waterfall chart component for variance visualization;true;2026-02-06T18:00:00Z
+ws52;u3;tk26;p3;2026-02-12;3.5;Monthly/quarterly toggle and final styling;true;2026-02-12T18:00:00Z
+ws53;u5;tk28;p1;2026-02-24;2;UI layout for credit limit comparison form;false;
+ws54;u7;tk29;p1;2026-02-17;3;Dashboard layout with live counter widgets;true;2026-02-17T18:00:00Z
+ws55;u7;tk29;p1;2026-02-20;4;ETA algorithm based on throughput rate;true;2026-02-20T18:00:00Z
+ws56;u7;tk29;p1;2026-02-22;2.5;Success/error/pending counters per object type;false;

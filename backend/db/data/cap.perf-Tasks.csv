@@ -1,0 +1,7 @@
+id;project_id;title;description;status;priority;assignee_id;plannedStart;plannedEnd;realStart;realEnd;progressPercent;estimatedHours;actualHours;isCritical;riskLevel;comments
+t1;p1;Analyse données maîtres;Analyse structures données MM à migrer;DONE;HIGH;u3;2026-01-06;2026-01-20;2026-01-06;2026-01-18;100;40;36;true;LOW;
+t2;p1;Développement programme migration;ABAP pour extraction/transformation/chargement;IN_PROGRESS;CRITICAL;u3;2026-01-21;2026-02-28;2026-01-21;;60;120;72;true;MEDIUM;
+t3;p2;Configuration Fiori Launchpad;Setup tuiles, groupes et catalogues;IN_PROGRESS;HIGH;u5;2026-02-03;2026-03-15;2026-02-03;;40;80;32;false;LOW;
+t4;p2;Tests intégration workflow;Tests end-to-end workflows approbation;TO_DO;MEDIUM;u4;2026-03-16;2026-04-15;;;0;60;0;false;NONE;
+t5;p3;Modélisation données BI;Modèle données BW/4HANA pour reporting;DONE;HIGH;u3;2026-01-20;2026-02-10;2026-01-20;2026-02-08;100;50;48;true;LOW;
+t6;p3;Développement dashboards;Dashboards SAC avec drill-down et filtres;IN_PROGRESS;HIGH;u5;2026-02-11;2026-03-31;2026-02-11;;30;90;27;false;MEDIUM;
